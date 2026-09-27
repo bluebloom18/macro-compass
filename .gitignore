@@ -1,0 +1,8 @@
+cache/
+output.json
+artifact_seed.json
+latest_doc.json
+history_doc.json
+macro_compass.html
+__pycache__/
+*.pyc
