@@ -1,0 +1,35 @@
+{
+ "start": "2011-05-26",
+ "end": "2026-10-16",
+ "cost_bp": 5.0,
+ "rows": [
+  {
+   "rule": "Buy & hold SPY",
+   "cagr": 0.1401,
+   "sharpe": 0.7613,
+   "maxdd": -0.3372,
+   "invested": 1.0
+  },
+  {
+   "rule": "52-week MA",
+   "cagr": 0.1112,
+   "sharpe": 0.8765,
+   "maxdd": -0.1924,
+   "invested": 0.661
+  },
+  {
+   "rule": "1-week change",
+   "cagr": 0.0702,
+   "sharpe": 0.4887,
+   "maxdd": -0.2757,
+   "invested": 0.6687
+  },
+  {
+   "rule": "1-week change, moves > 0.02",
+   "cagr": 0.1163,
+   "sharpe": 0.9226,
+   "maxdd": -0.2012,
+   "invested": 0.6494
+  }
+ ]
+}

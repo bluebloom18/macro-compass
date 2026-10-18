@@ -106,6 +106,20 @@ section{margin-bottom:40px;}
 .ongoing{font-family:var(--font-body); font-size:10.5px; color:var(--accent); margin-left:6px;}
 .bt-note{color:var(--ink-faint); font-size:12px; margin:12px 2px 0; max-width:90ch;}
 
+/* ---------- financial conditions (NFCI) ---------- */
+.nf-tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px;}
+@media (max-width:860px){.nf-tiles{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:420px){.nf-tiles{grid-template-columns:1fr;}}
+.nf-tile{padding:14px 16px; display:flex; flex-direction:column; gap:6px;}
+.nf-tile .val{font-family:var(--font-mono); font-size:22px; font-weight:600; font-variant-numeric:tabular-nums;}
+.nf-tile .sub{font-size:12px; color:var(--ink-muted);}
+.risk-pill{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; padding:3px 10px; border-radius:100px; font-size:12px; font-weight:600;}
+.risk-pill.on{background:rgba(61,156,121,.18); color:#7FCBAE;}
+.risk-pill.off{background:rgba(208,89,75,.18); color:#EE9A8F;}
+.nf-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-muted); margin:0 0 10px;}
+.nf-legend span{display:inline-flex; align-items:center; gap:6px;}
+.nf-legend i{display:inline-block; width:14px; height:6px; border-radius:2px;}
+
 /* ---------- outperform table ---------- */
 .outperform{display:grid; grid-template-columns:repeat(2,1fr); gap:10px 20px;}
 @media (max-width:600px){.outperform{grid-template-columns:1fr;}}
@@ -223,6 +237,41 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 
   <section>
     <div class="section-head">
+      <h2>Financial conditions (NFCI)</h2>
+      <div class="hint" id="nfHint">Chicago Fed National Financial Conditions Index &middot; weekly</div>
+    </div>
+    <div class="nf-tiles" id="nfTiles"></div>
+    <div class="card history-card">
+      <div class="history-controls">
+        <div class="seg" id="nfPresets" role="group" aria-label="Time range">
+          <button type="button" data-months="all">All</button>
+          <button type="button" data-months="240">20Y</button>
+          <button type="button" data-months="120">10Y</button>
+          <button type="button" data-months="60">5Y</button>
+          <button type="button" data-months="24">2Y</button>
+          <button type="button" data-months="12">1Y</button>
+        </div>
+        <span class="range-label" id="nfRangeLabel"></span>
+      </div>
+      <div class="nf-legend">
+        <span><i style="background:#3D9C79"></i>Risk on (own SPY)</span>
+        <span><i style="background:#D0594B"></i>Risk off (T-bills)</span>
+        <span>Positive NFCI = tighter than average</span>
+      </div>
+      <div class="chart-wrap">
+        <svg id="nfChart" role="img" aria-label="NFCI level, 52-week moving average and weekly change, with risk-on/off signals"></svg>
+        <div class="chart-tooltip" id="nfTooltip" hidden></div>
+      </div>
+    </div>
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow" id="nfBtTitle">Backtest &middot; as-published data</div></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="nfBacktest"></table></div>
+    </div>
+    <p class="bt-note">Level and 52-week MA use today's NFCI history, which the Chicago Fed re-estimates every week. Weekly changes from May 2011 are as first published (ALFRED vintages), because that is what a weekly rule actually trades on &mdash; today's smoothed history has had no weekly move above 0.02 since March 2023. Earlier weekly changes come from today's history. The &gt;0.02 rule keeps its position until a weekly move clears &plusmn;0.02. Backtest: SPY total return when on, 3-month T-bills when off, positions moved the Thursday after each release, 5bp per switch.</p>
+  </section>
+
+  <section>
+    <div class="section-head">
       <h2>What should outperform</h2>
       <div class="hint">Directional tilts implied by the current regime</div>
     </div>
@@ -261,6 +310,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 <script>
 const SEED = __SEED_JSON__;
 let BACKTEST = __BACKTEST_JSON__;
+let NFCI = __NFCI_JSON__;
 const REGIME_META = {
   1:{name:'Goldilocks', color:'var(--gold)', hex:'#BD8A32', desc:'growth accelerating, inflation cooling'},
   2:{name:'Reflation',  color:'var(--refl)', hex:'#3D9C79', desc:'growth accelerating, inflation rising'},
@@ -690,11 +740,278 @@ function renderBacktest(bt){
   }
 }
 
+// ---------- financial conditions (NFCI) ----------
+const NF = {doc:null, d:null, lo:0, hi:0, geom:null, drag:null, wired:false};
+const NF_ON = '#3D9C79', NF_OFF = '#D0594B', NF_LINE = '#B0A2F5', NF_BAND = 0.02;
+
+function nfDerive(doc){
+  const n = doc.dates.length, v = doc.v;
+  const fp = {};
+  doc.fp.dates.forEach((dt,k)=>{ fp[dt] = doc.fp.ch[k]; });
+  const ma = new Array(n).fill(null), chg = new Array(n).fill(null), isFp = new Array(n).fill(false);
+  const sMA = new Array(n).fill(null), sROC = new Array(n).fill(null), sBand = new Array(n).fill(null);
+  let sum = 0, band = 1;
+  for(let i=0;i<n;i++){
+    sum += v[i]; if(i>=52) sum -= v[i-52];
+    if(i>=51){ ma[i] = sum/52; sMA[i] = v[i] <= ma[i] ? 1 : 0; }
+    if(fp[doc.dates[i]] !== undefined){ chg[i] = fp[doc.dates[i]]; isFp[i] = true; }
+    else if(i>0){ chg[i] = +(v[i]-v[i-1]).toFixed(3); }
+    if(chg[i] !== null){
+      sROC[i] = chg[i] <= 0 ? 1 : 0;
+      if(chg[i] < -NF_BAND) band = 1; else if(chg[i] > NF_BAND) band = 0;
+      sBand[i] = band;
+    }
+  }
+  return {n, v, ma, chg, isFp, sMA, sROC, sBand};
+}
+
+function renderNfci(doc){
+  if(!doc || !doc.dates) return;
+  const prevN = NF.doc ? NF.doc.dates.length : 0;
+  const wasDefault = !NF.doc || (NF.hi===prevN-1 && NF.userRange!==true);
+  NF.doc = doc; NF.d = nfDerive(doc);
+  const n = NF.d.n;
+  if(wasDefault){ NF.hi = n-1; NF.lo = nfDefaultLo(); }
+  if(NF.hi > n-1){ NF.lo = 0; NF.hi = n-1; }
+  renderNfTiles(); renderNfBacktest();
+  if(!NF.wired) wireNfci();
+  drawNfci();
+}
+
+const NF_DEFAULT_MONTHS = 60;                         // default view: 5Y
+function nfDefaultLo(){ return Math.max(0, NF.d.n-1-Math.round(NF_DEFAULT_MONTHS*52/12)); }
+function riskPill(on){ return '<span class="risk-pill '+(on?'on':'off')+'">'+(on?'▲ Risk on':'▼ Risk off')+'</span>'; }
+function fmtNum(x, dp){ return (x>0?'+':x<0?'&minus;':'')+Math.abs(x).toFixed(dp===undefined?3:dp); }
+
+function renderNfTiles(){
+  const doc = NF.doc, d = NF.d, i = d.n-1;
+  let lastBig = null;
+  for(let k=i;k>0;k--){ if(d.chg[k]!==null && Math.abs(d.chg[k])>NF_BAND){ lastBig = k; break; } }
+  let streak = 0; const dir = Math.sign(d.chg[i]||0);
+  for(let k=i;k>0 && dir!==0 && Math.sign(d.chg[k]||0)===dir;k--) streak++;
+  document.getElementById('nfHint').textContent = 'Chicago Fed National Financial Conditions Index · week ending ' + fmtDate(doc.dates[i]);
+  document.getElementById('nfTiles').innerHTML =
+    '<div class="card nf-tile"><div class="eyebrow">NFCI level</div><div class="val">'+fmtNum(d.v[i])+'</div>'
+      + '<div class="sub">'+(d.v[i]<0?'Looser':'Tighter')+' than average &middot; '+(streak>1?(dir>0?'tightening ':'easing ')+streak+' weeks running':(dir>0?'tightened':'eased')+' this week')+'</div></div>'
+    + '<div class="card nf-tile"><div class="eyebrow">52-week MA rule</div>'+riskPill(d.sMA[i])
+      + '<div class="sub">NFCI '+fmtNum(d.v[i])+' vs MA '+fmtNum(d.ma[i])+(d.sMA[i]?' &middot; at or below its average':' &middot; above its average')+'</div></div>'
+    + '<div class="card nf-tile"><div class="eyebrow">1-week change rule</div>'+riskPill(d.sROC[i])
+      + '<div class="sub">This week '+fmtNum(d.chg[i])+(d.sROC[i]?' (eased)':' (tightened)')+'</div></div>'
+    + '<div class="card nf-tile"><div class="eyebrow">1-week change &gt; 0.02 rule</div>'+riskPill(d.sBand[i])
+      + '<div class="sub">'+(lastBig!==null?'Last move &gt; 0.02: '+fmtNum(d.chg[lastBig])+' on '+fmtDate(doc.dates[lastBig]):'No move &gt; 0.02 yet')+'</div></div>';
+}
+
+function renderNfBacktest(){
+  const bt = NF.doc.backtest, el = document.getElementById('nfBacktest');
+  if(!bt){ el.innerHTML = ''; return; }
+  document.getElementById('nfBtTitle').innerHTML = 'Backtest &middot; as-published data &middot; '+fmtMonth(bt.start)+' – '+fmtMonth(bt.end);
+  let best = -Infinity; bt.rows.forEach(r=>{ if(r.sharpe>best) best = r.sharpe; });
+  el.innerHTML = '<thead><tr><th>Rule</th><th>CAGR</th><th>Sharpe</th><th>Max drawdown</th><th>Time in SPY</th></tr></thead><tbody>'
+    + bt.rows.map(r=>'<tr><td class="reg">'+esc(r.rule)+'</td><td>'+fmtRet(r.cagr)+'</td>'
+      + '<td><span class="'+(r.sharpe===best?'best':'')+'" style="padding:2px 6px;">'+r.sharpe.toFixed(2)+'</span></td>'
+      + '<td class="neg">'+fmtRet(r.maxdd)+'</td><td>'+Math.round(r.invested*100)+'%</td></tr>').join('') + '</tbody>';
+}
+
+function setNfRange(lo, hi, user){
+  const n = NF.d.n;
+  lo = Math.max(0, Math.round(lo)); hi = Math.min(n-1, Math.round(hi));
+  if(hi - lo < 4) return;
+  NF.lo = lo; NF.hi = hi; NF.userRange = !!user;
+  drawNfci();
+}
+
+function drawNfci(){
+  const d = NF.d, doc = NF.doc; if(!d) return;
+  const svg = document.getElementById('nfChart');
+  const W = Math.max(280, svg.parentElement.clientWidth), narrow = W < 560;
+  const padL = 44, padR = 12, padT = 18, axisH = 24, head = 16, gap = 14, stripH = 6;
+  const P = [
+    {key:'lvl',  title:'NFCI level',                          h: narrow?90:110, strip:null},
+    {key:'ma',   title:narrow?'vs 52-week MA':'NFCI vs 52-week moving average', h: narrow?80:96,  strip:'sMA'},
+    {key:'roc',  title:'1-week change',                       h: narrow?70:84,  strip:'sROC'},
+    {key:'band', title:narrow?'1-week change > 0.02':'1-week change, moves > 0.02 flagged', h: narrow?70:84,  strip:'sBand'},
+  ];
+  let y = padT;
+  P.forEach(p=>{ p.top = y + head; y = p.top + p.h + (p.strip ? stripH + 4 : 0) + gap; });
+  const H = y - gap + axisH;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('height', H);
+  const plotW = W - padL - padR, {lo, hi} = NF;
+  const xAt = i => padL + plotW*(i-lo)/(hi-lo);
+  const colW = plotW/(hi-lo+1);
+  const parts = [];
+
+  function scale(p, vals, minSpan, symmetric){
+    let mn = Infinity, mx = -Infinity;
+    for(let i=lo;i<=hi;i++) for(const a of vals){ const x = a[i]; if(x!==null && x!==undefined){ if(x<mn) mn=x; if(x>mx) mx=x; } }
+    if(symmetric){ const m = Math.max(Math.abs(mn), Math.abs(mx), minSpan/2); mn = -m; mx = m; }
+    else { if(mx-mn < minSpan){ const c=(mx+mn)/2; mn=c-minSpan/2; mx=c+minSpan/2; } const pad=(mx-mn)*0.08; mn-=pad; mx+=pad; }
+    p.mn = mn; p.mx = mx;
+    p.yAt = val => p.top + p.h*(1-(val-mn)/(mx-mn));
+  }
+  function niceTicks(mn, mx){
+    const span = mx-mn, raw = span/3, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1,2,2.5,5,10].map(m=>m*mag).find(s=>s>=raw) || raw;
+    const out = []; for(let t=Math.ceil(mn/step)*step; t<=mx+1e-9; t+=step) out.push(+t.toFixed(6));
+    return out;
+  }
+  function grid(p, dp){
+    for(const t of niceTicks(p.mn, p.mx)){
+      const yy = p.yAt(t).toFixed(1);
+      parts.push('<line x1="'+padL+'" y1="'+yy+'" x2="'+(padL+plotW)+'" y2="'+yy+'" stroke="#4C5A78" stroke-width="1" opacity="'+(Math.abs(t)<1e-9?'1':'0.35')+'"/>');
+      parts.push('<text x="'+(padL-6)+'" y="'+(+yy+3.5)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="#A6AFC4">'+(Math.abs(t)<1e-9?'0':t.toFixed(dp))+'</text>');
+    }
+  }
+  function header(p){ parts.push('<text x="'+padL+'" y="'+(p.top-7)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">'+p.title+'</text>'); }
+  function linePath(p, arr){
+    let s = '', pen = false;
+    for(let i=lo;i<=hi;i++){ const x = arr[i]; if(x===null){ pen=false; continue; } s += (pen?'L':'M')+xAt(i).toFixed(1)+','+p.yAt(x).toFixed(1); pen = true; }
+    return s;
+  }
+  function runs(sig, fn){            // contiguous runs of equal signal over the visible window
+    let start = null, cur = null;
+    for(let i=lo;i<=hi+1;i++){
+      const s = i<=hi ? sig[i] : undefined;
+      if(s !== cur){ if(cur !== null && cur !== undefined) fn(start, i-1, cur); start = i; cur = s; }
+    }
+  }
+  function strip(p){
+    const yy = p.top + p.h + 4;
+    runs(d[p.strip], (a,b,s)=>{
+      const x0 = xAt(a) - colW/2, x1 = xAt(b) + colW/2;
+      parts.push('<rect x="'+Math.max(padL,x0).toFixed(1)+'" y="'+yy+'" width="'+Math.max(1, Math.min(padL+plotW,x1)-Math.max(padL,x0)).toFixed(1)+'" height="'+stripH+'" fill="'+(s?NF_ON:NF_OFF)+'"/>');
+    });
+  }
+  function bars(p, colorFor){
+    const bw = Math.max(1, colW*0.72), y0 = p.yAt(0);
+    for(let i=lo;i<=hi;i++){
+      const c = d.chg[i]; if(c===null) continue;
+      const yy = p.yAt(c);
+      parts.push('<rect x="'+(xAt(i)-bw/2).toFixed(2)+'" y="'+Math.min(y0,yy).toFixed(1)+'" width="'+bw.toFixed(2)+'" height="'+Math.max(0.6,Math.abs(yy-y0)).toFixed(1)+'" fill="'+colorFor(c)+'"/>');
+    }
+  }
+
+  // 1. level
+  const p1 = P[0]; header(p1); scale(p1, [d.v], 0.4, false); grid(p1, 2);
+  { let area = '', run = [];
+    const y0 = p1.yAt(Math.max(0, p1.mn));
+    const flush = ()=>{ if(run.length>1) area += 'M'+run[0][0]+','+y0+' L'+run.map(q=>q[0]+','+q[1]).join(' L')+' L'+run[run.length-1][0]+','+y0+' Z'; run = []; };
+    for(let i=lo;i<=hi;i++){ if(d.v[i] > 0) run.push([xAt(i).toFixed(1), p1.yAt(d.v[i]).toFixed(1)]); else flush(); }
+    flush();
+    parts.push('<path d="'+area+'" fill="'+NF_OFF+'" opacity="0.22"/>');
+  }
+  parts.push('<path d="'+linePath(p1, d.v)+'" fill="none" stroke="'+NF_LINE+'" stroke-width="2" stroke-linejoin="round"/>');
+  parts.push('<text x="'+(padL+plotW)+'" y="'+(p1.top-7)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#A6AFC4">tighter ↑ · looser ↓</text>');
+
+  // 2. vs 52w MA (risk-off periods shaded)
+  const p2 = P[1]; header(p2); scale(p2, [d.v, d.ma], 0.2, false);
+  runs(d.sMA, (a,b,s)=>{ if(s===0){ const x0=Math.max(padL,xAt(a)-colW/2), x1=Math.min(padL+plotW,xAt(b)+colW/2);
+    parts.push('<rect x="'+x0.toFixed(1)+'" y="'+p2.top+'" width="'+Math.max(1,x1-x0).toFixed(1)+'" height="'+p2.h+'" fill="'+NF_OFF+'" opacity="0.12"/>'); } });
+  grid(p2, 2);
+  parts.push('<path d="'+linePath(p2, d.v)+'" fill="none" stroke="#C7CEDC" stroke-width="1.2" opacity="0.75" stroke-linejoin="round"/>');
+  parts.push('<path d="'+linePath(p2, d.ma)+'" fill="none" stroke="'+NF_LINE+'" stroke-width="2" stroke-linejoin="round"/>');
+  parts.push('<text x="'+(padL+plotW)+'" y="'+(p2.top-7)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#A6AFC4"><tspan fill="#C7CEDC">— NFCI</tspan>  <tspan fill="'+NF_LINE+'">— 52w MA</tspan></text>');
+  strip(p2);
+
+  // 3. weekly change, all moves
+  const p3 = P[2]; header(p3); scale(p3, [d.chg], 0.06, true); grid(p3, 2);
+  bars(p3, c => c>0 ? NF_OFF : NF_ON);
+  strip(p3);
+
+  // 4. weekly change, only moves beyond +-0.02 coloured
+  const p4 = P[3]; header(p4); p4.mn = p3.mn; p4.mx = p3.mx; p4.yAt = val => p4.top + p4.h*(1-(val-p4.mn)/(p4.mx-p4.mn)); grid(p4, 2);
+  for(const t of [NF_BAND, -NF_BAND]){
+    const yy = p4.yAt(t).toFixed(1);
+    parts.push('<line x1="'+padL+'" y1="'+yy+'" x2="'+(padL+plotW)+'" y2="'+yy+'" stroke="#F5F3EE" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>');
+  }
+  bars(p4, c => c>NF_BAND ? NF_OFF : c<-NF_BAND ? NF_ON : '#4C5A78');
+  strip(p4);
+
+  // time axis
+  const axisY = H - axisH, plotTop = P[0].top, plotBot = axisY - 4;
+  const spanMonths = (hi-lo)/4.345, minPx = narrow ? 44 : 52;
+  let step = spanMonths<=15 ? 1 : spanMonths<=40 ? 3 : spanMonths<=80 ? 6 : 12;
+  while(step>=12 && plotW/(spanMonths/step) < minPx) step += 12;
+  if(step<12 && plotW/(spanMonths/step) < minPx) step = step===1 ? 3 : step===3 ? 6 : 12;
+  let lastX = -1e9;
+  for(let i=Math.max(lo,1);i<=hi;i++){
+    const dt = doc.dates[i], m = +dt.slice(5,7)-1, yr = +dt.slice(0,4);
+    if(dt.slice(5,7) === doc.dates[i-1].slice(5,7)) continue;      // first week of a month only
+    const ok = step>=12 ? (m===0 && yr % (step/12) === 0) : (m % step === 0);
+    if(!ok) continue;
+    const x = xAt(i); if(x - lastX < minPx*0.8) continue; lastX = x;
+    parts.push('<line x1="'+x.toFixed(1)+'" y1="'+plotTop+'" x2="'+x.toFixed(1)+'" y2="'+plotBot+'" stroke="#4C5A78" stroke-width="1" opacity="0.22"/>');
+    parts.push('<text x="'+x.toFixed(1)+'" y="'+(axisY+16)+'" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="'+(m===0?'#C7CEDC':'#A6AFC4')+'">'+(step>=12||m===0?yr:MONTHS[m])+'</text>');
+  }
+
+  svg.innerHTML = parts.join('')
+    + '<rect id="nfBrush" x="0" y="'+plotTop+'" width="0" height="'+(plotBot-plotTop)+'" fill="#B0A2F5" opacity="0.18" stroke="#B0A2F5" stroke-opacity="0.6"/>'
+    + '<line id="nfCross" y1="'+plotTop+'" y2="'+plotBot+'" stroke="#C7CEDC" stroke-width="1" opacity="0"/>'
+    + '<circle id="nfDot1" r="4" fill="'+NF_LINE+'" stroke="#262E3F" stroke-width="2" opacity="0"/>'
+    + '<circle id="nfDot2" r="4" fill="'+NF_LINE+'" stroke="#262E3F" stroke-width="2" opacity="0"/>';
+  NF.geom = {W, padL, plotW, xAt, P};
+
+  const full = lo===0 && hi===d.n-1, spanW = hi-lo;
+  document.querySelectorAll('#nfPresets button').forEach(b=>{
+    const m = b.dataset.months;
+    const on = m==='all' ? full : (hi===d.n-1 && Math.abs(spanW - Math.round(+m*52/12)) <= 1);
+    b.setAttribute('aria-pressed', on?'true':'false');
+  });
+  document.getElementById('nfRangeLabel').textContent = fmtMonth(doc.dates[lo]) + ' – ' + fmtMonth(doc.dates[hi]) + (NF.userRange ? ' · double-click to reset' : '');
+}
+
+function wireNfci(){
+  NF.wired = true;
+  const svg = document.getElementById('nfChart'), tooltip = document.getElementById('nfTooltip');
+  const idxAt = evt => {
+    const g = NF.geom, rect = svg.getBoundingClientRect();
+    const px = (evt.clientX - rect.left) / rect.width * g.W;
+    return Math.max(NF.lo, Math.min(NF.hi, Math.round(NF.lo + (px - g.padL)/g.plotW*(NF.hi-NF.lo))));
+  };
+  const hide = () => { ['nfCross','nfDot1','nfDot2'].forEach(id=>{ const e=svg.querySelector('#'+id); if(e) e.setAttribute('opacity','0'); }); tooltip.hidden = true; };
+  const show = i => {
+    const g = NF.geom, d = NF.d, x = g.xAt(i);
+    const cross = svg.querySelector('#nfCross'); cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.setAttribute('opacity','0.6');
+    const d1 = svg.querySelector('#nfDot1'); d1.setAttribute('cx',x); d1.setAttribute('cy',g.P[0].yAt(d.v[i])); d1.setAttribute('opacity','1');
+    const d2 = svg.querySelector('#nfDot2');
+    if(d.ma[i]!==null){ d2.setAttribute('cx',x); d2.setAttribute('cy',g.P[1].yAt(d.ma[i])); d2.setAttribute('opacity','1'); } else d2.setAttribute('opacity','0');
+    const wrapW = svg.parentElement.clientWidth;
+    tooltip.style.left = Math.max(110, Math.min(wrapW-110, x/g.W*wrapW))+'px'; tooltip.style.top = '-6px'; tooltip.hidden = false;
+    const on = s => s===null ? '&mdash;' : (s ? 'on' : 'off');
+    tooltip.innerHTML = 'Week ending '+fmtDate(NF.doc.dates[i])+'<br>NFCI '+fmtNum(d.v[i])+(d.ma[i]!==null?' &middot; 52w MA '+fmtNum(d.ma[i]):'')
+      + '<br>1w change '+(d.chg[i]!==null?fmtNum(d.chg[i])+(d.isFp[i]?' (first print)':' (revised)'):'&mdash;')
+      + '<br>MA '+on(d.sMA[i])+' &middot; 1w '+on(d.sROC[i])+' &middot; &gt;0.02 '+on(d.sBand[i]);
+  };
+  svg.addEventListener('pointerdown', e=>{ if(e.button!==0) return; NF.drag = {x:e.clientX, i:idxAt(e), moved:false}; svg.setPointerCapture(e.pointerId); });
+  svg.addEventListener('pointermove', e=>{
+    const i = idxAt(e), dr = NF.drag;
+    if(dr){
+      if(Math.abs(e.clientX-dr.x) > 4) dr.moved = true;
+      if(dr.moved){ const g = NF.geom, a = g.xAt(Math.min(dr.i,i)), b = g.xAt(Math.max(dr.i,i)); const br = svg.querySelector('#nfBrush'); br.setAttribute('x',a); br.setAttribute('width',Math.max(1,b-a)); }
+    }
+    show(i);
+  });
+  svg.addEventListener('pointerup', e=>{
+    const dr = NF.drag; NF.drag = null; if(!dr) return;
+    const br = svg.querySelector('#nfBrush'); if(br) br.setAttribute('width','0');
+    if(dr.moved){ const i = idxAt(e); setNfRange(Math.min(dr.i,i), Math.max(dr.i,i), true); show(i); }
+  });
+  svg.addEventListener('pointercancel', ()=>{ NF.drag = null; hide(); });
+  svg.addEventListener('pointerleave', ()=>{ if(!NF.drag) hide(); });
+  svg.addEventListener('dblclick', ()=>{ setNfRange(nfDefaultLo(), NF.d.n-1, false); hide(); });
+  document.getElementById('nfPresets').addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    const n = NF.d.n, m = b.dataset.months;
+    if(m==='all') setNfRange(0, n-1, true); else setNfRange(n-1-Math.round(+m*52/12), n-1, true);
+  });
+  let rz; new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawNfci); }).observe(svg.parentElement);
+}
+
 function renderAll(seed){
   renderLatest(seed.latest);
   renderQuadrant(seed.latest, seed.recent);
   renderHistory(seed.monthly);
   renderBacktest(BACKTEST);
+  renderNfci(NFCI);
 }
 
 renderAll(SEED);
@@ -714,6 +1031,11 @@ document.getElementById('statusText').textContent = 'seed data · ' + SEED.lates
       renderQuadrant(SEED.latest, SEED.recent);
       statusText.textContent = 'live · ' + data.asof;
     }, err => { statusText.textContent = 'seed data (live unavailable)'; });
+    db.doc('regime/nfci').onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const data = snap.data();
+      if(data && data.dates && data.fp){ NFCI = data; renderNfci(NFCI); }
+    });
     db.doc('regime/backtest').onSnapshot(snap=>{
       if(!snap.exists) return;
       const data = snap.data();

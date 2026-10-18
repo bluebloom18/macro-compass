@@ -21,10 +21,10 @@ REGIMES = {1: "Goldilocks", 2: "Reflation", 3: "Inflation", 4: "Deflation"}
 LAG = int(os.environ.get("LAG", "1"))
 
 
-def fetch_adjclose(symbol):
+def fetch_adjclose(symbol, period1=946684800):
     # explicit period1/period2: range=max silently downsamples to coarser-than-daily bars
-    url = "https://query1.finance.yahoo.com/v8/finance/chart/%s?period1=946684800&period2=%d&interval=1d" % (
-        urllib.parse.quote(symbol), int(time.time()))
+    url = "https://query1.finance.yahoo.com/v8/finance/chart/%s?period1=%d&period2=%d&interval=1d" % (
+        urllib.parse.quote(symbol), period1, int(time.time()))
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=30) as resp:
         r = json.loads(resp.read())["chart"]["result"][0]

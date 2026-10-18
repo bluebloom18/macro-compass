@@ -68,11 +68,26 @@ python3 backtest.py    # -> backtest.json (LAG=0 for the same-close variant)
 python3 render.py      # optional: -> macro_compass.html for local preview
 ```
 
+## Financial conditions (NFCI)
+
+`nfci/` backtests risk-on/off rules on the Chicago Fed NFCI (SPY when conditions ease,
+3M T-bills when they tighten) and feeds the dashboard's Financial conditions section.
+
+- `nfci_backtest.py` — level, moving-average and rate-of-change rules on two information
+  sets: today's revised FRED history, and ALFRED real-time vintages (May 2011+, fetched into
+  `nfci/cache/vintages/`, one per Thursday). The NFCI is re-estimated every week, so the
+  revised history badly overstates short-lookback rules — judge rules on the real-time run.
+- `roc1w_variants.py` — 1-week-change variants (execution day, dead-band, confirmation,
+  contrarian) on real-time data.
+- `nfci_doc.py` — writes the dashboard doc (`regime/nfci`): full NFCI history, first-print
+  weekly changes (persisted in `first_prints.csv`), and `backtest_summary.json`.
+
 ## Keeping the live dashboard current
 
 A daily scheduled cloud routine (`Macro Compass daily refresh`, 22:00 UTC) clones this
-repo, runs `build.py` → `finalize.py` → `backtest.py`, and writes the results straight into
-the published artifact's database (`regime/latest`, `regime/history`, `regime/backtest`)
+repo, runs `build.py` → `finalize.py` → `backtest.py` → `nfci/nfci_doc.py`, and writes the
+results straight into the published artifact's database (`regime/latest`, `regime/history`,
+`regime/backtest`, `regime/nfci`)
 via Claude's `write_db` — the dashboard updates for every viewer without anyone needing to
 run anything by hand. Pipeline changes take effect on the next run once pushed to `master`;
 changes to `template.html` still need a republish of the artifact page.

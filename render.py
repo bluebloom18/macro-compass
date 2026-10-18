@@ -17,6 +17,13 @@ try:
 except FileNotFoundError:
     bt = "null"  # run backtest.py first to populate the backtest section
 out = out.replace("__BACKTEST_JSON__", bt)
+try:
+    with open("nfci/nfci_doc.json") as f:
+        nf = f.read()
+    json.loads(nf)
+except FileNotFoundError:
+    nf = "null"  # run nfci/nfci_doc.py first to populate the NFCI section
+out = out.replace("__NFCI_JSON__", nf)
 
 with open("macro_compass.html", "w") as f:
     f.write(out)
