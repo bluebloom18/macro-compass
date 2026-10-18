@@ -51,6 +51,9 @@ TradingView-side ETF-ratio workaround for those series.
 - `build.py` — orchestrates fetch → align → signal computation → regime aggregation
 - `finalize.py` — computes the outperform table, downsamples history, writes
   `latest_doc.json` / `history_doc.json`
+- `backtest.py` — compounds dividend-adjusted SPY / QQQ / TLT / GLD returns over every
+  regime spell (1-day execution lag) and writes `backtest.json`, shown in the dashboard's
+  Regime backtest section
 - `render.py` — local-only: bakes `template.html` + seed data into a standalone
   `macro_compass.html` for preview (the live artifact doesn't use this — it reads
   live from its own database)
@@ -61,14 +64,15 @@ TradingView-side ETF-ratio workaround for those series.
 ```
 python3 build.py       # fetch + compute -> output.json
 python3 finalize.py    # -> latest_doc.json, history_doc.json (+ artifact_seed.json)
+python3 backtest.py    # -> backtest.json (LAG=0 for the same-close variant)
 python3 render.py      # optional: -> macro_compass.html for local preview
 ```
 
 ## Keeping the live dashboard current
 
-A daily scheduled cloud routine (`Macro Compass daily refresh`, 22:00 UTC) re-runs
-this pipeline and writes the result straight into the published artifact's database
-via Claude's `write_db` — the dashboard updates for every viewer without anyone
-needing to run anything by hand. That routine currently pulls its copy of these
-files from the artifact's own published supporting files (via `read_file`), not
-from this repo — the two are kept in sync by hand whenever the pipeline changes.
+A daily scheduled cloud routine (`Macro Compass daily refresh`, 22:00 UTC) clones this
+repo, runs `build.py` → `finalize.py` → `backtest.py`, and writes the results straight into
+the published artifact's database (`regime/latest`, `regime/history`, `regime/backtest`)
+via Claude's `write_db` — the dashboard updates for every viewer without anyone needing to
+run anything by hand. Pipeline changes take effect on the next run once pushed to `master`;
+changes to `template.html` still need a republish of the artifact page.
