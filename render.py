@@ -10,6 +10,13 @@ with open("artifact_seed.json") as f:
 
 json.loads(seed)  # sanity-check it's valid JSON before embedding
 out = tpl.replace("__SEED_JSON__", seed)
+try:
+    with open("backtest.json") as f:
+        bt = f.read()
+    json.loads(bt)
+except FileNotFoundError:
+    bt = "null"  # run backtest.py first to populate the backtest section
+out = out.replace("__BACKTEST_JSON__", bt)
 
 with open("macro_compass.html", "w") as f:
     f.write(out)

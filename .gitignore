@@ -6,3 +6,5 @@ history_doc.json
 macro_compass.html
 __pycache__/
 *.pyc
+backtest.json
+backtest_spells.csv

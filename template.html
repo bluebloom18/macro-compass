@@ -65,7 +65,7 @@ section{margin-bottom:40px;}
 /* ---------- history chart ---------- */
 .history-card{padding:20px 20px 8px;}
 .history-controls{display:flex; justify-content:space-between; align-items:center; gap:10px 16px; flex-wrap:wrap; margin-bottom:12px;}
-.seg{display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:2px;}
+.seg{display:inline-flex; flex-wrap:wrap; max-width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:2px;}
 .seg button{
   font-family:var(--font-mono); font-size:11.5px; color:var(--ink-muted); background:none; border:0;
   padding:4px 10px; border-radius:6px; cursor:pointer;
@@ -80,6 +80,31 @@ section{margin-bottom:40px;}
   transform:translate(-50%,-100%); white-space:nowrap; box-shadow:0 6px 18px rgba(0,0,0,.4); z-index:5;
 }
 .chart-wrap{position:relative;}
+
+/* ---------- backtest ---------- */
+.bt-card{padding:18px 20px;}
+.bt-controls{display:flex; justify-content:space-between; align-items:center; gap:10px 16px; flex-wrap:wrap; margin-bottom:12px;}
+.bt-table{width:100%; border-collapse:collapse; font-size:13px;}
+.bt-table th{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint);
+  font-weight:500; padding:8px 10px; border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; background:var(--surface);
+}
+.bt-table th:first-child, .bt-table td:first-child{text-align:left;}
+.bt-table td{padding:8px 10px; border-bottom:1px solid var(--border); text-align:right; font-family:var(--font-mono); font-size:12.5px; white-space:nowrap;}
+.bt-table tr:last-child td{border-bottom:none;}
+.bt-table td.reg{font-family:var(--font-body); font-size:13px;}
+.bt-table .neg{color:var(--ink-muted);}
+.bt-table .best{background:rgba(176,162,245,.16); color:var(--ink); font-weight:600; border-radius:6px;}
+.bt-table tr.bh td{color:var(--ink-muted); border-top:1px solid var(--border);}
+.bt-table th small{display:block; text-transform:none; letter-spacing:0; font-size:10px; color:var(--ink-faint); opacity:.8;}
+.reg-swatch{display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:8px; vertical-align:middle;}
+.spell-scroll{max-height:440px; overflow:auto; border:1px solid var(--border); border-radius:10px;}
+.spell-scroll .bt-table th{position:sticky; top:0; z-index:1; cursor:pointer; user-select:none;}
+.spell-scroll .bt-table th:hover{color:var(--ink);}
+.spell-scroll .bt-table th[aria-sort]::after{content:' ↓'; color:var(--accent);}
+.spell-scroll .bt-table th[aria-sort="ascending"]::after{content:' ↑';}
+.ongoing{font-family:var(--font-body); font-size:10.5px; color:var(--accent); margin-left:6px;}
+.bt-note{color:var(--ink-faint); font-size:12px; margin:12px 2px 0; max-width:90ch;}
 
 /* ---------- outperform table ---------- */
 .outperform{display:grid; grid-template-columns:repeat(2,1fr); gap:10px 20px;}
@@ -166,6 +191,38 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 
   <section>
     <div class="section-head">
+      <h2>Regime backtest</h2>
+      <div class="hint" id="btHint">&mdash;</div>
+    </div>
+    <div class="card bt-card" style="margin-bottom:14px;">
+      <div class="bt-controls">
+        <div class="eyebrow">Return by regime &middot; all spells of each regime chained</div>
+        <div class="seg" id="btMetric" role="group" aria-label="Metric">
+          <button type="button" data-metric="annualized" aria-pressed="true">Annualized</button>
+          <button type="button" data-metric="compounded" aria-pressed="false">Total</button>
+          <button type="button" data-metric="hit_rate" aria-pressed="false">Hit rate</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="btSummary"></table></div>
+    </div>
+    <div class="card bt-card">
+      <div class="bt-controls">
+        <div class="eyebrow" id="btSpellCount">Every regime spell</div>
+        <div class="seg" id="btFilter" role="group" aria-label="Filter by regime">
+          <button type="button" data-regime="0" aria-pressed="true">All</button>
+          <button type="button" data-regime="1" aria-pressed="false">Goldilocks</button>
+          <button type="button" data-regime="2" aria-pressed="false">Reflation</button>
+          <button type="button" data-regime="3" aria-pressed="false">Inflation</button>
+          <button type="button" data-regime="4" aria-pressed="false">Deflation</button>
+        </div>
+      </div>
+      <div class="spell-scroll"><table class="bt-table" id="btSpells"></table></div>
+    </div>
+    <p class="bt-note">Total return (dividend-adjusted) held from the close after each regime change to the close after the next one, so no reading is traded before it was available. Regimes are as the model reconstructs history today. No transaction costs; in-sample, one parameter set &mdash; the median spell is only a few weeks long, so treat this as a description of the regimes, not a tradeable strategy.</p>
+  </section>
+
+  <section>
+    <div class="section-head">
       <h2>What should outperform</h2>
       <div class="hint">Directional tilts implied by the current regime</div>
     </div>
@@ -203,6 +260,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 
 <script>
 const SEED = __SEED_JSON__;
+let BACKTEST = __BACKTEST_JSON__;
 const REGIME_META = {
   1:{name:'Goldilocks', color:'var(--gold)', hex:'#BD8A32', desc:'growth accelerating, inflation cooling'},
   2:{name:'Reflation',  color:'var(--refl)', hex:'#3D9C79', desc:'growth accelerating, inflation rising'},
@@ -561,10 +619,82 @@ function wireHistory(){
   new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawHistory); }).observe(svg.parentElement);
 }
 
+// ---------- backtest ----------
+const BT = {metric:'annualized', regime:0, sortKey:'start', sortDir:-1, wired:false};
+const BT_REGIME_ORDER = ['Goldilocks','Reflation','Inflation','Deflation'];
+function fmtRet(v, dp){ if(v===null||v===undefined) return '&mdash;'; const x=v*100; return (x>0?'+':x<0?'&minus;':'')+Math.abs(x).toFixed(dp===undefined?1:dp)+'%'; }
+function fmtDate(d){ return d ? (MONTHS[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+', '+d.slice(0,4)) : ''; }
+
+function renderBacktest(bt){
+  if(!bt || !bt.spells) return;
+  const assets = Object.keys(bt.assets);
+  const codeOf = {Goldilocks:1, Reflation:2, Inflation:3, Deflation:4};
+  document.getElementById('btHint').innerHTML = assets.join(' &middot; ')+' &middot; '+fmtMonth(bt.start)+' – '+fmtMonth(bt.end);
+
+  // summary
+  const m = BT.metric;
+  const best = {};
+  for(const a of assets){
+    let bv = -Infinity;
+    for(const r of BT_REGIME_ORDER){ const v = bt.summary[r][a][m]; if(v!==null && v>bv){ bv=v; best[a]=r; } }
+  }
+  let h = '<thead><tr><th>Regime</th><th>Spells</th><th>Time in regime</th>'
+    + assets.map(a=>'<th>'+a+'<small>'+esc(bt.assets[a])+'</small></th>').join('') + '</tr></thead><tbody>';
+  for(const r of BT_REGIME_ORDER){
+    const row = bt.summary[r];
+    h += '<tr><td class="reg"><span class="reg-swatch" style="background:'+REGIME_META[codeOf[r]].hex+'"></span>'+r+'</td>'
+      + '<td>'+row.spells+'</td><td>'+Math.round(row.share_of_time*100)+'%</td>';
+    for(const a of assets){
+      const v = row[a][m];
+      const txt = m==='hit_rate' ? Math.round(v*100)+'%' : fmtRet(v, m==='compounded'?0:1);
+      const cls = (best[a]===r ? 'best' : '') + (m!=='hit_rate' && v<0 ? ' neg' : '');
+      h += '<td><span class="'+cls+'" style="padding:2px 6px;">'+txt+'</span></td>';
+    }
+    h += '</tr>';
+  }
+  if(m!=='hit_rate'){
+    h += '<tr class="bh"><td class="reg">Buy &amp; hold</td><td></td><td>100%</td>'
+      + assets.map(a=>'<td><span style="padding:2px 6px;">'+fmtRet(bt.buyhold[a][m], m==='compounded'?0:1)+'</span></td>').join('') + '</tr>';
+  }
+  document.getElementById('btSummary').innerHTML = h + '</tbody>';
+  document.querySelectorAll('#btMetric button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.metric===m?'true':'false'));
+
+  // spell list
+  const cols = [['regime','Regime'],['start','Start'],['end','End'],['days','Days']].concat(assets.map(a=>[a,a]));
+  let rows = bt.spells.filter(sp => !BT.regime || sp.regime===BT.regime);
+  const k = BT.sortKey, dir = BT.sortDir;
+  rows = rows.slice().sort((p,q)=>{
+    const a = k==='regime' ? p.name : p[k], b = k==='regime' ? q.name : q[k];
+    return (a<b?-1:a>b?1:0)*dir;
+  });
+  let t = '<thead><tr>' + cols.map(([key,label])=>'<th data-key="'+key+'"'+(key===k?' aria-sort="'+(dir>0?'ascending':'descending')+'"':'')+'>'+label+'</th>').join('') + '</tr></thead><tbody>';
+  for(const sp of rows){
+    t += '<tr><td class="reg"><span class="reg-swatch" style="background:'+REGIME_META[sp.regime].hex+'"></span>'+sp.name+(sp.open?'<span class="ongoing">ongoing</span>':'')+'</td>'
+      + '<td>'+sp.start+'</td><td>'+sp.end+'</td><td>'+sp.days+'</td>'
+      + assets.map(a=>'<td'+(sp[a]<0?' class="neg"':'')+'>'+fmtRet(sp[a])+'</td>').join('') + '</tr>';
+  }
+  document.getElementById('btSpells').innerHTML = t + '</tbody>';
+  document.getElementById('btSpellCount').textContent = (BT.regime ? rows.length+' '+REGIME_META[BT.regime].name+' spells' : 'All '+rows.length+' regime spells') + ' · click a column to sort';
+  document.querySelectorAll('#btFilter button').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.regime===BT.regime?'true':'false'));
+
+  if(!BT.wired){
+    BT.wired = true;
+    document.getElementById('btMetric').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; BT.metric=b.dataset.metric; renderBacktest(BACKTEST); });
+    document.getElementById('btFilter').addEventListener('click', e=>{ const b=e.target.closest('button'); if(!b) return; BT.regime=+b.dataset.regime; renderBacktest(BACKTEST); });
+    document.getElementById('btSpells').addEventListener('click', e=>{
+      const th = e.target.closest('th'); if(!th) return;
+      const key = th.dataset.key;
+      if(BT.sortKey===key) BT.sortDir = -BT.sortDir; else { BT.sortKey = key; BT.sortDir = (key==='regime'||key==='start'||key==='end') ? 1 : -1; }
+      renderBacktest(BACKTEST);
+    });
+  }
+}
+
 function renderAll(seed){
   renderLatest(seed.latest);
   renderQuadrant(seed.latest, seed.recent);
   renderHistory(seed.monthly);
+  renderBacktest(BACKTEST);
 }
 
 renderAll(SEED);
@@ -584,6 +714,11 @@ document.getElementById('statusText').textContent = 'seed data · ' + SEED.lates
       renderQuadrant(SEED.latest, SEED.recent);
       statusText.textContent = 'live · ' + data.asof;
     }, err => { statusText.textContent = 'seed data (live unavailable)'; });
+    db.doc('regime/backtest').onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const data = snap.data();
+      if(data && data.spells){ BACKTEST = data; renderBacktest(BACKTEST); }
+    });
     db.doc('regime/history').onSnapshot(snap=>{
       if(!snap.exists) return;
       const data = snap.data();
