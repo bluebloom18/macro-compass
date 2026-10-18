@@ -64,14 +64,20 @@ section{margin-bottom:40px;}
 
 /* ---------- history chart ---------- */
 .history-card{padding:20px 20px 8px;}
-.history-legend{display:flex; gap:18px; flex-wrap:wrap; margin-bottom:10px; font-size:12.5px; color:var(--ink-muted);}
-.legend-item{display:flex; align-items:center; gap:6px;}
-.legend-swatch{width:9px; height:9px; border-radius:2px;}
-#historyChart{width:100%; height:auto; display:block; overflow:visible;}
+.history-controls{display:flex; justify-content:space-between; align-items:center; gap:10px 16px; flex-wrap:wrap; margin-bottom:12px;}
+.seg{display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:2px;}
+.seg button{
+  font-family:var(--font-mono); font-size:11.5px; color:var(--ink-muted); background:none; border:0;
+  padding:4px 10px; border-radius:6px; cursor:pointer;
+}
+.seg button:hover{color:var(--ink);}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--accent-ink); font-weight:600;}
+.range-label{font-family:var(--font-mono); font-size:12px; color:var(--ink-muted);}
+#historyChart{width:100%; display:block; touch-action:pan-y; cursor:crosshair; user-select:none; -webkit-user-select:none;}
 .chart-tooltip{
   position:absolute; pointer-events:none; background:var(--surface-2); border:1px solid var(--border);
   border-radius:8px; padding:8px 10px; font-size:12px; font-family:var(--font-mono); color:var(--ink);
-  transform:translate(-50%,-110%); white-space:nowrap; box-shadow:0 6px 18px rgba(0,0,0,.4); z-index:5;
+  transform:translate(-50%,-100%); white-space:nowrap; box-shadow:0 6px 18px rgba(0,0,0,.4); z-index:5;
 }
 .chart-wrap{position:relative;}
 
@@ -138,12 +144,21 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
   <section>
     <div class="section-head">
       <h2>Regime history</h2>
-      <div class="hint">Monthly since 2006 &middot; hover for exact reading</div>
+      <div class="hint">Share of regime votes, monthly since 2006 &middot; drag across the chart to zoom, double-click to reset</div>
     </div>
     <div class="card history-card">
-      <div class="history-legend" id="historyLegend"></div>
+      <div class="history-controls">
+        <div class="seg" id="histPresets" role="group" aria-label="Time range">
+          <button type="button" data-months="all">All</button>
+          <button type="button" data-months="120">10Y</button>
+          <button type="button" data-months="60">5Y</button>
+          <button type="button" data-months="36">3Y</button>
+          <button type="button" data-months="12">1Y</button>
+        </div>
+        <span class="range-label" id="histRangeLabel"></span>
+      </div>
       <div class="chart-wrap">
-        <svg id="historyChart" viewBox="0 0 1000 260" preserveAspectRatio="none"></svg>
+        <svg id="historyChart" role="img" aria-label="Regime vote share over time, one panel per regime"></svg>
         <div class="chart-tooltip" id="historyTooltip" hidden></div>
       </div>
     </div>
@@ -304,99 +319,246 @@ function renderQuadrant(latest, recent){
   `;
 }
 
+// Regime history: one small panel per regime on a shared time axis + shared 0-yMax scale.
+// HIST keeps the zoom window (lo/hi month indices) across live data refreshes.
+const HIST = {monthly:null, lo:0, hi:0, geom:null, drag:null, wired:false};
+const HIST_SERIES = [
+  {k:'g',  label:'Goldilocks', color:'#BD8A32'},
+  {k:'r',  label:'Reflation',  color:'#3D9C79'},
+  {k:'i',  label:'Inflation',  color:'#D0594B'},
+  {k:'de', label:'Deflation',  color:'#5080C0'},
+];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SVGNS = 'http://www.w3.org/2000/svg';
+function fmtMonth(d){ return MONTHS[+d.slice(5,7)-1]+' '+d.slice(0,4); }
+
 function renderHistory(monthly){
+  const n = monthly.dates.length;
+  const prevN = HIST.monthly ? HIST.monthly.dates.length : 0;
+  const wasFull = !HIST.monthly || (HIST.lo===0 && HIST.hi===prevN-1);
+  HIST.monthly = monthly;
+  if(wasFull || HIST.hi>n-1){ HIST.lo = 0; HIST.hi = n-1; }
+  if(!HIST.wired) wireHistory();
+  drawHistory();
+}
+
+function setHistRange(lo, hi){
+  const n = HIST.monthly.dates.length;
+  lo = Math.max(0, Math.round(lo)); hi = Math.min(n-1, Math.round(hi));
+  if(hi - lo < 3) return;               // need a few points to draw a line
+  HIST.lo = lo; HIST.hi = hi;
+  drawHistory();
+}
+
+function drawHistory(){
+  const monthly = HIST.monthly; if(!monthly) return;
+  const svg = document.getElementById('historyChart');
+  const W = Math.max(280, svg.parentElement.clientWidth);
+  const narrow = W < 560;
+  const panelH = narrow ? 58 : 66, gap = 12;
+  const padL = 34, padR = narrow ? 48 : 56, padT = 18, axisH = 24;
+  const stackH = narrow ? 110 : 130, stackBlock = 16 + stackH + gap + 6;   // stacked overview on top
+  const H = padT + stackBlock + HIST_SERIES.length*(panelH+gap+16) - gap + axisH;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('height', H);
+  const plotW = W - padL - padR;
+  const {lo, hi} = HIST;
+  const xAt = i => padL + plotW*(i-lo)/(hi-lo);
+
+  // one y-scale shared by every panel (computed over all history so zooming never rescales)
+  let vmax = 0;
+  for(const s of HIST_SERIES) for(const v of monthly[s.k]) if(v!==null && v>vmax) vmax=v;
+  const yMax = Math.max(50, Math.ceil(vmax/10)*10);
+
+  const parts = [];
+  const panels = [];
+
+  // ---- stacked overview: 100% stack of all four shares (na treated as 0)
+  {
+    const top = padT + 16;
+    const yAt = v => top + stackH*(1 - v/100);
+    parts.push('<text x="'+padL+'" y="'+(top-7)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">All regimes <tspan font-weight="400" fill="#A6AFC4">&middot; stacked share</tspan></text>');
+    const acc = [];
+    for(let i=lo;i<=hi;i++) acc.push(0);
+    for(const s of HIST_SERIES){
+      const topPts = [], botPts = [];
+      for(let i=lo;i<=hi;i++){
+        const j = i-lo, v = monthly[s.k][i] || 0, x = xAt(i).toFixed(1);
+        botPts.push(x+','+yAt(acc[j]).toFixed(1));
+        acc[j] += v;
+        topPts.push(x+','+yAt(acc[j]).toFixed(1));
+      }
+      parts.push('<path d="M'+topPts.join(' L')+' L'+botPts.reverse().join(' L')+' Z" fill="'+s.color+'" opacity="0.85"/>');
+    }
+    for(const t of [50,100]){
+      const y = yAt(t).toFixed(1);
+      parts.push('<line x1="'+padL+'" y1="'+y+'" x2="'+(padL+plotW)+'" y2="'+y+'" stroke="#1D2330" stroke-width="1" opacity="0.5"/>');
+      parts.push('<text x="'+(padL-6)+'" y="'+(+y+3.5)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="#A6AFC4">'+t+'%</text>');
+    }
+    parts.push('<line x1="'+padL+'" y1="'+yAt(0)+'" x2="'+(padL+plotW)+'" y2="'+yAt(0)+'" stroke="#4C5A78" stroke-width="1"/>');
+    // end-of-window band labels (each band's share, placed at its middle, collision-avoided)
+    let a2 = 0; const lbls = [];
+    for(const s of HIST_SERIES){
+      const v = monthly[s.k][hi] || 0;
+      lbls.push({s, v, y: yAt(a2 + v/2)}); a2 += v;
+    }
+    lbls.sort((p,q)=>p.y-q.y);
+    for(let i=1;i<lbls.length;i++) if(lbls[i].y - lbls[i-1].y < 13) lbls[i].y = lbls[i-1].y + 13;
+    const ov = lbls[lbls.length-1].y - yAt(0) - 4; if(ov>0) lbls.forEach(l=>l.y-=ov);
+    for(const l of lbls){
+      parts.push('<rect x="'+(padL+plotW+6)+'" y="'+(l.y-4).toFixed(1)+'" width="3" height="8" rx="1" fill="'+l.s.color+'"/>');
+      parts.push('<text x="'+(padL+plotW+12)+'" y="'+(l.y+4).toFixed(1)+'" font-family="IBM Plex Mono" font-size="10.5" font-weight="600" fill="#F5F3EE">'+l.v.toFixed(0)+'%</text>');
+    }
+  }
+
+  HIST_SERIES.forEach((s, p) => {
+    const top = padT + stackBlock + p*(panelH+gap+16) + 16;   // 16px header row above each panel
+    const yAt = v => top + panelH*(1 - v/yMax);
+    panels.push({k:s.k, yAt});
+    // header: swatch + name (text in ink, colour carried by the mark)
+    parts.push('<rect x="'+padL+'" y="'+(top-11)+'" width="12" height="2" rx="1" fill="'+s.color+'"/>');
+    parts.push('<text x="'+(padL+17)+'" y="'+(top-7)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">'+s.label+'</text>');
+    // recessive grid: baseline + midline
+    for(const t of [0, yMax/2, yMax]){
+      const y = yAt(t).toFixed(1);
+      parts.push('<line x1="'+padL+'" y1="'+y+'" x2="'+(padL+plotW)+'" y2="'+y+'" stroke="#4C5A78" stroke-width="1" opacity="'+(t===0?'1':'0.4')+'"/>');
+      if(t>0) parts.push('<text x="'+(padL-6)+'" y="'+(+y+3.5)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="#A6AFC4">'+t+'%</text>');
+    }
+    // area + line over the visible window (na breaks the line)
+    let line = '', area = '', run = [];
+    const flush = () => {
+      if(run.length>1){
+        area += 'M'+run[0][0]+','+yAt(0).toFixed(1)+' L'+run.map(q=>q[0]+','+q[1]).join(' L')+' L'+run[run.length-1][0]+','+yAt(0).toFixed(1)+' Z';
+      }
+      run = [];
+    };
+    for(let i=lo;i<=hi;i++){
+      const v = monthly[s.k][i];
+      if(v===null || v===undefined){ flush(); continue; }
+      const q = [xAt(i).toFixed(1), yAt(v).toFixed(1)];
+      line += (run.length?'L':'M') + q[0]+','+q[1];
+      run.push(q);
+    }
+    flush();
+    parts.push('<path d="'+area+'" fill="'+s.color+'" opacity="0.14"/>');
+    parts.push('<path d="'+line+'" fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>');
+    // end-of-window reading
+    const vEnd = monthly[s.k][hi];
+    if(vEnd!==null && vEnd!==undefined){
+      parts.push('<circle cx="'+xAt(hi).toFixed(1)+'" cy="'+yAt(vEnd).toFixed(1)+'" r="3" fill="'+s.color+'"/>');
+      parts.push('<text x="'+(padL+plotW+8)+'" y="'+(yAt(vEnd)+4).toFixed(1)+'" font-family="IBM Plex Mono" font-size="11.5" font-weight="600" fill="#F5F3EE">'+vEnd.toFixed(0)+'%</text>');
+    }
+  });
+
+  // time axis: tick density adapts to the zoom window
+  const span = hi - lo, axisY = H - axisH;
+  const plotTop = padT + 16, plotBot = axisY;
+  const minPx = narrow ? 44 : 52;
+  let step;   // months between ticks, all aligned to January
+  if(span <= 15) step = 1; else if(span <= 40) step = 3; else if(span <= 80) step = 6; else step = 12;
+  while(step >= 12 && (plotW / (span/step)) < minPx) step += 12;
+  if(step < 12 && (plotW / (span/step)) < minPx) step = step===1 ? 3 : (step===3 ? 6 : 12);
+  let lastX = -1e9;
+  for(let i=lo;i<=hi;i++){
+    const d = monthly.dates[i], m = +d.slice(5,7)-1, y = +d.slice(0,4);
+    const monthsFromJan = step >= 12 ? (m===0 && y % (step/12) === 0 ? 0 : 1) : m % step;
+    if(monthsFromJan !== 0) continue;
+    const x = xAt(i);
+    if(x - lastX < minPx*0.8) continue;
+    lastX = x;
+    parts.push('<line x1="'+x.toFixed(1)+'" y1="'+plotTop+'" x2="'+x.toFixed(1)+'" y2="'+plotBot+'" stroke="#4C5A78" stroke-width="1" opacity="0.28"/>');
+    const lbl = step >= 12 ? String(y) : (m===0 ? String(y) : MONTHS[m]);
+    parts.push('<text x="'+x.toFixed(1)+'" y="'+(axisY+16)+'" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="'+(m===0?'#C7CEDC':'#A6AFC4')+'">'+lbl+'</text>');
+  }
+
+  svg.innerHTML = parts.join('') +
+    '<rect id="histBrush" x="0" y="'+plotTop+'" width="0" height="'+(plotBot-plotTop)+'" fill="#B0A2F5" opacity="0.18" stroke="#B0A2F5" stroke-opacity="0.6"/>' +
+    '<line id="histCross" y1="'+plotTop+'" y2="'+plotBot+'" stroke="#C7CEDC" stroke-width="1" opacity="0"/>' +
+    HIST_SERIES.map(s=>'<circle class="hist-dot" data-k="'+s.k+'" r="4" fill="'+s.color+'" stroke="#262E3F" stroke-width="2" opacity="0"/>').join('');
+  HIST.geom = {W, padL, plotW, xAt, panels, plotTop};
+
+  // controls state
+  const full = lo===0 && hi===monthly.dates.length-1;
+  document.querySelectorAll('#histPresets button').forEach(b=>{
+    const m = b.dataset.months;
+    const on = m==='all' ? full : (!full && hi===monthly.dates.length-1 && span===+m);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
+  document.getElementById('histRangeLabel').textContent = fmtMonth(monthly.dates[lo]) + ' – ' + fmtMonth(monthly.dates[hi]) + (full ? '' : ' · double-click to reset');
+}
+
+function wireHistory(){
+  HIST.wired = true;
   const svg = document.getElementById('historyChart');
   const tooltip = document.getElementById('historyTooltip');
-  const W=1000,H=260, padL=6, padR=56, padT=10, padB=26;
-  const plotW = W-padL-padR, plotH = H-padT-padB;
-  const n = monthly.dates.length;
-  const xAt = i => padL + (plotW * i/(n-1));
-  const series = ['g','r','i','de'];
-  const colors = {g:'#BD8A32', r:'#3D9C79', i:'#D0594B', de:'#5080C0'};
-  const labels = {g:'Goldilocks', r:'Reflation', i:'Inflation', de:'Deflation'};
-
-  document.getElementById('historyLegend').innerHTML = series.map(k=>
-    '<span class="legend-item"><span class="legend-swatch" style="background:'+colors[k]+'"></span>'+labels[k]+'</span>'
-  ).join('');
-
-  // build stacked polygons (100% stack, na treated as 0)
-  const stacks = [];
-  for(let i=0;i<n;i++){
-    let acc=0; const layer={};
-    for(const k of series){ const v = monthly[k][i]||0; layer[k]=[acc, acc+v]; acc+=v; }
-    stacks.push(layer);
-  }
-  const yAt = v => padT + plotH*(1 - v/100);
-  let svgParts = [];
-  for(const k of series){
-    let top = [], bot = [];
-    for(let i=0;i<n;i++){
-      const x = xAt(i);
-      top.push(x.toFixed(1)+','+yAt(stacks[i][k][1]).toFixed(1));
-      bot.push(x.toFixed(1)+','+yAt(stacks[i][k][0]).toFixed(1));
-    }
-    const d = 'M'+top.join(' L')+' L'+bot.reverse().join(' L')+' Z';
-    svgParts.push('<path d="'+d+'" fill="'+colors[k]+'" opacity="0.82"/>');
-  }
-  // year gridlines + labels
-  let seenYears = new Set();
-  for(let i=0;i<n;i++){
-    const yr = monthly.dates[i].slice(0,4);
-    if(monthly.dates[i].slice(5,7)==='01' && !seenYears.has(yr)){
-      seenYears.add(yr);
-      const x = xAt(i);
-      svgParts.push('<line x1="'+x.toFixed(1)+'" y1="'+padT+'" x2="'+x.toFixed(1)+'" y2="'+(padT+plotH)+'" stroke="#4C5A78" stroke-width="1"/>');
-      svgParts.push('<text x="'+x.toFixed(1)+'" y="'+(H-8)+'" font-family="IBM Plex Mono" font-size="10" fill="#A6AFC4">'+yr+'</text>');
-    }
-  }
-
-  // direct end-labels: current reading for each band, collision-avoided
-  const lastX = xAt(n-1);
-  const lastLayer = stacks[n-1];
-  let endLabels = series.map(k => ({
-    k, val: monthly[k][n-1],
-    y: yAt((lastLayer[k][0]+lastLayer[k][1])/2),
-  })).sort((a,b) => a.y-b.y);
-  const MIN_GAP = 13;
-  for(let i=1;i<endLabels.length;i++){
-    if(endLabels[i].y - endLabels[i-1].y < MIN_GAP) endLabels[i].y = endLabels[i-1].y + MIN_GAP;
-  }
-  for(const lbl of endLabels){
-    if(lbl.val===null || lbl.val===undefined) continue;
-    svgParts.push('<line x1="'+(lastX+2).toFixed(1)+'" y1="'+lbl.y.toFixed(1)+'" x2="'+(lastX+9).toFixed(1)+'" y2="'+lbl.y.toFixed(1)+'" stroke="'+colors[lbl.k]+'" stroke-width="1" opacity="0.7"/>');
-    svgParts.push('<text x="'+(lastX+12).toFixed(1)+'" y="'+(lbl.y+3.5).toFixed(1)+'" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="'+colors[lbl.k]+'">'+lbl.val.toFixed(0)+'%</text>');
-  }
-
-  svg.innerHTML = svgParts.join('');
-
-  // hover crosshair
-  const hitRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-  hitRect.setAttribute('x',padL); hitRect.setAttribute('y',padT);
-  hitRect.setAttribute('width',plotW); hitRect.setAttribute('height',plotH);
-  hitRect.setAttribute('fill','transparent');
-  svg.appendChild(hitRect);
-  const crosshair = document.createElementNS('http://www.w3.org/2000/svg','line');
-  crosshair.setAttribute('y1',padT); crosshair.setAttribute('y2',padT+plotH);
-  crosshair.setAttribute('stroke','#C7CEDC'); crosshair.setAttribute('stroke-width','1'); crosshair.setAttribute('opacity','0');
-  svg.appendChild(crosshair);
-
-  function onMove(evt){
-    const rect = svg.getBoundingClientRect();
-    const px = (evt.clientX - rect.left) / rect.width * W;
-    let i = Math.round((px - padL) / plotW * (n-1));
-    i = Math.max(0, Math.min(n-1, i));
-    const x = xAt(i);
-    crosshair.setAttribute('x1',x); crosshair.setAttribute('x2',x); crosshair.setAttribute('opacity','0.6');
-    const wrapRect = svg.parentElement.getBoundingClientRect();
-    tooltip.style.left = ((x/W)*wrapRect.width) + 'px';
-    tooltip.style.top = '0px';
+  const idxAt = evt => {
+    const g = HIST.geom, rect = svg.getBoundingClientRect();
+    const px = (evt.clientX - rect.left) / rect.width * g.W;
+    const f = (px - g.padL) / g.plotW;
+    return Math.max(HIST.lo, Math.min(HIST.hi, Math.round(HIST.lo + f*(HIST.hi-HIST.lo))));
+  };
+  const hideHover = () => {
+    svg.querySelector('#histCross').setAttribute('opacity','0');
+    svg.querySelectorAll('.hist-dot').forEach(c=>c.setAttribute('opacity','0'));
+    tooltip.hidden = true;
+  };
+  const showHover = i => {
+    const g = HIST.geom, m = HIST.monthly, x = g.xAt(i);
+    const cross = svg.querySelector('#histCross');
+    cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.setAttribute('opacity','0.6');
+    svg.querySelectorAll('.hist-dot').forEach(c=>{
+      const k = c.dataset.k, v = m[k][i], pnl = g.panels.find(p=>p.k===k);
+      if(v===null || v===undefined){ c.setAttribute('opacity','0'); return; }
+      c.setAttribute('cx',x); c.setAttribute('cy',pnl.yAt(v)); c.setAttribute('opacity','1');
+    });
+    const wrapW = svg.parentElement.clientWidth;
+    const left = Math.max(95, Math.min(wrapW-95, x/g.W*wrapW));
+    tooltip.style.left = left+'px';
+    tooltip.style.top = '-6px';
     tooltip.hidden = false;
-    const rc = monthly.regime_code[i];
-    const rn = (REGIME_META[rc]||REGIME_META[0]).name;
-    tooltip.innerHTML = monthly.dates[i]+'<br>'+rn+'<br>G '+fmtPct(monthly.g[i])+' &middot; R '+fmtPct(monthly.r[i])+'<br>I '+fmtPct(monthly.i[i])+' &middot; D '+fmtPct(monthly.de[i]);
-  }
-  svg.addEventListener('mousemove', onMove);
-  svg.addEventListener('mouseleave', ()=>{ crosshair.setAttribute('opacity','0'); tooltip.hidden = true; });
+    const rn = (REGIME_META[m.regime_code[i]]||REGIME_META[0]).name;
+    tooltip.innerHTML = fmtMonth(m.dates[i])+' &middot; '+rn+'<br>G '+fmtPct(m.g[i])+' &middot; R '+fmtPct(m.r[i])+'<br>I '+fmtPct(m.i[i])+' &middot; D '+fmtPct(m.de[i]);
+  };
+
+  svg.addEventListener('pointerdown', evt=>{
+    if(evt.button!==0) return;
+    HIST.drag = {startX: evt.clientX, startI: idxAt(evt), moved:false};
+    svg.setPointerCapture(evt.pointerId);
+  });
+  svg.addEventListener('pointermove', evt=>{
+    const i = idxAt(evt);
+    const d = HIST.drag;
+    if(d){
+      if(Math.abs(evt.clientX - d.startX) > 4) d.moved = true;
+      if(d.moved){
+        const g = HIST.geom, a = g.xAt(Math.min(d.startI,i)), b = g.xAt(Math.max(d.startI,i));
+        const br = svg.querySelector('#histBrush');
+        br.setAttribute('x',a); br.setAttribute('width',Math.max(1,b-a));
+      }
+    }
+    showHover(i);
+  });
+  const endDrag = evt=>{
+    const d = HIST.drag; HIST.drag = null;
+    if(!d) return;
+    const br = svg.querySelector('#histBrush'); if(br) br.setAttribute('width','0');
+    if(d.moved){
+      const i = idxAt(evt);
+      setHistRange(Math.min(d.startI,i), Math.max(d.startI,i));
+      showHover(i);
+    }
+  };
+  svg.addEventListener('pointerup', endDrag);
+  svg.addEventListener('pointercancel', ()=>{ HIST.drag=null; const br=svg.querySelector('#histBrush'); if(br) br.setAttribute('width','0'); hideHover(); });
+  svg.addEventListener('pointerleave', ()=>{ if(!HIST.drag) hideHover(); });
+  svg.addEventListener('dblclick', ()=>{ setHistRange(0, HIST.monthly.dates.length-1); hideHover(); });
+  document.getElementById('histPresets').addEventListener('click', evt=>{
+    const b = evt.target.closest('button'); if(!b) return;
+    const n = HIST.monthly.dates.length, m = b.dataset.months;
+    if(m==='all') setHistRange(0, n-1); else setHistRange(Math.max(0, n-1-(+m)), n-1);
+  });
+  let rz;
+  new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawHistory); }).observe(svg.parentElement);
 }
 
 function renderAll(seed){
