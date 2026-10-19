@@ -24,6 +24,13 @@ try:
 except FileNotFoundError:
     nf = "null"  # run nfci/nfci_doc.py first to populate the NFCI section
 out = out.replace("__NFCI_JSON__", nf)
+try:
+    with open("risk_doc.json") as f:
+        rk = f.read()
+    json.loads(rk)
+except FileNotFoundError:
+    rk = "null"  # run risk_barometer.py first to populate the risk barometer section
+out = out.replace("__RISK_JSON__", rk)
 
 with open("macro_compass.html", "w") as f:
     f.write(out)

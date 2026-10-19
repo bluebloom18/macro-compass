@@ -10,3 +10,4 @@ backtest.json
 backtest_spells.csv
 nfci/nfci_results.json
 nfci/nfci_doc.json
+risk_doc.json

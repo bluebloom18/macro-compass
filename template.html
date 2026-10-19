@@ -116,9 +116,30 @@ section{margin-bottom:40px;}
 .risk-pill{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; padding:3px 10px; border-radius:100px; font-size:12px; font-weight:600;}
 .risk-pill.on{background:rgba(61,156,121,.18); color:#7FCBAE;}
 .risk-pill.off{background:rgba(208,89,75,.18); color:#EE9A8F;}
+.risk-pill.neutral{background:rgba(189,138,50,.18); color:#E3B868;}
 .nf-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-muted); margin:0 0 10px;}
 .nf-legend span{display:inline-flex; align-items:center; gap:6px;}
 .nf-legend i{display:inline-block; width:14px; height:6px; border-radius:2px;}
+
+/* ---------- risk barometer ---------- */
+.rb-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-muted);}
+.rb-legend span{display:inline-flex; align-items:center; gap:6px;}
+.rb-legend i{display:inline-block; width:12px; height:12px; border-radius:3px;}
+.rb-table{width:100%; border-collapse:separate; border-spacing:3px; font-size:13px; min-width:560px;}
+.rb-table th{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:500; padding:6px 8px; text-align:center; white-space:nowrap;}
+.rb-table th:first-child{text-align:left;}
+.rb-table td{padding:8px 8px; text-align:center; font-family:var(--font-mono); font-size:12.5px; border-radius:6px; color:var(--ink); font-variant-numeric:tabular-nums;}
+.rb-table td.name{text-align:left; font-family:var(--font-body); font-size:13.5px; background:var(--surface-2); white-space:nowrap;}
+.rb-table tr.pillar td.name{cursor:pointer;}
+.rb-table tr.pillar td.name:hover{color:var(--accent);}
+.rb-table tr.pillar td.name .caret{display:inline-block; width:12px; color:var(--ink-faint); font-size:10px; transition:transform .15s;}
+.rb-table tr.pillar.open td.name .caret{transform:rotate(90deg);}
+.rb-table tr.input td{font-size:11.5px; padding:5px 8px;}
+.rb-table tr.input td.name{background:none; color:var(--ink-muted); font-size:12px; padding-left:28px;}
+.rb-table tr.input td.name small{display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
+.rb-table tr.total td{font-weight:600; font-size:13.5px; padding:10px 8px;}
+.rb-table tr.total td.name{background:var(--accent); color:var(--accent-ink); font-family:var(--font-display);}
+#rbChart{width:100%; display:block; touch-action:pan-y; cursor:crosshair;}
 
 /* ---------- outperform table ---------- */
 .outperform{display:grid; grid-template-columns:repeat(2,1fr); gap:10px 20px;}
@@ -178,6 +199,45 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       <div class="eyebrow" style="margin-bottom:10px;">Growth / inflation quadrant &middot; 60-session path</div>
       <svg id="quadrantChart" viewBox="0 0 360 340"></svg>
     </div>
+  </section>
+
+  <section id="riskBarometer">
+    <div class="section-head">
+      <h2>Risk barometer</h2>
+      <div class="hint" id="rbHint">8-pillar risk-on / risk-off score &middot; weekly</div>
+    </div>
+    <div class="nf-tiles" id="rbTiles"></div>
+    <div class="card bt-card">
+      <div class="bt-controls">
+        <div class="eyebrow">Current reading vs the last four Fridays &middot; click a row for its inputs</div>
+        <div class="rb-legend">
+          <span><i style="background:#D0594B"></i>Risk off</span>
+          <span><i style="background:#BD8A32"></i>Neutral</span>
+          <span><i style="background:#3D9C79"></i>Risk on</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;"><table class="rb-table" id="rbTable"></table></div>
+    </div>
+    <div class="card history-card" style="margin-top:14px;">
+      <div class="history-controls">
+        <div class="seg" id="rbPresets" role="group" aria-label="Time range">
+          <button type="button" data-months="all">All</button>
+          <button type="button" data-months="60">5Y</button>
+          <button type="button" data-months="24">2Y</button>
+          <button type="button" data-months="12">1Y</button>
+        </div>
+        <span class="range-label" id="rbRangeLabel"></span>
+      </div>
+      <div class="chart-wrap">
+        <svg id="rbChart" role="img" aria-label="Risk Index over time with a weekly heat strip per pillar"></svg>
+        <div class="chart-tooltip" id="rbTooltip" hidden></div>
+      </div>
+    </div>
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow" id="rbFwdTitle">S&amp;P 500 after each reading</div></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="rbFwd"></table></div>
+    </div>
+    <p class="bt-note">Modelled on Lion Global Investors' Risk Barometer table, whose method isn't published &mdash; this is a free-data reconstruction, not their numbers. Each input is scored against its own last 3 years (z-score, capped at &plusmn;1, signed so positive = risk-on); a pillar averages its inputs and the Risk Index averages the 8 pillars, with &plusmn;0.33 as the colour lines. Proxies: the Fed's Weekly Economic Index stands in for the Citi surprise index, S&amp;P 500 vs its 10-week average for trend-follower positioning, and HYG/LQD/EMB vs IEF for credit spreads. It reads stress as it happens rather than forecasting it: the S&amp;P has on average done better after risk-off weeks, because stress tends to peak near market lows.</p>
   </section>
 
   <section>
@@ -311,6 +371,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 const SEED = __SEED_JSON__;
 let BACKTEST = __BACKTEST_JSON__;
 let NFCI = __NFCI_JSON__;
+let RISK = __RISK_JSON__;
 const REGIME_META = {
   1:{name:'Goldilocks', color:'var(--gold)', hex:'#BD8A32', desc:'growth accelerating, inflation cooling'},
   2:{name:'Reflation',  color:'var(--refl)', hex:'#3D9C79', desc:'growth accelerating, inflation rising'},
@@ -1006,12 +1067,189 @@ function wireNfci(){
   let rz; new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawNfci); }).observe(svg.parentElement);
 }
 
+// ---------- risk barometer ----------
+const RB = {doc:null, lo:0, hi:0, userRange:false, wired:false, open:{}};
+const RB_SHORT = {'Economic Surprise & Sentiment':'Econ surprise','Liquidity':'Liquidity','Credit Spreads':'Credit',
+  'Rates':'Rates','Equity Market Positioning':'Positioning','Equity Volatility':'Volatility','Foreign Exchange':'FX','Gold':'Gold'};
+const RB_RGB = {on:'61,156,121', neutral:'189,138,50', off:'208,89,75'};
+const RB_DEFAULT_MONTHS = 24;
+function rbState(v){ const t = RB.doc.thresh; return v===null||v===undefined ? null : v>t ? 'on' : v<-t ? 'off' : 'neutral'; }
+function rbFill(v){ const s = rbState(v); return s ? 'rgba('+RB_RGB[s]+','+(0.35+0.55*Math.min(1,Math.abs(v))).toFixed(2)+')' : 'transparent'; }
+function rbPill(v){ const s = rbState(v); return '<span class="risk-pill '+s+'">'+({on:'▲ Risk on',off:'▼ Risk off',neutral:'● Neutral'})[s]+'</span>'; }
+function rbDay(d){ return (+d.slice(8,10))+' '+MONTHS[+d.slice(5,7)-1]; }
+function rbDefaultLo(){ return Math.max(0, RB.doc.dates.length-1-Math.round(RB_DEFAULT_MONTHS*52/12)); }
+
+function renderRisk(doc){
+  if(!doc || !doc.dates) return;
+  const prevN = RB.doc ? RB.doc.dates.length : 0;
+  const wasDefault = !RB.doc || (RB.hi===prevN-1 && !RB.userRange);
+  RB.doc = doc;
+  const n = doc.dates.length;
+  if(wasDefault){ RB.hi = n-1; RB.lo = rbDefaultLo(); }
+  if(RB.hi > n-1){ RB.lo = 0; RB.hi = n-1; }
+  document.getElementById('rbHint').textContent = '8-pillar risk-on / risk-off score · weekly · as of ' + fmtDate(doc.asof);
+  renderRbTiles(); renderRbTable(); renderRbFwd();
+  if(!RB.wired) wireRisk();
+  drawRisk();
+}
+
+function renderRbTiles(){
+  const doc = RB.doc, n = doc.dates.length, v = doc.index[n-1], p = doc.index[n-2];
+  const cur = doc.pillars.map(pl=>({name:pl.name, v:pl.scores[n-1]}));
+  const cnt = {off:0, neutral:0, on:0}; cur.forEach(c=>cnt[rbState(c.v)]++);
+  const sorted = cur.slice().sort((a,b)=>a.v-b.v), lo = sorted[0], hi = sorted[sorted.length-1];
+  document.getElementById('rbTiles').innerHTML =
+    '<div class="card nf-tile"><div class="eyebrow">Risk Index</div><div class="val">'+fmtNum(v,2)+'</div>'+rbPill(v)+'</div>'
+    + '<div class="card nf-tile"><div class="eyebrow">Week on week</div><div class="val">'+fmtNum(v-p,2)+'</div>'
+      + '<div class="sub">from '+fmtNum(p,2)+' on '+rbDay(doc.dates[n-2])+'</div></div>'
+    + '<div class="card nf-tile"><div class="eyebrow">Pillars, of 8</div><div class="val">'+cnt.off+' &middot; '+cnt.neutral+' &middot; '+cnt.on+'</div>'
+      + '<div class="sub"><span style="color:#EE9A8F">off</span> &middot; <span style="color:#E3B868">neutral</span> &middot; <span style="color:#7FCBAE">on</span>, at &plusmn;'+doc.thresh.toFixed(2)+'</div></div>'
+    + '<div class="card nf-tile"><div class="eyebrow">Weakest &middot; strongest</div>'
+      + '<div class="sub" style="font-size:13px;color:var(--ink)">'+esc(lo.name)+' <span class="mono">'+fmtNum(lo.v,2)+'</span></div>'
+      + '<div class="sub" style="font-size:13px;color:var(--ink)">'+esc(hi.name)+' <span class="mono">'+fmtNum(hi.v,2)+'</span></div></div>';
+}
+
+function renderRbTable(){
+  const doc = RB.doc, n = doc.dates.length;
+  const cols = [n-1, n-2, n-3, n-4, n-5].filter(i=>i>=0);
+  const cell = v => '<td style="background:'+rbFill(v)+'">'+(v===null?'&mdash;':fmtNum(v,2))+'</td>';
+  let h = '<thead><tr><th>Indicators</th>' + cols.map((i,k)=>'<th>'+(k===0?'Current<small style="display:block;text-transform:none;letter-spacing:0;font-size:10px;opacity:.8">'+rbDay(doc.dates[i])+'</small>':rbDay(doc.dates[i]))+'</th>').join('') + '</tr></thead><tbody>';
+  doc.pillars.forEach((pl, pi)=>{
+    const open = !!RB.open[pi];
+    h += '<tr class="pillar'+(open?' open':'')+'" data-p="'+pi+'"><td class="name"><span class="caret">▶</span> '+esc(pl.name)+'</td>' + cols.map(i=>cell(pl.scores[i])).join('') + '</tr>';
+    if(open) pl.inputs.forEach(inp=>{
+      h += '<tr class="input"><td class="name">'+esc(inp.label)+'<small>'+esc(inp.source)+'</small></td>'
+        + cols.map(i=>{ const k = 4-(n-1-i); return cell(k>=0 ? inp.last5[k] : null); }).join('') + '</tr>';
+    });
+  });
+  h += '<tr class="total"><td class="name">Risk Index</td>' + cols.map(i=>cell(doc.index[i])).join('') + '</tr></tbody>';
+  document.getElementById('rbTable').innerHTML = h;
+}
+
+function renderRbFwd(){
+  const doc = RB.doc, el = document.getElementById('rbFwd');
+  document.getElementById('rbFwdTitle').innerHTML = 'S&amp;P 500 price return after each weekly reading &middot; '+fmtMonth(doc.dates[0])+' – '+fmtMonth(doc.dates[doc.dates.length-1]);
+  const lbl = {off:'Risk off', neutral:'Neutral', on:'Risk on'};
+  el.innerHTML = '<thead><tr><th>Reading</th><th>Weeks</th><th>Avg 4 wk</th><th>Up after 4 wk</th><th>Avg 13 wk</th><th>Up after 13 wk</th></tr></thead><tbody>'
+    + doc.fwd.map(r=>'<tr><td class="reg"><span class="reg-swatch" style="background:rgb('+RB_RGB[r.bucket]+')"></span>'+lbl[r.bucket]+'</td><td>'+r.n4+'</td>'
+      + '<td>'+fmtRet(r.avg4)+'</td><td>'+(r.hit4===null?'&mdash;':Math.round(r.hit4*100)+'%')+'</td>'
+      + '<td>'+fmtRet(r.avg13)+'</td><td>'+(r.hit13===null?'&mdash;':Math.round(r.hit13*100)+'%')+'</td></tr>').join('') + '</tbody>';
+}
+
+function setRbRange(lo, hi, user){
+  const n = RB.doc.dates.length;
+  lo = Math.max(0, Math.round(lo)); hi = Math.min(n-1, Math.round(hi));
+  if(hi - lo < 4) return;
+  RB.lo = lo; RB.hi = hi; RB.userRange = !!user;
+  drawRisk();
+}
+
+function drawRisk(){
+  const doc = RB.doc; if(!doc) return;
+  const svg = document.getElementById('rbChart');
+  const W = Math.max(280, svg.parentElement.clientWidth), narrow = W < 560;
+  const padL = narrow ? 76 : 88, padR = 12, padT = 22, axisH = 24, gap = 32, rowH = narrow ? 11 : 13;
+  const lineH = narrow ? 120 : 150, P = doc.pillars.length;
+  const lineTop = padT, stripTop = lineTop + lineH + gap, stripH = rowH*P;
+  const H = stripTop + stripH + axisH + 4;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('height', H);
+  const {lo, hi} = RB, plotW = W - padL - padR, t = doc.thresh;
+  const xAt = i => padL + plotW*(i-lo)/Math.max(1,hi-lo), colW = plotW/(hi-lo+1);
+  const yAt = v => lineTop + lineH*(1-(v+1)/2);
+  const parts = [];
+  // bands
+  parts.push('<rect x="'+padL+'" y="'+yAt(1)+'" width="'+plotW+'" height="'+(yAt(t)-yAt(1))+'" fill="rgb('+RB_RGB.on+')" opacity="0.10"/>');
+  parts.push('<rect x="'+padL+'" y="'+yAt(-t)+'" width="'+plotW+'" height="'+(yAt(-1)-yAt(-t))+'" fill="rgb('+RB_RGB.off+')" opacity="0.10"/>');
+  for(const g of [1, t, 0, -t, -1]){
+    const yy = yAt(g).toFixed(1);
+    parts.push('<line x1="'+padL+'" y1="'+yy+'" x2="'+(padL+plotW)+'" y2="'+yy+'" stroke="#4C5A78" stroke-width="1" opacity="'+(g===0?'0.9':'0.35')+'"'+(Math.abs(g)===t?' stroke-dasharray="3 3"':'')+'/>');
+    parts.push('<text x="'+(padL-6)+'" y="'+(+yy+3.5)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="#A6AFC4">'+(g===0?'0':fmtNum(g,2).replace('&minus;','−'))+'</text>');
+  }
+  parts.push('<text x="'+padL+'" y="'+(lineTop-8)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">Risk Index</text>');
+  parts.push('<text x="'+(padL+plotW)+'" y="'+(lineTop-8)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#A6AFC4">risk on ↑ · risk off ↓</text>');
+  let path = '', pen = false;
+  for(let i=lo;i<=hi;i++){ const v = doc.index[i]; if(v===null){ pen=false; continue; } path += (pen?'L':'M')+xAt(i).toFixed(1)+','+yAt(v).toFixed(1); pen = true; }
+  parts.push('<path d="'+path+'" fill="none" stroke="#B0A2F5" stroke-width="2" stroke-linejoin="round"/>');
+  // heat strip, one row per pillar
+  parts.push('<text x="'+padL+'" y="'+(stripTop-8)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">Pillars</text>');
+  const bw = Math.max(0.6, colW + 0.4);
+  doc.pillars.forEach((pl, pi)=>{
+    const yy = stripTop + pi*rowH;
+    parts.push('<text x="'+(padL-6)+'" y="'+(yy+rowH/2+3.5)+'" text-anchor="end" font-family="Archivo" font-size="'+(narrow?9.5:10.5)+'" fill="#C7CEDC">'+esc(RB_SHORT[pl.name]||pl.name)+'</text>');
+    for(let i=lo;i<=hi;i++){
+      const v = pl.scores[i]; if(v===null) continue;
+      parts.push('<rect x="'+(xAt(i)-colW/2).toFixed(2)+'" y="'+(yy+0.5)+'" width="'+bw.toFixed(2)+'" height="'+(rowH-1)+'" fill="'+rbFill(v)+'"/>');
+    }
+  });
+  // time axis
+  const axisY = stripTop + stripH, spanMonths = (hi-lo)/4.345, minPx = narrow ? 44 : 52;
+  let step = spanMonths<=15 ? 1 : spanMonths<=40 ? 3 : spanMonths<=80 ? 6 : 12;
+  while(step>=12 && plotW/(spanMonths/step) < minPx) step += 12;
+  if(step<12 && plotW/(spanMonths/step) < minPx) step = step===1 ? 3 : step===3 ? 6 : 12;
+  let lastX = -1e9;
+  for(let i=Math.max(lo,1);i<=hi;i++){
+    const dt = doc.dates[i], m = +dt.slice(5,7)-1, yr = +dt.slice(0,4);
+    if(dt.slice(5,7) === doc.dates[i-1].slice(5,7)) continue;
+    const ok = step>=12 ? (m===0 && yr % (step/12) === 0) : (m % step === 0);
+    if(!ok) continue;
+    const x = xAt(i); if(x - lastX < minPx*0.8) continue; lastX = x;
+    parts.push('<line x1="'+x.toFixed(1)+'" y1="'+lineTop+'" x2="'+x.toFixed(1)+'" y2="'+(lineTop+lineH)+'" stroke="#4C5A78" stroke-width="1" opacity="0.22"/>');
+    parts.push('<text x="'+x.toFixed(1)+'" y="'+(axisY+16)+'" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="'+(m===0?'#C7CEDC':'#A6AFC4')+'">'+(step>=12||m===0?yr:MONTHS[m])+'</text>');
+  }
+  svg.innerHTML = parts.join('')
+    + '<line id="rbCross" y1="'+lineTop+'" y2="'+axisY+'" stroke="#C7CEDC" stroke-width="1" opacity="0"/>'
+    + '<circle id="rbDot" r="4" fill="#B0A2F5" stroke="#262E3F" stroke-width="2" opacity="0"/>';
+  RB.geom = {W, padL, plotW, xAt, yAt};
+  const full = lo===0 && hi===doc.dates.length-1, spanW = hi-lo;
+  document.querySelectorAll('#rbPresets button').forEach(b=>{
+    const m = b.dataset.months;
+    const on = m==='all' ? full : (hi===doc.dates.length-1 && Math.abs(spanW - Math.round(+m*52/12)) <= 1);
+    b.setAttribute('aria-pressed', on?'true':'false');
+  });
+  document.getElementById('rbRangeLabel').textContent = fmtMonth(doc.dates[lo]) + ' – ' + fmtMonth(doc.dates[hi]);
+}
+
+function wireRisk(){
+  RB.wired = true;
+  const svg = document.getElementById('rbChart'), tooltip = document.getElementById('rbTooltip');
+  const idxAt = evt => {
+    const g = RB.geom, rect = svg.getBoundingClientRect();
+    const px = (evt.clientX - rect.left) / rect.width * g.W;
+    return Math.max(RB.lo, Math.min(RB.hi, Math.round(RB.lo + (px - g.padL)/g.plotW*(RB.hi-RB.lo))));
+  };
+  svg.addEventListener('pointermove', e=>{
+    const i = idxAt(e), g = RB.geom, doc = RB.doc, x = g.xAt(i), v = doc.index[i];
+    const cross = svg.querySelector('#rbCross'); cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.setAttribute('opacity','0.6');
+    const dot = svg.querySelector('#rbDot');
+    if(v!==null){ dot.setAttribute('cx',x); dot.setAttribute('cy',g.yAt(v)); dot.setAttribute('opacity','1'); } else dot.setAttribute('opacity','0');
+    const wrapW = svg.parentElement.clientWidth;
+    tooltip.style.left = Math.max(110, Math.min(wrapW-110, x/g.W*wrapW))+'px'; tooltip.style.top = '-6px'; tooltip.hidden = false;
+    tooltip.innerHTML = 'Week ending '+fmtDate(doc.dates[i])+'<br><b>Risk Index '+(v===null?'&mdash;':fmtNum(v,2))+'</b>'
+      + doc.pillars.map(pl=>'<br><span style="color:rgb('+(RB_RGB[rbState(pl.scores[i])]||'166,175,196')+')">■</span> '+esc(RB_SHORT[pl.name]||pl.name)+' '+(pl.scores[i]===null?'&mdash;':fmtNum(pl.scores[i],2))).join('');
+  });
+  svg.addEventListener('pointerleave', ()=>{
+    ['rbCross','rbDot'].forEach(id=>{ const e = svg.querySelector('#'+id); if(e) e.setAttribute('opacity','0'); });
+    tooltip.hidden = true;
+  });
+  document.getElementById('rbPresets').addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    const n = RB.doc.dates.length, m = b.dataset.months;
+    if(m==='all') setRbRange(0, n-1, true); else setRbRange(n-1-Math.round(+m*52/12), n-1, true);
+  });
+  document.getElementById('rbTable').addEventListener('click', e=>{
+    const tr = e.target.closest('tr.pillar'); if(!tr) return;
+    const pi = +tr.dataset.p; RB.open[pi] = !RB.open[pi]; renderRbTable();
+  });
+  let rz; new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawRisk); }).observe(svg.parentElement);
+}
+
 function renderAll(seed){
   renderLatest(seed.latest);
   renderQuadrant(seed.latest, seed.recent);
   renderHistory(seed.monthly);
   renderBacktest(BACKTEST);
   renderNfci(NFCI);
+  renderRisk(RISK);
 }
 
 renderAll(SEED);
@@ -1035,6 +1273,11 @@ document.getElementById('statusText').textContent = 'seed data · ' + SEED.lates
       if(!snap.exists) return;
       const data = snap.data();
       if(data && data.dates && data.fp){ NFCI = data; renderNfci(NFCI); }
+    });
+    db.doc('regime/risk').onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const data = snap.data();
+      if(data && data.dates && data.pillars){ RISK = data; renderRisk(RISK); }
     });
     db.doc('regime/backtest').onSnapshot(snap=>{
       if(!snap.exists) return;

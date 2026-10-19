@@ -49,6 +49,7 @@ TradingView-side ETF-ratio workaround for those series.
 - `align.py` — forward-fill alignment onto a common trading calendar
 - `model.py` — faithful port of `signal_logic()`, `vol_stop()`, `regime_contribution()`
 - `build.py` — orchestrates fetch → align → signal computation → regime aggregation
+- `risk_barometer.py` — 8-pillar Risk Barometer (see below), writes `risk_doc.json`
 - `finalize.py` — computes the outperform table, downsamples history, writes
   `latest_doc.json` / `history_doc.json`
 - `backtest.py` — compounds dividend-adjusted SPY / QQQ / TLT / GLD returns over every
@@ -65,6 +66,7 @@ TradingView-side ETF-ratio workaround for those series.
 python3 build.py       # fetch + compute -> output.json
 python3 finalize.py    # -> latest_doc.json, history_doc.json (+ artifact_seed.json)
 python3 backtest.py    # -> backtest.json (LAG=0 for the same-close variant)
+python3 risk_barometer.py --refresh   # -> risk_doc.json (Risk Barometer section)
 python3 render.py      # optional: -> macro_compass.html for local preview
 ```
 
@@ -82,12 +84,31 @@ python3 render.py      # optional: -> macro_compass.html for local preview
 - `nfci_doc.py` — writes the dashboard doc (`regime/nfci`): full NFCI history, first-print
   weekly changes (persisted in `first_prints.csv`), and `backtest_summary.json`.
 
+## Risk Barometer
+
+`risk_barometer.py` builds an 8-pillar weekly risk-on/risk-off score modelled on Lion Global
+Investors' Risk Barometer table (Economic Surprise & Sentiment, Liquidity, Credit Spreads, Rates,
+Equity Positioning, Equity Volatility, FX, Gold). Their method isn't published; this one was
+reverse-engineered from a 5-week sample of their table and fitted loosely to it (index within
+~0.11 on average, 18/32 cell colours), using free data only.
+
+- Each input is sampled weekly (Friday, plus the latest day as "Current"), turned into a 3-year
+  rolling z-score of its level, 4-week change or distance from a moving average, signed so
+  positive = risk-on, and clipped to +/-1. A pillar averages its inputs; the Risk Index averages
+  the 8 pillars. Colours at +/-0.33.
+- Free-data proxies: Fed Weekly Economic Index for the (paid) Citi surprise index, S&P 500 vs its
+  10-week average for trend-follower positioning, HYG/LQD/EMB vs IEF for credit spreads (FRED's
+  ICE BofA OAS series only serve the last 3 years). Weekly FRED prints are lagged to their
+  release date.
+- It's a coincident stress gauge, not a timing signal: since 2013 the S&P 500 has done better
+  over the following 4-13 weeks after risk-off readings than after risk-on ones.
+
 ## Keeping the live dashboard current
 
 A daily scheduled cloud routine (`Macro Compass daily refresh`, 22:00 UTC) clones this
-repo, runs `build.py` → `finalize.py` → `backtest.py` → `nfci/nfci_doc.py`, and writes the
-results straight into the published artifact's database (`regime/latest`, `regime/history`,
-`regime/backtest`, `regime/nfci`)
+repo, runs `build.py` → `finalize.py` → `backtest.py` → `risk_barometer.py` → `nfci/nfci_doc.py`,
+and writes the results straight into the published artifact's database (`regime/latest`,
+`regime/history`, `regime/backtest`, `regime/risk`, `regime/nfci`)
 via Claude's `write_db` — the dashboard updates for every viewer without anyone needing to
 run anything by hand. Pipeline changes take effect on the next run once pushed to `master`;
 changes to `template.html` still need a republish of the artifact page.
