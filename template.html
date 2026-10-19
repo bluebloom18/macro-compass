@@ -271,7 +271,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       </div>
       <div class="spell-scroll"><table class="bt-table" id="btSpells"></table></div>
     </div>
-    <p class="bt-note">Total return (dividend-adjusted) held from the close after each regime change to the close after the next one, so no reading is traded before it was available. Regimes are as the model reconstructs history today. No transaction costs; in-sample, one parameter set &mdash; the median spell is only a few weeks long, so treat this as a description of the regimes, not a tradeable strategy.</p>
+    <p class="bt-note">Total return (dividend-adjusted) held from the close after each regime change to the close after the next one, so no reading is traded before it was available. Regimes are as the model reconstructs history today. AAXJ (iShares MSCI All Country Asia ex Japan) only trades from August 2008: it is counted from its first day, including the 2008&ndash;09 Deflation spell it started in, and shows &mdash; for earlier spells. No transaction costs; in-sample, one parameter set &mdash; the median spell is only a few weeks long, so treat this as a description of the regimes, not a tradeable strategy.</p>
   </section>
 
   <section>
@@ -789,14 +789,14 @@ function renderBacktest(bt){
     for(const r of BT_REGIME_ORDER){ const v = bt.summary[r][a][m]; if(v!==null && v>bv){ bv=v; best[a]=r; } }
   }
   let h = '<thead><tr><th>Regime</th><th>Spells</th><th>Time in regime</th>'
-    + assets.map(a=>'<th>'+a+'<small>'+esc(bt.assets[a])+'</small></th>').join('') + '</tr></thead><tbody>';
+    + assets.map(a=>'<th>'+a+'<small>'+esc(bt.assets[a])+(bt.asset_start && bt.asset_start[a] > bt.start ? ' &middot; from '+fmtMonth(bt.asset_start[a]) : '')+'</small></th>').join('') + '</tr></thead><tbody>';
   for(const r of BT_REGIME_ORDER){
     const row = bt.summary[r];
     h += '<tr><td class="reg"><span class="reg-swatch" style="background:'+REGIME_META[codeOf[r]].hex+'"></span>'+r+'</td>'
       + '<td>'+row.spells+'</td><td>'+Math.round(row.share_of_time*100)+'%</td>';
     for(const a of assets){
       const v = row[a][m];
-      const txt = m==='hit_rate' ? Math.round(v*100)+'%' : fmtRet(v, m==='compounded'?0:1);
+      const txt = v===null||v===undefined ? '&mdash;' : m==='hit_rate' ? Math.round(v*100)+'%' : fmtRet(v, m==='compounded'?0:1);
       const cls = (best[a]===r ? 'best' : '') + (m!=='hit_rate' && v<0 ? ' neg' : '');
       h += '<td><span class="'+cls+'" style="padding:2px 6px;">'+txt+'</span></td>';
     }
@@ -815,13 +815,14 @@ function renderBacktest(bt){
   const k = BT.sortKey, dir = BT.sortDir;
   rows = rows.slice().sort((p,q)=>{
     const a = k==='regime' ? p.name : p[k], b = k==='regime' ? q.name : q[k];
+    if(a===null || b===null) return a===b ? 0 : a===null ? 1 : -1;     // missing returns always last
     return (a<b?-1:a>b?1:0)*dir;
   });
   let t = '<thead><tr>' + cols.map(([key,label])=>'<th data-key="'+key+'"'+(key===k?' aria-sort="'+(dir>0?'ascending':'descending')+'"':'')+'>'+label+'</th>').join('') + '</tr></thead><tbody>';
   for(const sp of rows){
     t += '<tr><td class="reg"><span class="reg-swatch" style="background:'+REGIME_META[sp.regime].hex+'"></span>'+sp.name+(sp.open?'<span class="ongoing">ongoing</span>':'')+'</td>'
       + '<td>'+sp.start+'</td><td>'+sp.end+'</td><td>'+sp.days+'</td>'
-      + assets.map(a=>'<td'+(sp[a]<0?' class="neg"':'')+'>'+fmtRet(sp[a])+'</td>').join('') + '</tr>';
+      + assets.map(a=>'<td'+(sp[a]!==null&&sp[a]<0?' class="neg"':'')+'>'+fmtRet(sp[a])+'</td>').join('') + '</tr>';
   }
   document.getElementById('btSpells').innerHTML = t + '</tbody>';
   document.getElementById('btSpellCount').textContent = (BT.regime ? rows.length+' '+REGIME_META[BT.regime].name+' spells' : 'All '+rows.length+' regime spells') + ' · click a column to sort';

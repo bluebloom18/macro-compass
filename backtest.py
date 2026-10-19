@@ -16,7 +16,8 @@ import urllib.request
 
 from fetch import UA
 
-ASSETS = {"SPY": "S&P 500", "QQQ": "Nasdaq-100", "TLT": "20Y+ Treasuries", "GLD": "Gold"}
+ASSETS = {"SPY": "S&P 500", "QQQ": "Nasdaq-100", "TLT": "20Y+ Treasuries", "GLD": "Gold",
+          "AAXJ": "Asia ex-Japan"}
 REGIMES = {1: "Goldilocks", 2: "Reflation", 3: "Inflation", 4: "Deflation"}
 LAG = int(os.environ.get("LAG", "1"))
 
@@ -41,11 +42,15 @@ def main():
     dates, regime = d["dates"], d["regime_history"]
     prices = {s: fetch_adjclose(s) for s in ASSETS}
 
-    # common calendar: model dates where every asset has a price
-    idx = [i for i, dt in enumerate(dates) if all(dt in prices[s] for s in ASSETS)]
+    # common calendar: model dates where every asset that has started trading has a price.
+    # An asset with a shorter history (AAXJ: Aug 2008) is None before its first price, and
+    # spells it wasn't around for are left out of its stats rather than shortening everyone's
+    # (the spell it starts in is counted from its first price).
+    first_px = {s: min(prices[s]) for s in ASSETS}
+    idx = [i for i, dt in enumerate(dates) if all(dt in prices[s] for s in ASSETS if first_px[s] <= dt)]
     cal = [dates[i] for i in idx]
     reg = [regime[i] for i in idx]
-    px = {s: [prices[s][dt] for dt in cal] for s in ASSETS}
+    px = {s: [prices[s].get(dt) for dt in cal] for s in ASSETS}
     n = len(cal)
 
     # spells: [start, end) in calendar indices, shifted by LAG for execution
@@ -59,29 +64,39 @@ def main():
         sp = dict(regime=reg[a], name=REGIMES[reg[a]], signal_date=cal[a], start=cal[ea], end=cal[eb],
                   days=eb - ea, open=(b == n - 1))
         for s in ASSETS:
-            sp[s] = px[s][eb] / px[s][ea] - 1
+            # an asset that starts trading mid-spell is counted from its first price
+            a = next((i for i in range(ea, eb) if px[s][i]), None)
+            sp[s] = px[s][eb] / px[s][a] - 1 if a is not None and px[s][eb] else None
         spells.append(sp)
 
-    years_total = (n - 1 - min(first + LAG, n - 1)) / 252
     summary = {}
     for code, name in REGIMES.items():
         ss = [sp for sp in spells if sp["regime"] == code]
         days = sum(sp["days"] for sp in ss)
         row = dict(spells=len(ss), days=days, share_of_time=days / (n - 1 - first - LAG))
         for s in ASSETS:
+            sa = [sp for sp in ss if sp[s] is not None]
+            days_a = sum(sp["days"] for sp in sa)
             comp = 1.0
-            for sp in ss:
+            for sp in sa:
                 comp *= 1 + sp[s]
-            row[s] = dict(compounded=comp - 1,
-                          annualized=comp ** (252 / days) - 1 if days else None,
-                          avg_per_spell=sum(sp[s] for sp in ss) / len(ss) if ss else None,
-                          hit_rate=sum(1 for sp in ss if sp[s] > 0) / len(ss) if ss else None)
+            row[s] = dict(compounded=comp - 1 if sa else None,
+                          annualized=comp ** (252 / days_a) - 1 if days_a else None,
+                          avg_per_spell=sum(sp[s] for sp in sa) / len(sa) if sa else None,
+                          hit_rate=sum(1 for sp in sa if sp[s] > 0) / len(sa) if sa else None,
+                          spells=len(sa))
         summary[name] = row
     s0 = min(first + LAG, n - 1)
-    buyhold = {s: dict(compounded=px[s][-1] / px[s][s0] - 1,
-                       annualized=(px[s][-1] / px[s][s0]) ** (1 / years_total) - 1) for s in ASSETS}
+    buyhold, starts = {}, {}
+    for s in ASSETS:
+        # from the backtest start, or the asset's first trading day if it started later
+        a0 = next(i for i in range(s0, n) if px[s][i])
+        yrs = (n - 1 - a0) / 252
+        buyhold[s] = dict(compounded=px[s][-1] / px[s][a0] - 1,
+                          annualized=(px[s][-1] / px[s][a0]) ** (1 / yrs) - 1)
+        starts[s] = cal[a0]
 
-    out = dict(lag=LAG, start=cal[s0], end=cal[-1], assets=ASSETS, spells=spells,
+    out = dict(lag=LAG, start=cal[s0], end=cal[-1], assets=ASSETS, asset_start=starts, spells=spells,
                summary=summary, buyhold=buyhold)
     def rnd(o):
         if isinstance(o, float):
@@ -102,7 +117,8 @@ def main():
         line = "%-11s %6d %6d %4.0f%%" % (name, r["spells"], r["days"], r["share_of_time"] * 100)
         for s in ASSETS:
             a = r[s]
-            line += " | %+8.0f%% %+5.1f%% %3.0f%%" % (a["compounded"] * 100, a["annualized"] * 100, a["hit_rate"] * 100)
+            line += " | %+8.0f%% %+5.1f%% %3.0f%%" % (a["compounded"] * 100, a["annualized"] * 100, a["hit_rate"] * 100) \
+                if a["spells"] else " | %21s" % "n/a"
         print(line)
     line = "%-11s %6s %6s %5s" % ("Buy & hold", "", "", "")
     for s in ASSETS:
