@@ -46,6 +46,17 @@ section{margin-bottom:40px;}
 
 .card{background:var(--surface); border:1px solid var(--border); border-radius:14px;}
 
+/* ---------- study dividers ---------- */
+.part{display:flex; align-items:flex-start; gap:14px; margin:8px 0 22px; padding-top:22px; border-top:2px solid var(--border); scroll-margin-top:16px;}
+.wrap > .part:first-of-type{border-top:0; padding-top:0;}
+.part .num{font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--accent-ink); background:var(--accent); border-radius:6px; padding:3px 7px; margin-top:5px;}
+.part h2{font-size:28px; letter-spacing:-.01em;}
+.part p{margin:4px 0 0; color:var(--ink-muted); font-size:13.5px;}
+.study-nav{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; font-family:var(--font-mono); font-size:12px;}
+.study-nav a{color:var(--ink-muted); text-decoration:none; border-bottom:1px dotted var(--border);}
+.study-nav a:hover{color:var(--accent);}
+.methodology{margin-bottom:56px;}
+
 /* ---------- hero ---------- */
 .hero{display:grid; grid-template-columns:1.1fr 1fr; gap:20px;}
 @media (max-width:760px){.hero{grid-template-columns:1fr;}}
@@ -180,12 +191,18 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 <div class="wrap">
   <header>
     <div class="title-block">
-      <div class="eyebrow">Growth &times; Inflation, nowcast daily</div>
+      <div class="eyebrow">Cross-asset macro &middot; updated daily</div>
       <h1>Macro Compass</h1>
-      <p>A 29-signal cross-asset regime read, ported from a TradingView indicator to run entirely on open data &mdash; Yahoo Finance and FRED, no vendor key required.</p>
+      <p>Three studies on open data &mdash; a 29-signal macro regime, Chicago Fed financial conditions, and an 8-pillar risk barometer. Yahoo Finance and FRED, no vendor key required.</p>
+      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk barometer</a></nav>
     </div>
     <div class="status-chip"><span class="status-dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
   </header>
+
+  <div class="part" id="study-regime">
+    <span class="num">01</span>
+    <div><h2>Macro regime</h2><p>29 cross-asset trend signals vote for Goldilocks, Reflation, Inflation or Deflation &middot; daily</p></div>
+  </div>
 
   <section class="hero">
     <div class="card hero-readout">
@@ -200,45 +217,6 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       <div class="eyebrow" style="margin-bottom:10px;">Growth / inflation quadrant &middot; 60-session path</div>
       <svg id="quadrantChart" viewBox="0 0 360 340"></svg>
     </div>
-  </section>
-
-  <section id="riskBarometer">
-    <div class="section-head">
-      <h2>Risk barometer</h2>
-      <div class="hint" id="rbHint">8-pillar risk-on / risk-off score &middot; weekly</div>
-    </div>
-    <div class="nf-tiles" id="rbTiles"></div>
-    <div class="card bt-card">
-      <div class="bt-controls">
-        <div class="eyebrow">Current reading vs the last four Fridays &middot; click a row for its inputs</div>
-        <div class="rb-legend">
-          <span><i style="background:#D0594B"></i>Risk off</span>
-          <span><i style="background:#BD8A32"></i>Neutral</span>
-          <span><i style="background:#3D9C79"></i>Risk on</span>
-        </div>
-      </div>
-      <div style="overflow-x:auto;"><table class="rb-table" id="rbTable"></table></div>
-    </div>
-    <div class="card history-card" style="margin-top:14px;">
-      <div class="history-controls">
-        <div class="seg" id="rbPresets" role="group" aria-label="Time range">
-          <button type="button" data-months="all">All</button>
-          <button type="button" data-months="60">5Y</button>
-          <button type="button" data-months="24">2Y</button>
-          <button type="button" data-months="12">1Y</button>
-        </div>
-        <span class="range-label" id="rbRangeLabel"></span>
-      </div>
-      <div class="chart-wrap">
-        <svg id="rbChart" role="img" aria-label="Risk Index over time with a weekly heat strip per pillar"></svg>
-        <div class="chart-tooltip" id="rbTooltip" hidden></div>
-      </div>
-    </div>
-    <div class="card bt-card" style="margin-top:14px;">
-      <div class="bt-controls"><div class="eyebrow" id="rbFwdTitle">S&amp;P 500 after each reading</div></div>
-      <div style="overflow-x:auto;"><table class="bt-table" id="rbFwd"></table></div>
-    </div>
-    <p class="bt-note">Modelled on Lion Global Investors' Risk Barometer table, whose method isn't published &mdash; this is a free-data reconstruction, not their numbers. Each input is scored against its own last 3 years (z-score, capped at &plusmn;1, signed so positive = risk-on); a pillar averages its inputs and the Risk Index averages the 8 pillars, with &plusmn;0.33 as the colour lines. Proxies: the Fed's Weekly Economic Index stands in for the Citi surprise index, S&amp;P 500 vs its 10-week average for trend-follower positioning, and HYG/LQD/EMB vs IEF for credit spreads. It reads stress as it happens rather than forecasting it: the S&amp;P has on average done better after risk-off weeks, because stress tends to peak near market lows.</p>
   </section>
 
   <section>
@@ -298,7 +276,43 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 
   <section>
     <div class="section-head">
-      <h2>Financial conditions (NFCI)</h2>
+      <h2>What should outperform</h2>
+      <div class="hint">Directional tilts implied by the current regime</div>
+    </div>
+    <div class="outperform" id="outperformBlock"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
+      <h2>Signal detail</h2>
+      <div class="hint" id="signalCountHint">&mdash;</div>
+    </div>
+    <div class="table-scroll">
+      <table class="signal-table">
+        <thead><tr><th>Signal</th><th>Source</th><th>Weights (G/R/I/D)</th><th>Reading</th></tr></thead>
+        <tbody id="signalRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card methodology">
+    <h3>Macro regime &middot; methodology &amp; sourcing notes</h3>
+    <ul>
+      <li>Ported from <em>Global Macro Regime</em> (QuantitativeAlpha, TradingView) &mdash; same trend-cross signal logic (EMA30/EMA60, ATR-scaled margin) and sticky-regime aggregation across cross-asset signals, run in Python against open data instead of TradingView's feed.</li>
+      <li>Credit spreads, breakevens and US Treasury yields come straight from <a href="https://fred.stlouisfed.org" target="_blank" rel="noopener">FRED</a> &mdash; more faithful than the original's ETF-ratio workaround for these series.</li>
+      <li>Equities, FX, commodities, VIX, MOVE and 3M correlation come from Yahoo Finance's public chart feed. <span class="note-icon" title="German/UK/Japan 10Y yields have no free daily series, so these three use a duration-matched government bond ETF price as an inverse proxy (weights complemented accordingly). Emerging markets uses the EEM ETF in place of ICE MME1! futures.">3 proxies &amp; 1 substitution &mdash; hover ⓘ in the table below</span>.</li>
+      <li><code>3M Implied Correlation (COR3M)</code> was dropped: Yahoo carries only a live snapshot, no history, and a fabricated substitute would defeat the point of an open-data source.</li>
+    </ul>
+  </section>
+
+  <div class="part" id="study-nfci">
+    <span class="num">02</span>
+    <div><h2>Financial conditions</h2><p>Chicago Fed NFCI and SPY / T-bill switching rules &middot; weekly</p></div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>NFCI and switching rules</h2>
       <div class="hint" id="nfHint">Chicago Fed National Financial Conditions Index &middot; weekly</div>
     </div>
     <div class="nf-tiles" id="nfTiles"></div>
@@ -342,35 +356,48 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
     <p class="bt-note">Level and 52-week MA use today's NFCI history, which the Chicago Fed re-estimates every week. Weekly changes from May 2011 are as first published (ALFRED vintages), because that is what a weekly rule actually trades on &mdash; today's smoothed history has had no weekly move above 0.02 since March 2023. Earlier weekly changes come from today's history. The &gt;0.02 rule keeps its position until a weekly move clears &plusmn;0.02. Backtest: SPY total return when on, 3-month T-bills when off, positions moved the Thursday after each release, 5bp per switch.</p>
   </section>
 
-  <section>
-    <div class="section-head">
-      <h2>What should outperform</h2>
-      <div class="hint">Directional tilts implied by the current regime</div>
-    </div>
-    <div class="outperform" id="outperformBlock"></div>
-  </section>
+  <div class="part" id="study-risk">
+    <span class="num">03</span>
+    <div><h2>Risk barometer</h2><p>8-pillar risk-on / risk-off score, modelled on Lion Global Investors' table &middot; weekly</p></div>
+  </div>
 
-  <section>
+  <section id="riskBarometer">
     <div class="section-head">
-      <h2>Signal detail</h2>
-      <div class="hint" id="signalCountHint">&mdash;</div>
+      <h2>Pillar scores</h2>
+      <div class="hint" id="rbHint">8-pillar risk-on / risk-off score &middot; weekly</div>
     </div>
-    <div class="table-scroll">
-      <table class="signal-table">
-        <thead><tr><th>Signal</th><th>Source</th><th>Weights (G/R/I/D)</th><th>Reading</th></tr></thead>
-        <tbody id="signalRows"></tbody>
-      </table>
+    <div class="nf-tiles" id="rbTiles"></div>
+    <div class="card bt-card">
+      <div class="bt-controls">
+        <div class="eyebrow">Current reading vs the last four Fridays &middot; click a row for its inputs</div>
+        <div class="rb-legend">
+          <span><i style="background:#D0594B"></i>Risk off</span>
+          <span><i style="background:#BD8A32"></i>Neutral</span>
+          <span><i style="background:#3D9C79"></i>Risk on</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;"><table class="rb-table" id="rbTable"></table></div>
     </div>
-  </section>
-
-  <section class="card methodology">
-    <h3>Methodology &amp; sourcing notes</h3>
-    <ul>
-      <li>Ported from <em>Global Macro Regime</em> (QuantitativeAlpha, TradingView) &mdash; same trend-cross signal logic (EMA30/EMA60, ATR-scaled margin) and sticky-regime aggregation across cross-asset signals, run in Python against open data instead of TradingView's feed.</li>
-      <li>Credit spreads, breakevens and US Treasury yields come straight from <a href="https://fred.stlouisfed.org" target="_blank" rel="noopener">FRED</a> &mdash; more faithful than the original's ETF-ratio workaround for these series.</li>
-      <li>Equities, FX, commodities, VIX, MOVE and 3M correlation come from Yahoo Finance's public chart feed. <span class="note-icon" title="German/UK/Japan 10Y yields have no free daily series, so these three use a duration-matched government bond ETF price as an inverse proxy (weights complemented accordingly). Emerging markets uses the EEM ETF in place of ICE MME1! futures.">3 proxies &amp; 1 substitution &mdash; hover ⓘ in the table below</span>.</li>
-      <li><code>3M Implied Correlation (COR3M)</code> was dropped: Yahoo carries only a live snapshot, no history, and a fabricated substitute would defeat the point of an open-data source.</li>
-    </ul>
+    <div class="card history-card" style="margin-top:14px;">
+      <div class="history-controls">
+        <div class="seg" id="rbPresets" role="group" aria-label="Time range">
+          <button type="button" data-months="all">All</button>
+          <button type="button" data-months="60">5Y</button>
+          <button type="button" data-months="24">2Y</button>
+          <button type="button" data-months="12">1Y</button>
+        </div>
+        <span class="range-label" id="rbRangeLabel"></span>
+      </div>
+      <div class="chart-wrap">
+        <svg id="rbChart" role="img" aria-label="Risk Index over time with a weekly heat strip per pillar"></svg>
+        <div class="chart-tooltip" id="rbTooltip" hidden></div>
+      </div>
+    </div>
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow" id="rbFwdTitle">S&amp;P 500 after each reading</div></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="rbFwd"></table></div>
+    </div>
+    <p class="bt-note">Modelled on Lion Global Investors' Risk Barometer table, whose method isn't published &mdash; this is a free-data reconstruction, not their numbers. Each input is scored against its own last 3 years (z-score, capped at &plusmn;1, signed so positive = risk-on); a pillar averages its inputs and the Risk Index averages the 8 pillars, with &plusmn;0.33 as the colour lines. Proxies: the Fed's Weekly Economic Index stands in for the Citi surprise index, S&amp;P 500 vs its 10-week average for trend-follower positioning, and HYG/LQD/EMB vs IEF for credit spreads. It reads stress as it happens rather than forecasting it: the S&amp;P has on average done better after risk-off weeks, because stress tends to peak near market lows.</p>
   </section>
 
   <footer>
