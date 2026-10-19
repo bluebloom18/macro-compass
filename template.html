@@ -271,7 +271,11 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       </div>
       <div class="spell-scroll"><table class="bt-table" id="btSpells"></table></div>
     </div>
-    <p class="bt-note">Total return (dividend-adjusted) held from the close after each regime change to the close after the next one, so no reading is traded before it was available. Regimes are as the model reconstructs history today. AAXJ (iShares MSCI All Country Asia ex Japan) only trades from August 2008: it is counted from its first day, including the 2008&ndash;09 Deflation spell it started in, and shows &mdash; for earlier spells. No transaction costs; in-sample, one parameter set &mdash; the median spell is only a few weeks long, so treat this as a description of the regimes, not a tradeable strategy.</p>
+    <div class="card bt-card" style="margin-top:14px;" id="swCard" hidden>
+      <div class="bt-controls"><div class="eyebrow" id="swTitle">Switching strategies &middot; hold in favourable regimes, T-bills otherwise</div></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="swTable"></table></div>
+    </div>
+    <p class="bt-note">Total return (dividend-adjusted) held from the close after each regime change to the close after the next one, so no reading is traded before it was available. Regimes are as the model reconstructs history today. Switching strategies: equities are held in Goldilocks and Reflation (growth rising), TLT in Deflation (or Goldilocks + Deflation), earning 3-month T-bills otherwise; highlighted cells beat buy &amp; hold. AAXJ (iShares MSCI All Country Asia ex Japan) only trades from August 2008: it is counted from its first day, including the 2008&ndash;09 Deflation spell it started in, and shows &mdash; for earlier spells. No transaction costs; in-sample, one parameter set &mdash; the median spell is only a few weeks long, so treat this as a description of the regimes, not a tradeable strategy.</p>
   </section>
 
   <section>
@@ -775,6 +779,30 @@ const BT_REGIME_ORDER = ['Goldilocks','Reflation','Inflation','Deflation'];
 function fmtRet(v, dp){ if(v===null||v===undefined) return '&mdash;'; const x=v*100; return (x>0?'+':x<0?'&minus;':'')+Math.abs(x).toFixed(dp===undefined?1:dp)+'%'; }
 function fmtDate(d){ return d ? (MONTHS[+d.slice(5,7)-1]+' '+(+d.slice(8,10))+', '+d.slice(0,4)) : ''; }
 
+function renderSwitching(bt){
+  const sw = bt.switching, card = document.getElementById('swCard');
+  if(!sw || !sw.rows){ card.hidden = true; return; }
+  card.hidden = false;
+  document.getElementById('swTitle').innerHTML = 'Switching strategies &middot; hold the ETF in its regimes, '+esc(sw.cash)+' otherwise &middot; '+sw.cost_bp+'bp per switch';
+  const pct = (v,dp) => fmtRet(v, dp===undefined?1:dp);
+  const win = (a,b) => a > b ? ' class="best" style="padding:2px 6px;"' : ' style="padding:2px 6px;"';
+  let h = '<thead><tr><th>ETF</th><th>Held in</th>'
+    + '<th>Total<small>switching</small></th><th>CAGR<small>switching</small></th><th>Max DD<small>switching</small></th>'
+    + '<th>Total<small>buy &amp; hold</small></th><th>CAGR<small>buy &amp; hold</small></th><th>Max DD<small>buy &amp; hold</small></th>'
+    + '<th>Vol<small>switch / B&amp;H</small></th><th>In market</th><th>Switches<small>per year</small></th></tr></thead><tbody>';
+  for(const r of sw.rows){
+    const s = r.strategy, b = r.buyhold;
+    h += '<tr><td class="reg">'+esc(r.asset)+(r.start > bt.start ? '<span class="ongoing">from '+fmtMonth(r.start)+'</span>' : '')+'</td>'
+      + '<td class="reg" style="color:var(--ink-muted)">'+esc(r.held)+'</td>'
+      + '<td><span'+win(s.total,b.total)+'>'+pct(s.total,0)+'</span></td><td><span'+win(s.cagr,b.cagr)+'>'+pct(s.cagr)+'</span></td>'
+      + '<td><span'+win(s.maxdd,b.maxdd)+'>'+pct(s.maxdd,0)+'</span></td>'
+      + '<td>'+pct(b.total,0)+'</td><td>'+pct(b.cagr)+'</td><td class="neg">'+pct(b.maxdd,0)+'</td>'
+      + '<td>'+(s.vol*100).toFixed(0)+'% / '+(b.vol*100).toFixed(0)+'%</td>'
+      + '<td>'+Math.round(r.invested*100)+'%</td><td>'+r.switches_per_yr.toFixed(1)+'</td></tr>';
+  }
+  document.getElementById('swTable').innerHTML = h + '</tbody>';
+}
+
 function renderBacktest(bt){
   if(!bt || !bt.spells) return;
   const assets = Object.keys(bt.assets);
@@ -827,6 +855,8 @@ function renderBacktest(bt){
   document.getElementById('btSpells').innerHTML = t + '</tbody>';
   document.getElementById('btSpellCount').textContent = (BT.regime ? rows.length+' '+REGIME_META[BT.regime].name+' spells' : 'All '+rows.length+' regime spells') + ' · click a column to sort';
   document.querySelectorAll('#btFilter button').forEach(b=>b.setAttribute('aria-pressed', +b.dataset.regime===BT.regime?'true':'false'));
+
+  renderSwitching(bt);
 
   if(!BT.wired){
     BT.wired = true;

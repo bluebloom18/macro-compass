@@ -1,12 +1,17 @@
-"""Regime backtest: compounded total return of SPY / QQQ / TLT / GLD over every regime spell.
+"""Regime backtest: compounded total return of SPY / QQQ / TLT / GLD / AAXJ over every regime spell.
 
 A spell runs from one regime change to the next. The regime is read off the daily
 close, so by default positions switch with a 1-trading-day lag (signal at close t,
 held from close t+1) to avoid trading on information not yet available; LAG=0 gives
 the same-close variant. Prices are Yahoo dividend/split-adjusted closes (total return).
 
+Also runs simple regime-switching strategies (SWITCH): hold the ETF in its favourable regimes,
+3M T-bills otherwise, same execution lag, COST_BP per switch, vs buy & hold.
+
 Requires output.json from build.py. Writes backtest.json.
 """
+import bisect
+import datetime as dt
 import json
 import os
 import sys
@@ -14,12 +19,17 @@ import time
 import urllib.parse
 import urllib.request
 
-from fetch import UA
+from fetch import UA, fetch_fred
 
 ASSETS = {"SPY": "S&P 500", "QQQ": "Nasdaq-100", "TLT": "20Y+ Treasuries", "GLD": "Gold",
           "AAXJ": "Asia ex-Japan"}
 REGIMES = {1: "Goldilocks", 2: "Reflation", 3: "Inflation", 4: "Deflation"}
 LAG = int(os.environ.get("LAG", "1"))
+COST_BP = 5.0
+# (asset, regime codes held, label): equities risk-on in growth-up regimes, TLT in Deflation
+SWITCH = [("SPY", (1, 2), "Goldilocks + Reflation"), ("QQQ", (1, 2), "Goldilocks + Reflation"),
+          ("AAXJ", (1, 2), "Goldilocks + Reflation"), ("TLT", (4,), "Deflation"),
+          ("TLT", (1, 4), "Goldilocks + Deflation")]
 
 
 def fetch_adjclose(symbol, period1=946684800):
@@ -35,6 +45,49 @@ def fetch_adjclose(symbol, period1=946684800):
         if v is not None:
             out[time.strftime("%Y-%m-%d", time.gmtime(t))] = v
     return out
+
+
+def switching(dates, regime, prices):
+    """Daily: return on day j belongs to the regime read LAG days before j-1 (as in the spells)."""
+    tb = {r["date"]: r["close"] for r in fetch_fred("DTB3")}
+    tbk = sorted(tb)
+
+    def stats(eq, yrs):
+        rets = [eq[i] / eq[i - 1] - 1 for i in range(1, len(eq))]
+        mu = sum(rets) / len(rets)
+        vol = (sum((x - mu) ** 2 for x in rets) / (len(rets) - 1)) ** 0.5 * 252 ** 0.5
+        peak, mdd = 1.0, 0.0
+        for v in eq:
+            peak = max(peak, v)
+            mdd = min(mdd, v / peak - 1)
+        cagr = eq[-1] ** (1 / yrs) - 1
+        return dict(total=eq[-1] - 1, cagr=cagr, vol=vol, maxdd=mdd)
+
+    rows = []
+    first = next(i for i, r in enumerate(regime) if r)
+    for sym, held, label in SWITCH:
+        px = prices[sym]
+        cal = [i for i in range(first, len(dates)) if dates[i] in px]
+        eq_s, eq_b, inv, sw, prev = [1.0], [1.0], 0, 0, None
+        for k in range(1 + LAG, len(cal)):
+            j, jm = cal[k], cal[k - 1]
+            on = regime[cal[k - 1 - LAG]] in held
+            r_asset = px[dates[j]] / px[dates[jm]] - 1
+            rate = tb[tbk[max(0, bisect.bisect_right(tbk, dates[jm]) - 1)]]
+            days = (dt.date.fromisoformat(dates[j]) - dt.date.fromisoformat(dates[jm])).days
+            g = 1 + (r_asset if on else (1 + rate / 100) ** (days / 365) - 1)
+            if prev is not None and on != prev:
+                g *= 1 - COST_BP / 1e4
+                sw += 1
+            prev = on
+            inv += on
+            eq_s.append(eq_s[-1] * g)
+            eq_b.append(eq_b[-1] * (1 + r_asset))
+        start, end = dates[cal[LAG]], dates[cal[-1]]
+        yrs = (dt.date.fromisoformat(end) - dt.date.fromisoformat(start)).days / 365.25
+        rows.append(dict(asset=sym, held=label, start=start, end=end, strategy=stats(eq_s, yrs),
+                         buyhold=stats(eq_b, yrs), invested=inv / (len(eq_s) - 1), switches_per_yr=sw / yrs))
+    return dict(cost_bp=COST_BP, cash="3M T-bills", rows=rows)
 
 
 def main():
@@ -106,6 +159,10 @@ def main():
         if isinstance(o, list):
             return [rnd(v) for v in o]
         return o
+    try:
+        out["switching"] = switching(dates, regime, prices)
+    except Exception as e:                      # T-bill fetch etc. must not sink the main backtest
+        print("switching strategies skipped: %s" % e, file=sys.stderr)
     json.dump(rnd(out), open("backtest.json", "w"), separators=(",", ":"))
 
     print("Backtest %s -> %s, lag %d day(s), %d spells" % (cal[s0], cal[-1], LAG, len(spells)), file=sys.stderr)
