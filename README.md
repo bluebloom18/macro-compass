@@ -106,6 +106,15 @@ reverse-engineered from a 5-week sample of their table and fitted loosely to it 
 - It's a coincident stress gauge, not a timing signal: since 2013 the S&P 500 has done better
   over the following 4-13 weeks after risk-off readings than after risk-on ones.
 
+## Alerts
+
+`alerts.py --prev-dir <dir>` compares tonight's `latest_doc.json` and `nfci/nfci_doc.json` with the
+previous live copies (`latest.json`, `nfci.json` as saved by the refresh's database reads) and writes
+`alerts.json`: a list of changes plus an email subject/body. It flags a macro regime change and any
+NFCI switching-rule flip (52-week MA, 1-week change, 1-week change > 0.02), using the same rule
+definitions as the dashboard tiles. The refresh routine emails the result via the Gmail connector,
+only when something changed.
+
 ## Keeping the live dashboard current
 
 A daily scheduled cloud routine (`Macro Compass daily refresh`, 22:00 UTC) clones this
