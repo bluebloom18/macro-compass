@@ -10,8 +10,10 @@ Contents:
                   the ALFRED vintage cache (cache/vintages) when present, the previous live doc
                   (--prev, e.g. regime/nfci saved by read_db), and finally the newest week's
                   change from today's release. The merged series is written back to the CSV.
-  * backtest    - as-published backtest summary (backtest_summary.json, regenerated from
-                  nfci_results.json after a full local nfci_backtest.py run).
+  * backtest    - as-published backtest summary (backtest_summary.json) and equity curves
+                  (backtest_curves.json, growth of 100, weekly), both regenerated from
+                  nfci_results.json after a full local run (fetch_vintages.py, then
+                  nfci_backtest.py) and committed, so the daily refresh reuses them.
 
 Usage: python3 nfci/nfci_doc.py [--prev path/to/previous_nfci_doc.json]
 """
@@ -81,6 +83,7 @@ def main():
     # backtest summary: rebuilt from nfci_results.json when present (needs the vintage cache, so
     # only on a full local run), else the committed backtest_summary.json
     res_path, summ_path = os.path.join(HERE, "nfci_results.json"), os.path.join(HERE, "backtest_summary.json")
+    curves_path = os.path.join(HERE, "backtest_curves.json")
     if os.path.exists(res_path):
         res = json.load(open(res_path))
         a, b = res["periods"]["realtime"]
@@ -88,8 +91,16 @@ def main():
             dict(rule=label, **{k: round(res["realtime"][key][k], 4) for k in ("cagr", "sharpe", "maxdd", "invested")})
             for key, label in BT_ROWS.items()])
         json.dump(summary, open(summ_path, "w"), indent=1)
+        # equity curves for the same rules, growth of 100, sampled weekly
+        cd = res["curve_dates"]["realtime"]
+        curves = dict(dates=cd, series=[
+            dict(rule=label, v=[round(100 * x, 1) for x in res["realtime"][key]["curve"]])
+            for key, label in BT_ROWS.items()])
+        json.dump(curves, open(curves_path, "w"), separators=(",", ":"))
     if os.path.exists(summ_path):
         doc["backtest"] = json.load(open(summ_path))
+        if os.path.exists(curves_path):
+            doc["backtest"]["curves"] = json.load(open(curves_path))
     json.dump(doc, open(os.path.join(HERE, "nfci_doc.json"), "w"), separators=(",", ":"))
     print("Wrote nfci_doc.json: %d weeks through %s (latest %.3f); %d first-print changes from %s, through %s" % (
         len(dates), dates[-1], vals[-1], len(fp_dates), source, fp_dates[-1]))

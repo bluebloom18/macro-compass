@@ -79,10 +79,13 @@ python3 render.py      # optional: -> macro_compass.html for local preview
   sets: today's revised FRED history, and ALFRED real-time vintages (May 2011+, fetched into
   `nfci/cache/vintages/`, one per Thursday). The NFCI is re-estimated every week, so the
   revised history badly overstates short-lookback rules — judge rules on the real-time run.
+- `fetch_vintages.py` — downloads the weekly ALFRED vintages into `nfci/cache/vintages/` (skips ones
+  already there); run it before a full `nfci_backtest.py` run.
 - `roc1w_variants.py` — 1-week-change variants (execution day, dead-band, confirmation,
   contrarian) on real-time data.
 - `nfci_doc.py` — writes the dashboard doc (`regime/nfci`): full NFCI history, first-print
-  weekly changes (persisted in `first_prints.csv`), and `backtest_summary.json`.
+  weekly changes (persisted in `first_prints.csv`), `backtest_summary.json`, and `backtest_curves.json` (growth-of-100 equity curves for the same rules,
+  weekly). The last two are regenerated only by a full local run and committed.
 
 ## Risk Barometer
 

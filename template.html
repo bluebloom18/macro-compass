@@ -139,6 +139,7 @@ section{margin-bottom:40px;}
 .rb-table tr.input td.name small{display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
 .rb-table tr.total td{font-weight:600; font-size:13.5px; padding:10px 8px;}
 .rb-table tr.total td.name{background:var(--accent); color:var(--accent-ink); font-family:var(--font-display);}
+#nfEquity{width:100%; display:block; touch-action:pan-y; cursor:crosshair;}
 #rbChart{width:100%; display:block; touch-action:pan-y; cursor:crosshair;}
 
 /* ---------- outperform table ---------- */
@@ -324,7 +325,18 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       </div>
     </div>
     <div class="card bt-card" style="margin-top:14px;">
-      <div class="bt-controls"><div class="eyebrow" id="nfBtTitle">Backtest &middot; as-published data</div></div>
+      <div class="bt-controls">
+        <div class="eyebrow" id="nfBtTitle">Backtest &middot; as-published data</div>
+        <div class="seg" id="nfEqScale" role="group" aria-label="Scale">
+          <button type="button" data-scale="lin" aria-pressed="true">Linear</button>
+          <button type="button" data-scale="log" aria-pressed="false">Log</button>
+        </div>
+      </div>
+      <div class="nf-legend" id="nfEqLegend"></div>
+      <div class="chart-wrap" style="margin-bottom:14px;">
+        <svg id="nfEquity" role="img" aria-label="Growth of 100: buy and hold SPY vs the three NFCI switching rules"></svg>
+        <div class="chart-tooltip" id="nfEqTooltip" hidden></div>
+      </div>
       <div style="overflow-x:auto;"><table class="bt-table" id="nfBacktest"></table></div>
     </div>
     <p class="bt-note">Level and 52-week MA use today's NFCI history, which the Chicago Fed re-estimates every week. Weekly changes from May 2011 are as first published (ALFRED vintages), because that is what a weekly rule actually trades on &mdash; today's smoothed history has had no weekly move above 0.02 since March 2023. Earlier weekly changes come from today's history. The &gt;0.02 rule keeps its position until a weekly move clears &plusmn;0.02. Backtest: SPY total return when on, 3-month T-bills when off, positions moved the Thursday after each release, 5bp per switch.</p>
@@ -863,6 +875,7 @@ function renderNfTiles(){
 }
 
 function renderNfBacktest(){
+  drawNfEquity();
   const bt = NF.doc.backtest, el = document.getElementById('nfBacktest');
   if(!bt){ el.innerHTML = ''; return; }
   document.getElementById('nfBtTitle').innerHTML = 'Backtest &middot; as-published data &middot; '+fmtMonth(bt.start)+' – '+fmtMonth(bt.end);
@@ -1241,6 +1254,79 @@ function wireRisk(){
     const pi = +tr.dataset.p; RB.open[pi] = !RB.open[pi]; renderRbTable();
   });
   let rz; new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawRisk); }).observe(svg.parentElement);
+}
+
+// ---------- NFCI backtest equity curves ----------
+const NF_EQ_COLORS = {'Buy & hold SPY':'#C7CEDC', '52-week MA':'#B0A2F5', '1-week change':'#5080C0', '1-week change, moves > 0.02':'#BD8A32'};
+const NFEQ = {scale:'lin', wired:false};
+function drawNfEquity(){
+  const svg = document.getElementById('nfEquity');
+  const c = NF.doc && NF.doc.backtest && NF.doc.backtest.curves;
+  if(!c){ svg.innerHTML = ''; svg.setAttribute('height', 0); document.getElementById('nfEqLegend').innerHTML = ''; return; }
+  const n = c.dates.length, log = NFEQ.scale === 'log';
+  const W = Math.max(280, svg.parentElement.clientWidth), narrow = W < 560;
+  const padL = 44, padR = 12, padT = 10, axisH = 24, H = (narrow ? 200 : 260) + padT + axisH;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('height', H);
+  const plotW = W - padL - padR, plotH = H - padT - axisH;
+  let mn = Infinity, mx = -Infinity;
+  c.series.forEach(s=>s.v.forEach(x=>{ if(x<mn) mn=x; if(x>mx) mx=x; }));
+  const f = log ? Math.log10 : (x=>x);
+  let lo = log ? f(mn)-0.03 : Math.min(0, mn), hi = f(mx) + (f(mx)-lo)*0.05;
+  const xAt = i => padL + plotW*i/(n-1), yAt = v => padT + plotH*(1-(f(v)-lo)/(hi-lo));
+  const parts = [];
+  // y grid
+  let ticks = [];
+  if(log){ for(const t of [50,100,200,300,500,1000,2000]) if(f(t)>=lo && f(t)<=hi) ticks.push(t); }
+  else { const raw = (mx)/4, mag = Math.pow(10, Math.floor(Math.log10(raw))); const step = [1,2,2.5,5,10].map(m=>m*mag).find(st=>st>=raw); for(let t=0;t<=mx*1.05;t+=step) ticks.push(t); }
+  for(const t of ticks){
+    const yy = yAt(Math.max(t, log?1e-9:t)).toFixed(1);
+    parts.push('<line x1="'+padL+'" y1="'+yy+'" x2="'+(padL+plotW)+'" y2="'+yy+'" stroke="#4C5A78" stroke-width="1" opacity="'+(t===100?'0.9':'0.35')+'"'+(t===100?' stroke-dasharray="3 3"':'')+'/>');
+    parts.push('<text x="'+(padL-6)+'" y="'+(+yy+3.5)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="#A6AFC4">'+t+'</text>');
+  }
+  // x axis: years
+  let lastX = -1e9; const minPx = narrow ? 40 : 50;
+  for(let i=1;i<n;i++){
+    if(c.dates[i].slice(0,4) === c.dates[i-1].slice(0,4)) continue;
+    const x = xAt(i); if(x - lastX < minPx) continue; lastX = x;
+    parts.push('<line x1="'+x.toFixed(1)+'" y1="'+padT+'" x2="'+x.toFixed(1)+'" y2="'+(padT+plotH)+'" stroke="#4C5A78" stroke-width="1" opacity="0.22"/>');
+    parts.push('<text x="'+x.toFixed(1)+'" y="'+(padT+plotH+16)+'" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#A6AFC4">'+c.dates[i].slice(0,4)+'</text>');
+  }
+  // lines: buy & hold drawn last so it stays readable on top
+  const order = c.series.slice(1).concat(c.series.slice(0,1));
+  for(const s of order){
+    let d = '';
+    s.v.forEach((x,i)=>{ d += (i?'L':'M')+xAt(i).toFixed(1)+','+yAt(x).toFixed(1); });
+    const bh = s.rule === 'Buy & hold SPY';
+    parts.push('<path d="'+d+'" fill="none" stroke="'+(NF_EQ_COLORS[s.rule]||'#F5F3EE')+'" stroke-width="'+(bh?1.5:2)+'"'+(bh?' stroke-dasharray="4 3"':'')+' stroke-linejoin="round"/>');
+  }
+  svg.innerHTML = parts.join('') + '<line id="nfEqCross" y1="'+padT+'" y2="'+(padT+plotH)+'" stroke="#C7CEDC" stroke-width="1" opacity="0"/>'
+    + c.series.map((s,k)=>'<circle id="nfEqDot'+k+'" r="3.5" fill="'+(NF_EQ_COLORS[s.rule]||'#F5F3EE')+'" stroke="#262E3F" stroke-width="1.5" opacity="0"/>').join('');
+  NFEQ.geom = {W, padL, plotW, xAt, yAt, n};
+  document.getElementById('nfEqLegend').innerHTML = c.series.map(s=>'<span><i style="background:'+(NF_EQ_COLORS[s.rule]||'#F5F3EE')+'"></i>'+esc(s.rule)+' <b class="mono" style="color:var(--ink)">'+s.v[s.v.length-1].toFixed(0)+'</b></span>').join('')
+    + '<span>Growth of 100 &middot; '+fmtMonth(c.dates[0])+' – '+fmtMonth(c.dates[n-1])+'</span>';
+  document.querySelectorAll('#nfEqScale button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.scale===NFEQ.scale?'true':'false'));
+  if(!NFEQ.wired) wireNfEquity();
+}
+function wireNfEquity(){
+  NFEQ.wired = true;
+  const svg = document.getElementById('nfEquity'), tip = document.getElementById('nfEqTooltip');
+  svg.addEventListener('pointermove', e=>{
+    const g = NFEQ.geom, c = NF.doc && NF.doc.backtest && NF.doc.backtest.curves; if(!g || !c) return;
+    const rect = svg.getBoundingClientRect(), px = (e.clientX-rect.left)/rect.width*g.W;
+    const i = Math.max(0, Math.min(g.n-1, Math.round((px-g.padL)/g.plotW*(g.n-1)))), x = g.xAt(i);
+    const cr = svg.querySelector('#nfEqCross'); cr.setAttribute('x1',x); cr.setAttribute('x2',x); cr.setAttribute('opacity','0.6');
+    c.series.forEach((s,k)=>{ const dt = svg.querySelector('#nfEqDot'+k); dt.setAttribute('cx',x); dt.setAttribute('cy',g.yAt(s.v[i])); dt.setAttribute('opacity','1'); });
+    const wrapW = svg.parentElement.clientWidth;
+    tip.style.left = Math.max(120, Math.min(wrapW-120, x/g.W*wrapW))+'px'; tip.style.top = '-6px'; tip.hidden = false;
+    tip.innerHTML = fmtDate(c.dates[i]) + c.series.map(s=>'<br><span style="color:'+(NF_EQ_COLORS[s.rule]||'#F5F3EE')+'">■</span> '+esc(s.rule)+' '+s.v[i].toFixed(1)).join('');
+  });
+  svg.addEventListener('pointerleave', ()=>{
+    svg.querySelectorAll('#nfEqCross, circle').forEach(el=>el.setAttribute('opacity','0')); tip.hidden = true;
+  });
+  document.getElementById('nfEqScale').addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return; NFEQ.scale = b.dataset.scale; drawNfEquity();
+  });
+  let rz; new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawNfEquity); }).observe(svg.parentElement);
 }
 
 function renderAll(seed){
