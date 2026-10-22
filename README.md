@@ -15,6 +15,12 @@ toward one of four regimes — Goldilocks, Reflation, Inflation, Deflation — w
 sticky-regime aggregation so the reading doesn't flip on ties. Ported line-for-line
 into Python (`model.py`) rather than approximated.
 
+Vote weighting: every signal with a trend casts exactly two votes (a flat signal casts none),
+for the two regimes on the side of its axis it points to. 21 of the 29 signals sit on the growth
+axis (equities, FX, metals, bitcoin, vol, dollar, credit spreads) and 8 on the inflation axis (oil,
+agriculture, yields, breakevens), so growth dominates the call. The percentages are each
+regime's share of the votes cast that day.
+
 ## Data sources
 
 | Source | Used for |
@@ -50,8 +56,9 @@ TradingView-side ETF-ratio workaround for those series.
 - `model.py` — faithful port of `signal_logic()`, `vol_stop()`, `regime_contribution()`
 - `build.py` — orchestrates fetch → align → signal computation → regime aggregation
 - `risk_barometer.py` — 8-pillar Risk Barometer (see below), writes `risk_doc.json`
-- `finalize.py` — computes the outperform table, downsamples history, writes
-  `latest_doc.json` / `history_doc.json`
+- `finalize.py` — computes the outperform table, samples history weekly (last trading day of
+  each ISO week, plus the last ~2 years daily for the quadrant path), writes
+  `latest_doc.json` / `history_doc.json`; `latest.complete` is false when any signal failed
 - `backtest.py` — compounds dividend-adjusted SPY / QQQ / TLT / GLD returns over every
   regime spell (1-day execution lag) and writes `backtest.json`, shown in the dashboard's
   Regime backtest section
@@ -112,8 +119,9 @@ reverse-engineered from a 5-week sample of their table and fitted loosely to it 
 previous live copies (`latest.json`, `nfci.json` as saved by the refresh's database reads) and writes
 `alerts.json`: a list of changes plus an email subject/body. It flags a macro regime change and any
 NFCI switching-rule flip (52-week MA, 1-week change, 1-week change > 0.02), using the same rule
-definitions as the dashboard tiles. The refresh routine emails the result via the Gmail connector,
-only when something changed.
+definitions as the dashboard tiles. It also flags an incomplete refresh: any regime signal that
+failed to fetch, or a Risk Barometer / NFCI doc that wasn't produced. The refresh routine emails the
+result via the Gmail connector, only when something changed.
 
 ## Keeping the live dashboard current
 
@@ -124,3 +132,14 @@ and writes the results straight into the published artifact's database (`regime/
 via Claude's `write_db` — the dashboard updates for every viewer without anyone needing to
 run anything by hand. Pipeline changes take effect on the next run once pushed to `master`;
 changes to `template.html` still need a republish of the artifact page.
+
+Data-source outages: `fetch_fred` rejects anything that isn't FRED's CSV (its site-maintenance
+page comes back as HTML with HTTP 200 — seen 2026-10-21) and retries for ~4 minutes, then fails
+fast for the remaining series. If any regime signal is still missing, the routine does not write
+`regime/latest`, `regime/history` or `regime/backtest` — the model recomputes the whole history
+every run, so a partial run would rewrite past regimes and the backtest too — and the dashboard
+keeps the last complete reading while `alerts.py` emails "Refresh incomplete". The dashboard also
+shows a warning naming any failed signals if a partial reading is ever live.
+
+The routine can only push `nfci/first_prints.csv` if the Claude GitHub App has access to this
+repo; otherwise the database copy (`regime/nfci`) still carries the series.
