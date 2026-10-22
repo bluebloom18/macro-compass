@@ -224,7 +224,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
   <section>
     <div class="section-head">
       <h2>Regime history</h2>
-      <div class="hint">Share of regime votes, weekly since 2006 &middot; drag across the chart to zoom, double-click to reset</div>
+      <div class="hint">Share of regime votes, weekly since 2006 &middot; dashed lines mark regime changes &middot; drag across the chart to zoom, double-click to reset</div>
     </div>
     <div class="card history-card">
       <div class="history-controls">
@@ -687,6 +687,20 @@ function drawHistory(){
     }
   });
 
+
+  // regime changes: a dashed vertical line (coloured by the new regime) at each week the regime
+  // switches; full strength when zoomed in, faded when the window holds many changes
+  {
+    const rc = monthly.regime_code || [], top = padT + 16, bot = H - axisH, chg = [];
+    for(let i=Math.max(lo,1);i<=hi;i++) if(rc[i]!==rc[i-1] && rc[i]) chg.push(i);
+    const op = chg.length <= 24 ? 0.8 : 0.35;
+    for(const i of chg){
+      const x = xAt(i), hex = (REGIME_META[rc[i]]||REGIME_META[0]).hex;
+      parts.push('<line x1="'+x.toFixed(1)+'" y1="'+top+'" x2="'+x.toFixed(1)+'" y2="'+bot+'" stroke="'+hex+'" stroke-width="1.5" stroke-dasharray="3 3" opacity="'+op+'"/>');
+      parts.push('<path d="M'+(x-4).toFixed(1)+','+(bot+6)+' L'+(x+4).toFixed(1)+','+(bot+6)+' L'+x.toFixed(1)+','+bot+' Z" fill="'+hex+'" opacity="'+Math.min(1,op+0.2)+'"/>');   // marker on the time axis
+    }
+  }
+
   // time axis: tick density adapts to the zoom window
   const span = Math.round(monthsBetween(monthly.dates[lo], monthly.dates[hi])), axisY = H - axisH;
   const plotTop = padT + 16, plotBot = axisY;
@@ -755,7 +769,10 @@ function wireHistory(){
     tooltip.style.top = '-6px';
     tooltip.hidden = false;
     const rn = (REGIME_META[m.regime_code[i]]||REGIME_META[0]).name;
-    tooltip.innerHTML = 'Week to '+fmtDate(m.dates[i])+' &middot; '+rn+'<br>G '+fmtPct(m.g[i])+' &middot; R '+fmtPct(m.r[i])+'<br>I '+fmtPct(m.i[i])+' &middot; D '+fmtPct(m.de[i]);
+    const prev = i>0 && m.regime_code ? m.regime_code[i-1] : null;
+    const switched = prev && m.regime_code[i]!==prev
+      ? ' <span style="color:'+(REGIME_META[m.regime_code[i]]||REGIME_META[0]).hex+'">(changed from '+(REGIME_META[prev]||REGIME_META[0]).name+')</span>' : '';
+    tooltip.innerHTML = 'Week to '+fmtDate(m.dates[i])+' &middot; '+rn+switched+'<br>G '+fmtPct(m.g[i])+' &middot; R '+fmtPct(m.r[i])+'<br>I '+fmtPct(m.i[i])+' &middot; D '+fmtPct(m.de[i]);
   };
 
   svg.addEventListener('pointerdown', evt=>{
