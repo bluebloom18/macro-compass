@@ -41,22 +41,24 @@ latest = dict(
     n_signals_ready=sum(1 for s in d["per_signal_last"] if s.get("ready")),
 )
 
-# Monthly-downsampled full history (last trading day on/before each month-end)
-monthly = {"dates": [], "g": [], "r": [], "i": [], "de": [], "regime_code": []}
-seen_months = set()
+# Weekly-downsampled full history (last trading day of each ISO week; the current
+# week's point is the latest close, so the chart's right edge moves every day)
+import datetime
+weekly = {"dates": [], "g": [], "r": [], "i": [], "de": [], "regime_code": []}
+seen_weeks = set()
 for idx in range(n - 1, -1, -1):
-    ym = dates[idx][:7]
-    if ym in seen_months:
+    wk = datetime.date.fromisoformat(dates[idx]).isocalendar()[:2]
+    if wk in seen_weeks:
         continue
-    seen_months.add(ym)
-    monthly["dates"].append(dates[idx])
-    monthly["g"].append(d["goldilocks_pct"][idx])
-    monthly["r"].append(d["reflation_pct"][idx])
-    monthly["i"].append(d["inflation_pct"][idx])
-    monthly["de"].append(d["deflation_pct"][idx])
-    monthly["regime_code"].append(d["regime_history"][idx])
-for k in monthly:
-    monthly[k].reverse()
+    seen_weeks.add(wk)
+    weekly["dates"].append(dates[idx])
+    weekly["g"].append(d["goldilocks_pct"][idx])
+    weekly["r"].append(d["reflation_pct"][idx])
+    weekly["i"].append(d["inflation_pct"][idx])
+    weekly["de"].append(d["deflation_pct"][idx])
+    weekly["regime_code"].append(d["regime_history"][idx])
+for k in weekly:
+    weekly[k].reverse()
 
 # Recent daily (last ~2 years)
 cut = max(0, n - 504)
@@ -70,16 +72,16 @@ recent = dict(
 )
 
 with open("artifact_seed.json", "w") as f:
-    json.dump(dict(latest=latest, monthly=monthly, recent=recent), f)
+    json.dump(dict(latest=latest, weekly=weekly, recent=recent), f)
 
 # Split into the two documents the artifact's DB expects (collection "regime",
 # doc ids "latest" and "history") so the caller can write_db these files as-is.
 with open("latest_doc.json", "w") as f:
     json.dump(latest, f)
 with open("history_doc.json", "w") as f:
-    json.dump(dict(monthly=monthly, recent=recent), f)
+    json.dump(dict(weekly=weekly, recent=recent), f)
 
 print("Wrote latest_doc.json and history_doc.json for collection 'regime'.")
 print("latest:", json.dumps(latest, indent=2)[:2000])
-print("\nmonthly points:", len(monthly["dates"]))
+print("\nweekly points:", len(weekly["dates"]))
 print("recent points:", len(recent["dates"]))

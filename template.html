@@ -222,7 +222,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
   <section>
     <div class="section-head">
       <h2>Regime history</h2>
-      <div class="hint">Share of regime votes, monthly since 2006 &middot; drag across the chart to zoom, double-click to reset</div>
+      <div class="hint">Share of regime votes, weekly since 2006 &middot; drag across the chart to zoom, double-click to reset</div>
     </div>
     <div class="card history-card">
       <div class="history-controls">
@@ -532,8 +532,8 @@ function renderQuadrant(latest, recent){
 }
 
 // Regime history: one small panel per regime on a shared time axis + shared 0-yMax scale.
-// HIST keeps the zoom window (lo/hi month indices) across live data refreshes.
-const HIST = {monthly:null, lo:0, hi:0, geom:null, drag:null, wired:false};
+// HIST keeps the zoom window (lo/hi point indices) across live data refreshes. One point per week.
+const HIST = {series:null, lo:0, hi:0, geom:null, drag:null, wired:false};
 const HIST_SERIES = [
   {k:'g',  label:'Goldilocks', color:'#BD8A32'},
   {k:'r',  label:'Reflation',  color:'#3D9C79'},
@@ -544,18 +544,29 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const SVGNS = 'http://www.w3.org/2000/svg';
 function fmtMonth(d){ return MONTHS[+d.slice(5,7)-1]+' '+d.slice(0,4); }
 
-function renderHistory(monthly){
-  const n = monthly.dates.length;
-  const prevN = HIST.monthly ? HIST.monthly.dates.length : 0;
-  const wasFull = !HIST.monthly || (HIST.lo===0 && HIST.hi===prevN-1);
-  HIST.monthly = monthly;
+// months between two ISO dates (fractional), used for zoom presets and tick density
+function monthsBetween(a, b){ return (+b.slice(0,4)-+a.slice(0,4))*12 + (+b.slice(5,7)-+a.slice(5,7)) + (+b.slice(8,10)-+a.slice(8,10))/30.4; }
+
+function renderHistory(series){
+  const n = series.dates.length;
+  const prevN = HIST.series ? HIST.series.dates.length : 0;
+  const wasFull = !HIST.series || (HIST.lo===0 && HIST.hi===prevN-1);
+  HIST.series = series;
   if(wasFull || HIST.hi>n-1){ HIST.lo = 0; HIST.hi = n-1; }
   if(!HIST.wired) wireHistory();
   drawHistory();
 }
 
+// index of the first point inside the last `months` months of history
+function presetLo(months){
+  const d = HIST.series.dates, end = d[d.length-1];
+  let i = d.length-1;
+  while(i>0 && monthsBetween(d[i-1], end) <= months) i--;
+  return i;
+}
+
 function setHistRange(lo, hi){
-  const n = HIST.monthly.dates.length;
+  const n = HIST.series.dates.length;
   lo = Math.max(0, Math.round(lo)); hi = Math.min(n-1, Math.round(hi));
   if(hi - lo < 3) return;               // need a few points to draw a line
   HIST.lo = lo; HIST.hi = hi;
@@ -563,7 +574,7 @@ function setHistRange(lo, hi){
 }
 
 function drawHistory(){
-  const monthly = HIST.monthly; if(!monthly) return;
+  const monthly = HIST.series; if(!monthly) return;
   const svg = document.getElementById('historyChart');
   const W = Math.max(280, svg.parentElement.clientWidth);
   const narrow = W < 560;
@@ -663,7 +674,7 @@ function drawHistory(){
   });
 
   // time axis: tick density adapts to the zoom window
-  const span = hi - lo, axisY = H - axisH;
+  const span = Math.round(monthsBetween(monthly.dates[lo], monthly.dates[hi])), axisY = H - axisH;
   const plotTop = padT + 16, plotBot = axisY;
   const minPx = narrow ? 44 : 52;
   let step;   // months between ticks, all aligned to January
@@ -673,6 +684,7 @@ function drawHistory(){
   let lastX = -1e9;
   for(let i=lo;i<=hi;i++){
     const d = monthly.dates[i], m = +d.slice(5,7)-1, y = +d.slice(0,4);
+    if(i>0 && monthly.dates[i-1].slice(0,7)===d.slice(0,7)) continue;   // first week of each month only
     const monthsFromJan = step >= 12 ? (m===0 && y % (step/12) === 0 ? 0 : 1) : m % step;
     if(monthsFromJan !== 0) continue;
     const x = xAt(i);
@@ -693,7 +705,7 @@ function drawHistory(){
   const full = lo===0 && hi===monthly.dates.length-1;
   document.querySelectorAll('#histPresets button').forEach(b=>{
     const m = b.dataset.months;
-    const on = m==='all' ? full : (!full && hi===monthly.dates.length-1 && span===+m);
+    const on = m==='all' ? full : (!full && hi===monthly.dates.length-1 && lo===presetLo(+m));
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
   });
   document.getElementById('histRangeLabel').textContent = fmtMonth(monthly.dates[lo]) + ' – ' + fmtMonth(monthly.dates[hi]) + (full ? '' : ' · double-click to reset');
@@ -715,7 +727,7 @@ function wireHistory(){
     tooltip.hidden = true;
   };
   const showHover = i => {
-    const g = HIST.geom, m = HIST.monthly, x = g.xAt(i);
+    const g = HIST.geom, m = HIST.series, x = g.xAt(i);
     const cross = svg.querySelector('#histCross');
     cross.setAttribute('x1',x); cross.setAttribute('x2',x); cross.setAttribute('opacity','0.6');
     svg.querySelectorAll('.hist-dot').forEach(c=>{
@@ -729,7 +741,7 @@ function wireHistory(){
     tooltip.style.top = '-6px';
     tooltip.hidden = false;
     const rn = (REGIME_META[m.regime_code[i]]||REGIME_META[0]).name;
-    tooltip.innerHTML = fmtMonth(m.dates[i])+' &middot; '+rn+'<br>G '+fmtPct(m.g[i])+' &middot; R '+fmtPct(m.r[i])+'<br>I '+fmtPct(m.i[i])+' &middot; D '+fmtPct(m.de[i]);
+    tooltip.innerHTML = 'Week to '+fmtDate(m.dates[i])+' &middot; '+rn+'<br>G '+fmtPct(m.g[i])+' &middot; R '+fmtPct(m.r[i])+'<br>I '+fmtPct(m.i[i])+' &middot; D '+fmtPct(m.de[i]);
   };
 
   svg.addEventListener('pointerdown', evt=>{
@@ -763,11 +775,11 @@ function wireHistory(){
   svg.addEventListener('pointerup', endDrag);
   svg.addEventListener('pointercancel', ()=>{ HIST.drag=null; const br=svg.querySelector('#histBrush'); if(br) br.setAttribute('width','0'); hideHover(); });
   svg.addEventListener('pointerleave', ()=>{ if(!HIST.drag) hideHover(); });
-  svg.addEventListener('dblclick', ()=>{ setHistRange(0, HIST.monthly.dates.length-1); hideHover(); });
+  svg.addEventListener('dblclick', ()=>{ setHistRange(0, HIST.series.dates.length-1); hideHover(); });
   document.getElementById('histPresets').addEventListener('click', evt=>{
     const b = evt.target.closest('button'); if(!b) return;
-    const n = HIST.monthly.dates.length, m = b.dataset.months;
-    if(m==='all') setHistRange(0, n-1); else setHistRange(Math.max(0, n-1-(+m)), n-1);
+    const n = HIST.series.dates.length, m = b.dataset.months;
+    if(m==='all') setHistRange(0, n-1); else setHistRange(presetLo(+m), n-1);
   });
   let rz;
   new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawHistory); }).observe(svg.parentElement);
@@ -1390,7 +1402,7 @@ function wireNfEquity(){
 function renderAll(seed){
   renderLatest(seed.latest);
   renderQuadrant(seed.latest, seed.recent);
-  renderHistory(seed.monthly);
+  renderHistory(seed.weekly || seed.monthly);
   renderBacktest(BACKTEST);
   renderNfci(NFCI);
   renderRisk(RISK);
@@ -1431,7 +1443,8 @@ document.getElementById('statusText').textContent = 'seed data · ' + SEED.lates
     db.doc('regime/history').onSnapshot(snap=>{
       if(!snap.exists) return;
       const data = snap.data();
-      if(data.monthly){ SEED.monthly = data.monthly; renderHistory(SEED.monthly); }
+      const hs = data.weekly || data.monthly;   // monthly = docs written before the weekly switch
+      if(hs){ SEED.weekly = hs; renderHistory(hs); }
       if(data.recent){ SEED.recent = data.recent; renderQuadrant(SEED.latest, SEED.recent); }
     });
   }catch(e){ /* no db in this view; seed data already rendered */ }
