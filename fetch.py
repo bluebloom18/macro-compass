@@ -49,11 +49,16 @@ def fetch_yahoo(symbol, range_="20y", interval="1d", retries=3):
     raise RuntimeError("failed to fetch yahoo symbol %s: %s" % (symbol, last_err))
 
 
-def fetch_fred(series_id, retries=3):
+_FRED_DOWN = []   # series that failed every retry in this process
+
+
+def fetch_fred(series_id, retries=5):
     """Returns list of dicts: [{date, open, high, low, close}] with O=H=L=C=value (level series).
     Shells out to curl rather than urllib: FRED's bot-protection silently stalls Python's
     urllib/ssl client (never returns within any timeout) but passes curl's TLS handshake fine."""
     url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=%s" % series_id
+    if _FRED_DOWN:   # one series already exhausted its retries this run: don't wait again per series
+        retries = 1
     last_err = None
     for attempt in range(retries):
         try:
@@ -61,8 +66,12 @@ def fetch_fred(series_id, retries=3):
                 ["curl", "-s", "-m", "20", url],
                 capture_output=True, timeout=25, check=True,
             )
-            text = proc.stdout.decode("utf-8")
+            text = proc.stdout.decode("utf-8", "replace")
             lines = text.strip().splitlines()
+            # During FRED site maintenance the endpoint returns an HTML page with HTTP 200 (seen
+            # 2026-10-21); without this check it parsed as an empty series and the signal vanished.
+            if not lines or not lines[0].lower().startswith(("observation_date,", "date,")):
+                raise ValueError("FRED returned non-CSV (site maintenance?): %r" % text[:80])
             out = []
             for line in lines[1:]:
                 parts = line.split(",")
@@ -76,11 +85,15 @@ def fetch_fred(series_id, retries=3):
                 except ValueError:
                     continue
                 out.append({"date": date, "open": v, "high": v, "low": v, "close": v})
+            if not out:
+                raise ValueError("FRED returned no observations for %s" % series_id)
             out.sort(key=lambda x: x["date"])
             return out
         except Exception as e:
             last_err = e
-            time.sleep(1.5 * (attempt + 1))
+            if attempt < retries - 1:
+                time.sleep(15 * 2 ** attempt)   # 15s, 30s, 60s, 120s: rides out a short outage
+    _FRED_DOWN.append(series_id)
     raise RuntimeError("failed to fetch FRED series %s: %s" % (series_id, last_err))
 
 

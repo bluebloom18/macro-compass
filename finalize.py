@@ -39,6 +39,7 @@ latest = dict(
     errors=d["errors"],
     n_signals_total=len(SIGNALS),
     n_signals_ready=sum(1 for s in d["per_signal_last"] if s.get("ready")),
+    complete=not d["errors"],   # False = some signals failed to fetch; the routine then keeps yesterday's docs live
 )
 
 # Weekly-downsampled full history (last trading day of each ISO week; the current
@@ -85,3 +86,5 @@ print("Wrote latest_doc.json and history_doc.json for collection 'regime'.")
 print("latest:", json.dumps(latest, indent=2)[:2000])
 print("\nweekly points:", len(weekly["dates"]))
 print("recent points:", len(recent["dates"]))
+if d["errors"]:
+    print("\nINCOMPLETE: %d signal(s) failed to fetch: %s" % (len(d["errors"]), ", ".join(sorted(d["errors"]))))

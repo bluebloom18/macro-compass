@@ -63,6 +63,7 @@ section{margin-bottom:40px;}
 .hero-readout{padding:24px; display:flex; flex-direction:column; gap:18px;}
 .regime-name{font-size:40px; line-height:1.05;}
 .regime-sub{font-family:var(--font-mono); font-size:12.5px; color:var(--ink-muted); margin-top:6px;}
+.data-warn{margin-top:10px; padding:8px 12px; border-radius:8px; font-size:12.5px; line-height:1.45; background:rgba(208,89,75,.14); border:1px solid rgba(208,89,75,.45); color:#EE9A8F;}
 .bars{display:flex; flex-direction:column; gap:10px;}
 .bar-row{display:grid; grid-template-columns:88px 1fr 48px; align-items:center; gap:10px; font-size:13px;}
 .bar-track{height:9px; border-radius:5px; background:var(--surface-2); overflow:hidden; position:relative;}
@@ -210,6 +211,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
         <div class="eyebrow" id="asOfLine">as of &mdash;</div>
         <h2 class="regime-name" id="regimeName" style="color:var(--gold)">&mdash;</h2>
         <div class="regime-sub" id="regimeSub">&mdash;</div>
+        <div class="data-warn" id="dataWarn" hidden></div>
       </div>
       <div class="bars" id="barsBlock"></div>
     </div>
@@ -447,6 +449,14 @@ function renderLatest(latest){
   rn.style.color = meta.hex;
   document.getElementById('regimeSub').textContent = meta.desc + ' — ' + latest.n_signals_ready + ' of ' + latest.n_signals_total + ' signals live';
   document.getElementById('footerUpdated').textContent = 'Last computed ' + latest.asof;
+  const failed = Object.keys(latest.errors || {});
+  const warn = document.getElementById('dataWarn');
+  warn.hidden = failed.length === 0;
+  if(failed.length){
+    const names = failed.map(k => { const s = (latest.per_signal||[]).find(p=>p.key===k); return s ? s.label : k; });
+    warn.textContent = failed.length + ' of ' + latest.n_signals_total + ' signals failed to fetch on this run (' + names.join(', ')
+      + '), so this reading is built from the rest and may differ from a full run.';
+  }
 
   const bars = [
     ['Goldilocks', latest.goldilocks_pct, '#BD8A32'],

@@ -7,6 +7,9 @@ definitions as the dashboard's Financial conditions tiles:
   * 1-week change   - risk on when this week's (first-print) change is <= 0
   * 1-week > 0.02   - flips only on a weekly move beyond +-0.02, otherwise keeps its position
 
+Also flags an incomplete refresh: any regime signal that failed to fetch (the routine then keeps
+yesterday's regime docs live), or a Risk Barometer / NFCI doc that wasn't produced tonight.
+
 Writes alerts.json: {"changes": [...], "subject": ..., "body": ...}; "changes" is empty when
 nothing flipped. Exit code is always 0 so the refresh never blocks on this step.
 
@@ -52,7 +55,13 @@ def main():
 
     new_latest = load(os.path.join(HERE, "latest_doc.json"))
     old_latest = load(os.path.join(prev_dir, "latest.json")) if prev_dir else None
-    if new_latest and old_latest:
+    failed = sorted((new_latest or {}).get("errors") or {})
+    if failed:
+        changes.append("Refresh incomplete: %d of %d regime signals failed to fetch (%s); the dashboard keeps "
+                       "the previous reading (as of %s)" % (
+                           len(failed), new_latest.get("n_signals_total", 29), ", ".join(failed),
+                           (old_latest or {}).get("asof", "unknown")))
+    elif new_latest and old_latest:
         a, b = old_latest.get("regime_name"), new_latest.get("regime_name")
         if a and b and a != b:
             pct = ", ".join("%s %.0f%%" % (k.title(), new_latest.get(k + "_pct", 0))
@@ -61,7 +70,11 @@ def main():
     else:
         notes.append("regime: previous or new doc missing, not compared")
 
+    if not os.path.exists(os.path.join(HERE, "risk_doc.json")):
+        changes.append("Refresh incomplete: Risk Barometer not refreshed (risk_doc.json missing)")
     new_nf = load(os.path.join(HERE, "nfci", "nfci_doc.json"))
+    if not new_nf:
+        changes.append("Refresh incomplete: NFCI not refreshed (nfci_doc.json missing)")
     old_nf = load(os.path.join(prev_dir, "nfci.json")) if prev_dir else None
     if new_nf and old_nf and new_nf.get("fp") and old_nf.get("fp"):
         old_r, _ = nfci_rules(old_nf)
@@ -75,7 +88,12 @@ def main():
         notes.append("nfci: previous or new doc missing, not compared")
 
     if changes:
-        subject = "Macro Compass alert: " + "; ".join(c.split(" (")[0] for c in changes)
+        heads = []
+        for c in changes:
+            h = "Refresh incomplete" if c.startswith("Refresh incomplete") else c.split(" (")[0]
+            if h not in heads:
+                heads.append(h)
+        subject = "Macro Compass alert: " + "; ".join(heads)
         body = "\n".join(["Changes in tonight's Macro Compass refresh:", ""] + ["- " + c for c in changes]
                          + ["", "Dashboard: " + DASHBOARD])
     else:
