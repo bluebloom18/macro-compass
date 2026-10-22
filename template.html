@@ -593,7 +593,7 @@ function drawHistory(){
   const W = Math.max(280, svg.parentElement.clientWidth);
   const narrow = W < 560;
   const panelH = narrow ? 58 : 66, gap = 12;
-  const padL = 34, padR = narrow ? 48 : 56, padT = 18, axisH = 24;
+  const padL = 34, padR = narrow ? 48 : 56, padT = 32, axisH = 24;   // padT leaves a row for regime-change letters
   const stackH = narrow ? 110 : 130, stackBlock = 16 + stackH + gap + 6;   // stacked overview on top
   const H = padT + stackBlock + HIST_SERIES.length*(panelH+gap+16) - gap + axisH;
   svg.setAttribute('viewBox','0 0 '+W+' '+H);
@@ -614,7 +614,7 @@ function drawHistory(){
   {
     const top = padT + 16;
     const yAt = v => top + stackH*(1 - v/100);
-    parts.push('<text x="'+padL+'" y="'+(top-7)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">All regimes <tspan font-weight="400" fill="#A6AFC4">&middot; stacked share</tspan></text>');
+    parts.push('<text x="'+padL+'" y="'+(top-18)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">All regimes <tspan font-weight="400" fill="#A6AFC4">&middot; stacked share</tspan></text>');
     const acc = [];
     for(let i=lo;i<=hi;i++) acc.push(0);
     for(const s of HIST_SERIES){
@@ -694,10 +694,15 @@ function drawHistory(){
     const rc = monthly.regime_code || [], top = padT + 16, bot = H - axisH, chg = [];
     for(let i=Math.max(lo,1);i<=hi;i++) if(rc[i]!==rc[i-1] && rc[i]) chg.push(i);
     const op = chg.length <= 24 ? 0.8 : 0.35;
+    let lastLetterX = -1e9;
     for(const i of chg){
       const x = xAt(i), hex = (REGIME_META[rc[i]]||REGIME_META[0]).hex;
       parts.push('<line x1="'+x.toFixed(1)+'" y1="'+top+'" x2="'+x.toFixed(1)+'" y2="'+bot+'" stroke="'+hex+'" stroke-width="1.5" stroke-dasharray="3 3" opacity="'+op+'"/>');
       parts.push('<path d="M'+(x-4).toFixed(1)+','+(bot+6)+' L'+(x+4).toFixed(1)+','+(bot+6)+' L'+x.toFixed(1)+','+bot+' Z" fill="'+hex+'" opacity="'+Math.min(1,op+0.2)+'"/>');   // marker on the time axis
+      if(x - lastLetterX >= 11){   // initial of the new regime just above the stacked chart, skipped where crowded
+        lastLetterX = x;
+        parts.push('<text x="'+x.toFixed(1)+'" y="'+(top-3)+'" text-anchor="middle" font-family="IBM Plex Mono" font-size="11" font-weight="600" fill="'+hex+'">'+(REGIME_META[rc[i]]||REGIME_META[0]).name[0]+'</text>');
+      }
     }
   }
 
