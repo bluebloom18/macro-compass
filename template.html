@@ -180,6 +180,27 @@ section{margin-bottom:40px;}
 .table-scroll{overflow-x:auto; border-radius:14px; border:1px solid var(--border);}
 .note-icon{color:var(--ink-faint); cursor:help; font-family:var(--font-mono); font-size:11px;}
 
+/* ---------- vote tally ---------- */
+.tally{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:14px;}
+@media (max-width:700px){.tally{grid-template-columns:1fr;}}
+.tally-card{padding:16px 18px;}
+.tally-card h3{font-family:var(--font-body); font-size:13.5px; font-weight:600; margin-bottom:10px;}
+.tally-card h3 small{font-weight:400; color:var(--ink-faint); font-size:12px; margin-left:6px;}
+.tally-strip{display:flex; height:12px; border-radius:6px; overflow:hidden; background:var(--surface-2); margin-bottom:10px;}
+.tally-strip span{display:block; height:100%;}
+.tally-nums{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12.5px; color:var(--ink-muted);}
+.tally-nums b{font-family:var(--font-mono); color:var(--ink); font-weight:600;}
+.tally-nums i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px; vertical-align:baseline;}
+.tally-call{margin-top:10px; font-size:12.5px; color:var(--ink-muted);}
+.tally-call b{color:var(--ink);}
+.tally-totals{grid-column:1 / -1; padding:14px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; font-size:12.5px; color:var(--ink-muted);}
+.tally-totals .t{display:inline-flex; align-items:center; gap:6px;}
+.tally-totals b{font-family:var(--font-mono); color:var(--ink);}
+.vote{display:inline-block; padding:2px 7px; border-radius:5px; font-size:11px; font-weight:600; color:#fff; margin-right:4px; white-space:nowrap;}
+.vote.none{background:none; color:var(--ink-faint); font-weight:400; padding-left:0;}
+.signal-table tr.axis-head td{background:var(--surface-2); font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); padding:7px 12px;}
+.axis-dir{font-size:12.5px; color:var(--ink-muted); white-space:nowrap;}
+
 /* ---------- methodology / footer ---------- */
 .methodology{padding:22px 24px; font-size:13.5px; color:var(--ink-muted);}
 .methodology h3{font-size:14px; color:var(--ink); margin-bottom:8px;}
@@ -290,12 +311,20 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 
   <section>
     <div class="section-head">
+      <h2>Vote tally</h2>
+      <div class="hint">Each trending signal casts two votes, one for each regime on its side of its axis; flat signals abstain</div>
+    </div>
+    <div class="tally" id="voteTally"></div>
+  </section>
+
+  <section>
+    <div class="section-head">
       <h2>Signal detail</h2>
       <div class="hint" id="signalCountHint">&mdash;</div>
     </div>
     <div class="table-scroll">
       <table class="signal-table">
-        <thead><tr><th>Signal</th><th>Source</th><th>Weights (G/R/I/D)</th><th>Reading</th></tr></thead>
+        <thead><tr><th>Signal</th><th>Source</th><th>Reading</th><th>Means</th><th>Votes for</th></tr></thead>
         <tbody id="signalRows"></tbody>
       </table>
     </div>
@@ -483,7 +512,68 @@ function renderLatest(latest){
   }).join('');
 
   document.getElementById('signalCountHint').textContent = latest.n_signals_ready + ' of ' + latest.n_signals_total + ' live · default Trend signal, EMA 30/60';
-  document.getElementById('signalRows').innerHTML = latest.per_signal.map(s=>{
+  renderVotes(latest);
+}
+
+// Inflation-axis signals vote Reflation+Inflation when inflation is rising (weights 0/1/1/0, or the
+// complemented 1/0/0/1 for the bond-ETF yield proxies); everything else sits on the growth axis.
+function signalAxis(w){ return (w[0]===w[3] && w[1]===w[2] && w[0]!==w[1]) ? 'inflation' : 'growth'; }
+function signalVotes(s){
+  if(!s.ready || !s.weights || !(s.bull || s.bear)) return [];
+  const v = s.bull ? s.weights : s.weights.map(x => 1 - x);
+  return [1,2,3,4].filter(k => v[k-1] === 1);
+}
+function voteChip(code){ const m = REGIME_META[code]; return '<span class="vote" style="background:'+m.hex+'">'+m.name+'</span>'; }
+
+function renderVotes(latest){
+  const sigs = latest.per_signal || [];
+  const ax = {growth:{up:0,down:0,flat:0,n:0}, inflation:{up:0,down:0,flat:0,n:0}};
+  const totals = {1:0,2:0,3:0,4:0};
+  const rows = {growth:[], inflation:[]};
+  sigs.forEach(s => {
+    const a = s.weights ? signalAxis(s.weights) : 'growth';
+    const votes = signalVotes(s);
+    votes.forEach(k => totals[k]++);
+    let dir = null;
+    if(votes.length){
+      dir = (a === 'growth') ? (votes.includes(1) && votes.includes(2) ? 'up' : 'down')
+                             : (votes.includes(2) && votes.includes(3) ? 'up' : 'down');
+    }
+    ax[a].n++;
+    if(s.ready) ax[a][dir || 'flat']++;
+    rows[a].push({s, votes, dir});
+  });
+
+  const UP = '#3D9C79', DOWN = '#D0594B', FLAT = '#5E6B88';
+  function axisCard(key, title){
+    const t = ax[key], net = t.up - t.down;
+    const seg = (n, c) => n ? '<span style="width:'+(100*n/t.n)+'%;background:'+c+'"></span>' : '';
+    const call = net > 0 ? 'rising' : net < 0 ? 'falling' : 'tied';
+    const need = net === 0 ? 'Tied: the current regime holds until one side leads.'
+      : 'Net ' + (net > 0 ? '+' : '') + net + '. To flip, '
+        + (net > 0 ? 'falling' : 'rising') + ' signals must outnumber '
+        + (net > 0 ? 'rising' : 'falling') + ' ones: a net swing of ' + (Math.abs(net) + 1)
+        + ' (a signal going from one side to the other counts 2, to or from flat counts 1).';
+    return '<div class="card tally-card"><h3>' + title + '<small>' + t.n + ' signals</small></h3>'
+      + '<div class="tally-strip" role="img" aria-label="'+t.up+' rising, '+t.down+' falling, '+t.flat+' flat">'
+      + seg(t.up, UP) + seg(t.flat, FLAT) + seg(t.down, DOWN) + '</div>'
+      + '<div class="tally-nums"><span><i style="background:'+UP+'"></i>Rising <b>'+t.up+'</b></span>'
+      + '<span><i style="background:'+FLAT+'"></i>Flat <b>'+t.flat+'</b></span>'
+      + '<span><i style="background:'+DOWN+'"></i>Falling <b>'+t.down+'</b></span></div>'
+      + '<div class="tally-call">' + title.split(' ')[0] + ' is <b>' + call + '</b>. ' + need + '</div></div>';
+  }
+  const total = totals[1] + totals[2] + totals[3] + totals[4];
+  const totalsHtml = '<div class="card tally-totals"><span>Votes cast <b>' + total + '</b></span>'
+    + [1,2,3,4].map(k => '<span class="t">' + voteChip(k) + '<b>' + totals[k] + '</b>'
+      + (total ? ' <span>(' + (100*totals[k]/total).toFixed(1) + '%)</span>' : '') + '</span>').join('')
+    + '<span>The regime with the most votes wins; on a tie the current one stays.</span></div>';
+  document.getElementById('voteTally').innerHTML = axisCard('growth', 'Growth axis') + axisCard('inflation', 'Inflation axis') + totalsHtml;
+
+  const head = (key, label) => {
+    const t = ax[key];
+    return '<tr class="axis-head"><td colspan="5">' + label + ' &middot; ' + t.up + ' rising &middot; ' + t.down + ' falling &middot; ' + t.flat + ' flat</td></tr>';
+  };
+  const row = ({s, votes, dir}, key) => {
     let pillClass='na', pillText='no data';
     if(s.ready){
       if(s.bull){pillClass='bull'; pillText='bullish';}
@@ -492,14 +582,20 @@ function renderLatest(latest){
     } else if(s.status==='fetch_failed'){
       pillText='fetch failed';
     }
-    const w = s.weights ? s.weights.join('/') : '&mdash;';
     const noteAttr = s.note ? ' title="'+esc(s.note)+'"' : '';
     const noteIcon = s.note ? ' <span class="note-icon"'+noteAttr+'>ⓘ</span>' : '';
+    const axisName = key === 'growth' ? 'Growth' : 'Inflation';
+    const means = dir ? axisName + (dir === 'up' ? ' &uarr;' : ' &darr;') : '&mdash;';
+    const w = s.weights ? ' title="Weights G/R/I/D when bullish: ' + s.weights.join('/') + '"' : '';
     return '<tr><td>'+esc(s.label)+noteIcon+'</td>'
       + '<td class="src">'+esc(s.source||'')+'</td>'
-      + '<td class="tabular src">'+w+'</td>'
-      + '<td><span class="pill '+pillClass+'">'+pillText+'</span></td></tr>';
-  }).join('');
+      + '<td><span class="pill '+pillClass+'">'+pillText+'</span></td>'
+      + '<td class="axis-dir">'+means+'</td>'
+      + '<td'+w+'>' + (votes.length ? votes.map(voteChip).join('') : '<span class="vote none">abstains</span>') + '</td></tr>';
+  };
+  document.getElementById('signalRows').innerHTML =
+    head('growth', 'Growth axis') + rows.growth.map(r => row(r, 'growth')).join('')
+    + head('inflation', 'Inflation axis') + rows.inflation.map(r => row(r, 'inflation')).join('');
 }
 
 function renderQuadrant(latest, recent){
