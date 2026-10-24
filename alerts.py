@@ -59,7 +59,7 @@ def main():
     if failed:
         changes.append("Refresh incomplete: %d of %d regime signals failed to fetch (%s); the dashboard keeps "
                        "the previous reading (as of %s)" % (
-                           len(failed), new_latest.get("n_signals_total", 29), ", ".join(failed),
+                           len(failed), new_latest.get("n_signals_total", 30), ", ".join(failed),
                            (old_latest or {}).get("asof", "unknown")))
     elif new_latest and old_latest:
         a, b = old_latest.get("regime_name"), new_latest.get("regime_name")

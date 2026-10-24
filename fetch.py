@@ -4,6 +4,8 @@ import subprocess
 import time
 import urllib.request
 import urllib.parse
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 UA = "Mozilla/5.0 (compatible; regime-model/1.0)"
 
@@ -24,12 +26,19 @@ def fetch_yahoo(symbol, range_="20y", interval="1d", retries=3):
             r = result[0]
             ts = r.get("timestamp") or []
             quote = r["indicators"]["quote"][0]
+            # Date each bar in the exchange's own timezone: Yahoo stamps FX daily bars at London
+            # midnight, which is 23:00 UTC the previous day during BST, so gmtime() put them a day early.
+            try:
+                tz = ZoneInfo(r["meta"].get("exchangeTimezoneName") or "UTC")
+            except ZoneInfoNotFoundError:
+                tz = None
             out = []
             for i, t in enumerate(ts):
                 o, h, l, c = quote["open"][i], quote["high"][i], quote["low"][i], quote["close"][i]
                 if c is None:
                     continue
-                date = time.strftime("%Y-%m-%d", time.gmtime(t))
+                date = (datetime.fromtimestamp(t, tz).strftime("%Y-%m-%d") if tz
+                        else time.strftime("%Y-%m-%d", time.gmtime(t)))
                 out.append({
                     "date": date,
                     "open": o if o is not None else c,
@@ -95,6 +104,39 @@ def fetch_fred(series_id, retries=5):
                 time.sleep(15 * 2 ** attempt)   # 15s, 30s, 60s, 120s: rides out a short outage
     _FRED_DOWN.append(series_id)
     raise RuntimeError("failed to fetch FRED series %s: %s" % (series_id, last_err))
+
+
+def fetch_cboe(index, retries=3):
+    """Cboe's public daily history CSV (DATE,OPEN,HIGH,LOW,CLOSE, MM/DD/YYYY dates) for indices
+    Yahoo carries only as a live snapshot, e.g. COR3M."""
+    url = "https://cdn.cboe.com/api/global/us_indices/daily_prices/%s_History.csv" % index
+    last_err = None
+    for attempt in range(retries):
+        try:
+            proc = subprocess.run(["curl", "-sL", "-m", "30", "-A", UA, url],
+                                  capture_output=True, timeout=35, check=True)
+            lines = proc.stdout.decode("utf-8", "replace").strip().splitlines()
+            if not lines or not lines[0].upper().startswith("DATE,"):
+                raise ValueError("Cboe returned non-CSV for %s: %r" % (index, lines[:1]))
+            out = []
+            for line in lines[1:]:
+                parts = line.split(",")
+                if len(parts) != 5:
+                    continue
+                try:
+                    o, h, l, c = (float(x) for x in parts[1:])
+                except ValueError:
+                    continue
+                date = datetime.strptime(parts[0], "%m/%d/%Y").strftime("%Y-%m-%d")
+                out.append({"date": date, "open": o, "high": h, "low": l, "close": c})
+            if not out:
+                raise ValueError("Cboe returned no observations for %s" % index)
+            out.sort(key=lambda x: x["date"])
+            return out
+        except Exception as e:
+            last_err = e
+            time.sleep(5 * (attempt + 1))
+    raise RuntimeError("failed to fetch Cboe index %s: %s" % (index, last_err))
 
 
 def ratio_series(legA, legB):

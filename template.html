@@ -194,7 +194,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
     <div class="title-block">
       <div class="eyebrow">Cross-asset macro &middot; updated daily</div>
       <h1>Macro Compass</h1>
-      <p>Three studies on open data &mdash; a 29-signal macro regime, Chicago Fed financial conditions, and an 8-pillar risk barometer. Yahoo Finance and FRED, no vendor key required.</p>
+      <p>Three studies on open data &mdash; a 30-signal macro regime, Chicago Fed financial conditions, and an 8-pillar risk barometer. Yahoo Finance and FRED, no vendor key required.</p>
       <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk barometer</a></nav>
     </div>
     <div class="status-chip"><span class="status-dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
@@ -202,7 +202,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 
   <div class="part" id="study-regime">
     <span class="num">01</span>
-    <div><h2>Macro regime</h2><p>29 cross-asset trend signals vote for Goldilocks, Reflation, Inflation or Deflation &middot; daily</p></div>
+    <div><h2>Macro regime</h2><p>30 cross-asset trend signals vote for Goldilocks, Reflation, Inflation or Deflation &middot; daily</p></div>
   </div>
 
   <section class="hero">
@@ -305,9 +305,9 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
     <h3>Macro regime &middot; methodology &amp; sourcing notes</h3>
     <ul>
       <li>Ported from <em>Global Macro Regime</em> (QuantitativeAlpha, TradingView) &mdash; same trend-cross signal logic (EMA30/EMA60, ATR-scaled margin) and sticky-regime aggregation across cross-asset signals, run in Python against open data instead of TradingView's feed.</li>
-      <li>Credit spreads, breakevens and US Treasury yields come straight from <a href="https://fred.stlouisfed.org" target="_blank" rel="noopener">FRED</a> &mdash; more faithful than the original's ETF-ratio workaround for these series.</li>
-      <li>Equities, FX, commodities, VIX, MOVE and 3M correlation come from Yahoo Finance's public chart feed. <span class="note-icon" title="German/UK/Japan 10Y yields have no free daily series, so these three use a duration-matched government bond ETF price as an inverse proxy (weights complemented accordingly). Emerging markets uses the EEM ETF in place of ICE MME1! futures.">3 proxies &amp; 1 substitution &mdash; hover ⓘ in the table below</span>.</li>
-      <li><code>3M Implied Correlation (COR3M)</code> was dropped: Yahoo carries only a live snapshot, no history, and a fabricated substitute would defeat the point of an open-data source.</li>
+      <li>Credit spreads, breakevens and the US 2Y yield come from <a href="https://fred.stlouisfed.org" target="_blank" rel="noopener">FRED</a>, as in the original; the US 10Y uses Cboe's <code>^TNX</code> for full daily ranges.</li>
+      <li>Equities, FX, commodities, VIX and MOVE come from Yahoo Finance's public chart feed; 3M implied correlation (COR3M) from Cboe's daily history file. <span class="note-icon" title="German/UK/Japan 10Y yields have no free daily series, so these three use a duration-matched government bond ETF price as an inverse proxy (weights complemented accordingly). Emerging markets uses the EEM ETF in place of ICE MME1! futures.">3 proxies &amp; 1 substitution &mdash; hover ⓘ in the table below</span>.</li>
+      <li>Each signal runs on its own market's trading days before being carried onto the S&amp;P 500 calendar, as TradingView's <code>request.security</code> does.</li>
     </ul>
   </section>
 

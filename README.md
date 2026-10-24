@@ -1,6 +1,6 @@
 # Macro Compass
 
-A 29-signal cross-asset growth/inflation regime nowcast, ported from the TradingView
+A 30-signal cross-asset growth/inflation regime nowcast, ported from the TradingView
 indicator [Global Macro Regime](https://www.tradingview.com/script/tDChNs5m-Global-Macro-Regime/)
 (© QuantitativeAlpha) to run entirely on open data — no TradingView subscription,
 no API key.
@@ -16,8 +16,8 @@ sticky-regime aggregation so the reading doesn't flip on ties. Ported line-for-l
 into Python (`model.py`) rather than approximated.
 
 Vote weighting: every signal with a trend casts exactly two votes (a flat signal casts none),
-for the two regimes on the side of its axis it points to. 21 of the 29 signals sit on the growth
-axis (equities, FX, metals, bitcoin, vol, dollar, credit spreads) and 8 on the inflation axis (oil,
+for the two regimes on the side of its axis it points to. 22 of the 30 signals sit on the growth
+axis (equities, FX, metals, bitcoin, vol, correlation, dollar, credit spreads) and 8 on the inflation axis (oil,
 agriculture, yields, breakevens), so growth dominates the call. The percentages are each
 regime's share of the votes cast that day.
 
@@ -25,18 +25,19 @@ regime's share of the votes cast that day.
 
 | Source | Used for |
 |---|---|
-| [Yahoo Finance chart API](https://query1.finance.yahoo.com/v8/finance/chart/) | Equities, FX, commodities, VIX, MOVE, 3M correlation, bond-ETF yield proxies |
-| [FRED CSV endpoint](https://fred.stlouisfed.org/graph/fredgraph.csv) | US 2Y/10Y Treasury yields, 10Y breakeven, credit spreads (distressed/HY/IG OAS) |
+| [Yahoo Finance chart API](https://query1.finance.yahoo.com/v8/finance/chart/) | Equities, FX, commodities, VIX, MOVE, US 10Y yield (`^TNX`), bond-ETF yield proxies |
+| [Cboe index history CSV](https://cdn.cboe.com/api/global/us_indices/daily_prices/COR3M_History.csv) | 3M implied correlation (COR3M) |
+| [FRED CSV endpoint](https://fred.stlouisfed.org/graph/fredgraph.csv) | US 2Y Treasury yield, 10Y breakeven, credit spreads (distressed/HY/IG OAS) |
 
 Both are public, unauthenticated endpoints. FRED's endpoint blocks Python's `urllib`
 client at the TLS layer for reasons that were never fully clear — `fetch.py` shells
 out to `curl` for FRED requests instead.
 
-### Deviations from the original 30-signal script
+### Deviations from the original script
 
-- **`COR3M` (3M implied correlation) dropped** — Yahoo's `^COR3M` ticker has no
-  historical series, only a live snapshot. Rather than fabricate a substitute, this
-  runs on 29 signals.
+All 30 of the original's signals are present; these are sourced differently:
+
+
 - **German/UK/Japan 10Y yields** use a duration-matched government bond ETF price
   (`EXHD.DE`, `IGLT.L`, `236A.T`) as an inverse proxy — no free daily sovereign yield
   series exists for these. Weights are complemented accordingly since price moves
@@ -44,14 +45,31 @@ out to `curl` for FRED requests instead.
 - **Emerging markets** uses the `EEM` ETF in place of the original's `ICE MME1!`
   futures contract.
 
-Everything else — including credit spreads, breakevens, and US Treasury yields —
-comes from FRED directly, which is *more* faithful than the original script's
-TradingView-side ETF-ratio workaround for those series.
+- **US 2Y yield** comes from FRED (`DGS2`), which is close-only, where the original's
+  `TVC:US02Y` has full daily bars. A close-only series has a smaller ATR, so the 0.3×ATR
+  trend margin is narrower. The 10Y avoids this by using Cboe's `^TNX` (full OHLC); no
+  free 2Y series with intraday ranges and long history was found.
+- **Bitcoin** is spot `BTC-USD` rather than `CME:BTC1!`; Yahoo continuous futures (`BZ=F`,
+  `HG=F`, `SI=F`, `GC=F`) roll on different dates from TradingView's `1!` contracts.
+
+Breakevens and credit spreads come from FRED, exactly as the original does (`FRED:` tickers).
+
+### Matching TradingView's calculation
+
+- Each signal is computed on its own series' trading days and then carried onto the S&P 500
+  calendar, as `request.security('D', signal_logic())` does. (Filling prices onto the S&P
+  calendar first would run the EMAs over the wrong number of bars for bitcoin and for
+  markets with different holidays.)
+- Yahoo bars are dated in the exchange's own timezone. Yahoo stamps FX daily bars at London
+  midnight, i.e. 23:00 UTC during BST, so dating them in UTC put every FX bar a day early
+  for half the year.
+- To compare against the TradingView indicator, use a daily SPX chart with dividend
+  adjustment off: the script's tickers inherit the chart's settings via `ticker.inherit`.
 
 ## Files
 
-- `config.py` — the 29 signal definitions (source, ticker, regime weights)
-- `fetch.py` — Yahoo Finance / FRED fetchers, plus ratio-symbol construction
+- `config.py` — the 30 signal definitions (source, ticker, regime weights)
+- `fetch.py` — Yahoo Finance / FRED / Cboe fetchers, plus ratio-symbol construction
 - `align.py` — forward-fill alignment onto a common trading calendar
 - `model.py` — faithful port of `signal_logic()`, `vol_stop()`, `regime_contribution()`
 - `build.py` — orchestrates fetch → align → signal computation → regime aggregation

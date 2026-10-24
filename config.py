@@ -1,7 +1,8 @@
 """Signal definitions for the open-data port of the Global Macro Regime indicator.
 
 Each entry: key -> dict(label, kind, weights=(goldilocks, reflation, inflation, deflation), ...)
-kind is one of: "yahoo" (single symbol), "ratio" (two yahoo symbols, A/B), "fred" (FRED series id).
+kind is one of: "yahoo" (single symbol), "ratio" (two yahoo symbols, A/B), "fred" (FRED series id),
+"cboe" (Cboe index history CSV).
 `invert_yield` marks the three signals sourced from a bond-ETF PRICE as a proxy for a YIELD:
 price direction is the inverse of yield direction, so the weight tuple must be the complement of
 what the original (yield-sourced) signal used - see the review notes for why.
@@ -19,8 +20,8 @@ SIGNALS = {
     "cycl":    dict(label="Cyclicals / Defensives",       kind="ratio", symbolA="XLY", symbolB="XLP", weights=(1, 1, 0, 0)),
     "vix":     dict(label="S&P 500 Volatility Index",     kind="yahoo", symbol="^VIX",   weights=(0, 0, 1, 1)),
     "move":    dict(label="US Bond Volatility Index",     kind="yahoo", symbol="^MOVE",  weights=(0, 0, 1, 1)),
-    # cor3m (3M Implied Correlation) dropped: ^COR3M has no historical series on Yahoo, only a
-    # live snapshot (1 bar for any range). Rather than fake a substitute, this runs on 29 signals.
+    "cor3m":   dict(label="3M Implied Correlation",       kind="cboe", index="COR3M", weights=(0, 0, 1, 1),
+                     note="Cboe's daily history CSV; Yahoo's ^COR3M is a live snapshot only."),
     "brn1":    dict(label="Brent Crude Oil Futures",      kind="yahoo", symbol="BZ=F",   weights=(0, 1, 1, 0)),
     "dba":     dict(label="Agricultural Commodities",     kind="yahoo", symbol="DBA",    weights=(0, 1, 1, 0)),
     "dbb":     dict(label="Industrial Metals",            kind="yahoo", symbol="DBB",    weights=(1, 1, 0, 0)),
@@ -38,7 +39,8 @@ SIGNALS = {
     "jp10y":   dict(label="Japan 10Y JGB Yield",          kind="yahoo", symbol="236A.T", weights=(1, 0, 0, 1), invert_yield=True,
                      note="Proxy: iShares 7-10Y Japan Govt Bond ETF price (inverse of yield); weights complemented."),
     "us02y":   dict(label="US 2Y Treasury Yield",         kind="fred", series="DGS2",  weights=(0, 1, 1, 0)),
-    "us10y":   dict(label="US 10Y Treasury Yield",        kind="fred", series="DGS10", weights=(0, 1, 1, 0)),
+    "us10y":   dict(label="US 10Y Treasury Yield",        kind="yahoo", symbol="^TNX", weights=(0, 1, 1, 0),
+                     note="Cboe 10Y yield index: full OHLC like TVC:US10Y (FRED DGS10 is close-only, which shrinks the ATR margin)."),
     "t10yie":  dict(label="US 10Y Breakeven Rate",        kind="fred", series="T10YIE", weights=(0, 1, 1, 0)),
     "dyoas":   dict(label="US Distressed Index OAS",      kind="fred", series="BAMLH0A3HYC", weights=(0, 0, 1, 1)),
     "hyoas":   dict(label="US High Yield Index OAS",      kind="fred", series="BAMLH0A0HYM2", weights=(0, 0, 1, 1)),

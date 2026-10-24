@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-from fetch import fetch_yahoo, fetch_fred, ratio_series
+from fetch import fetch_yahoo, fetch_fred, fetch_cboe, ratio_series
 from align import forward_fill_onto
 from model import signal_logic, regime_contribution
 from config import SIGNALS, MASTER_CALENDAR_SYMBOL, DEFAULTS
@@ -28,6 +28,8 @@ def fetch_signal_raw(key, spec):
         return cached_fetch("yahoo_" + spec["symbol"].replace("/", "_"), lambda: fetch_yahoo(spec["symbol"]))
     if spec["kind"] == "fred":
         return cached_fetch("fred_" + spec["series"], lambda: fetch_fred(spec["series"]))
+    if spec["kind"] == "cboe":
+        return cached_fetch("cboe_" + spec["index"], lambda: fetch_cboe(spec["index"]))
     if spec["kind"] == "ratio":
         a = cached_fetch("yahoo_" + spec["symbolA"].replace("/", "_"), lambda: fetch_yahoo(spec["symbolA"]))
         b = cached_fetch("yahoo_" + spec["symbolB"].replace("/", "_"), lambda: fetch_yahoo(spec["symbolB"]))
@@ -48,8 +50,7 @@ def main():
         try:
             print("Fetching %s (%s)..." % (key, spec["label"]), file=sys.stderr)
             raw = fetch_signal_raw(key, spec)
-            aligned = forward_fill_onto(raw, master_dates)
-            ready, bull, bear = signal_logic(aligned, **DEFAULTS_FOR_SIGNAL_LOGIC())
+            ready, bull, bear = flags_on_master(raw, master_dates)
             per_signal[key] = dict(ready=ready, bull=bull, bear=bear,
                                     first_date=raw[0]["date"], last_date=raw[-1]["date"], n_raw=len(raw))
         except Exception as e:
@@ -136,7 +137,7 @@ def main():
             i -= 1
         out["per_signal_last"].append(dict(
             key=key, label=spec["label"], weights=spec["weights"],
-            note=spec.get("note"), source=spec.get("symbol") or spec.get("series") or
+            note=spec.get("note"), source=spec.get("symbol") or spec.get("series") or spec.get("index") or
             (spec.get("symbolA", "") + "/" + spec.get("symbolB", "")),
             ready=bool(ps["ready"][-1]),
             bull=bool(ps["bull"][i]) if i >= 0 else None,
@@ -152,6 +153,16 @@ def main():
     print("Latest pct: g=%.1f r=%.1f i=%.1f d=%.1f" % (
         goldilocks_pct[-1] or -1, reflation_pct[-1] or -1, inflation_pct[-1] or -1, deflation_pct[-1] or -1),
         file=sys.stderr)
+
+
+def flags_on_master(raw, master_dates):
+    """Run signal_logic() on the series' own bars, then carry each bar's flags onto the master
+    calendar - request.security('D', signal_logic()) semantics. Filling the prices first would
+    run the EMAs/ATR over S&P 500 days instead (wrong lengths for BTC, foreign holidays)."""
+    flags = signal_logic(raw, **DEFAULTS_FOR_SIGNAL_LOGIC())
+    rows = [dict(date=r["date"], flags=f) for r, f in zip(raw, zip(*flags))]
+    filled = forward_fill_onto(rows, master_dates)
+    return [[(row["flags"][k] if row else False) for row in filled] for k in range(3)]
 
 
 def DEFAULTS_FOR_SIGNAL_LOGIC():
