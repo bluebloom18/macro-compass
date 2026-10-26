@@ -71,6 +71,8 @@ piles, no em-dash asides, no "not X, but Y" framing. Explain the mechanism in ev
   Give both sides their strongest case.
 - `positioning`: a judgment call. Keep it consistent with the regime and the evidence. When it
   changes from last week, say why in the `why` text.
+- `special_report`: leave it out unless these instructions or the user's request for this run ask
+  for one (see SCHEMA.md). Never copy last week's special report forward.
 - `callout`: what to watch on the Macro Compass dashboard for the turn (which regime it would
   most likely move to first, and which signals would have to flip).
 

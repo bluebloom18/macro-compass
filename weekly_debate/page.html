@@ -143,6 +143,13 @@ td.dim{color:var(--ink-muted);}
 .state{background:var(--surface); border:1px dashed var(--border); border-radius:12px; padding:22px; color:var(--ink-muted);}
 .lastweek{background:var(--surface-2); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px;}
 .lastweek h2{font-size:17px;}
+/* special report */
+.special{border-top:2px solid var(--border); padding-top:28px; display:flex; flex-direction:column; gap:16px;}
+.special .kicker{align-self:flex-start; font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); border-radius:100px; padding:3px 10px;}
+.special > h2{font-size:28px; letter-spacing:-.01em;}
+.special h3.sub{font-size:19px; margin-top:6px;}
+.special .summary{font-size:16.5px; color:var(--ink); max-width:66ch;}
+.special .sources{margin-top:4px;}
 /* archive */
 .archive-list{list-style:none; margin:0; padding:0; background:var(--surface); border:1px solid var(--border); border-radius:12px;}
 .archive-list li{display:grid; grid-template-columns:150px 90px minmax(0,1fr); gap:12px; padding:10px 16px; border-bottom:1px solid var(--border); font-size:14px; align-items:baseline;}
@@ -223,6 +230,28 @@ function strip(c, kind){
 }
 const STATE_TXT = {bull:'bullish', bear:'bearish', flat:'flat', na:'no data'};
 
+function renderSpecial(sr){
+  const pts = (items, ordered) => '<' + (ordered ? 'ol' : 'ul') + ' class="triggers">' + items.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</' + (ordered ? 'ol' : 'ul') + '>';
+  const blocks = (sr.blocks || []).map(b => {
+    if(b.type === 'h') return '<h3 class="sub">' + esc(b.text) + '</h3>';
+    if(b.type === 'p') return '<p class="lede">' + minus(b.text) + '</p>';
+    if(b.type === 'callout') return '<div class="callout">' + minus(b.text) + '</div>';
+    if(b.type === 'points') return pts(b.items || [], !!b.ordered);
+    if(b.type === 'tilts') return '<div class="tilts">' + (b.items || []).map(x => '<div class="tilt"><span class="what">' + esc(x.what) + '</span><span class="why">' + minus(x.why) + '</span></div>').join('') + '</div>';
+    if(b.type === 'debate') return '<div class="debate"><div class="side bear"><h3>' + esc(b.bear_title || 'Bear case') + '</h3><ol>' + (b.bear || []).map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div>'
+      + '<div class="side bull"><h3>' + esc(b.bull_title || 'Bull case') + '</h3><ol>' + (b.bull || []).map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div></div>';
+    if(b.type === 'table') return '<div class="table-scroll"><table><thead><tr>' + (b.head || []).map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>'
+      + (b.rows || []).map(r => '<tr>' + r.map((c, i) => '<td' + (i === 0 ? ' class="k"' : '') + '>' + minus(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>'
+      + (b.note ? '<p class="note">' + minus(b.note) + '</p>' : '');
+    return '';
+  }).join('');
+  const src = (sr.sources || []).filter(x => /^https?:\/\//.test(x.url));
+  return '<section class="special" id="special"><span class="kicker">Special report</span><h2>' + esc(sr.title) + '</h2>'
+    + (sr.summary ? '<p class="summary">' + minus(sr.summary) + '</p>' : '') + blocks
+    + (src.length ? '<h3 class="sub">Special report sources</h3><ol class="sources">' + src.map(x => '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.title) + '</a></li>').join('') + '</ol>' : '')
+    + '</section>';
+}
+
 function render(d){
   const r = d.regime || {}, rm = REGIME[r.code];
   document.getElementById('eyebrow').textContent = 'Macro Compass weekly debate · readings as of ' + day(d.asof, true) + ' · written ' + day(d.written, true);
@@ -233,6 +262,7 @@ function render(d){
     (rm ? '<span class="chip infl" style="border-color:var(' + rm.v + ');color:var(' + rm.v + ')">Regime <b style="color:var(' + rm.v + ')">' + esc(rm.name) + '</b> ' + r.pct[r.code - 1].toFixed(1) + '%</span>' : '')
     + '<span class="chip">Growth signals <b>' + ax.growth.up.length + '&uarr; ' + ax.growth.down.length + '&darr;</b></span>'
     + '<span class="chip">Inflation signals <b>' + ax.inflation.up.length + '&uarr; ' + ax.inflation.down.length + '&darr;</b></span>'
+    + (d.special_report ? '<a class="chip" href="#special" style="text-decoration:none;border-color:var(--accent);color:var(--accent)">Special report: ' + esc(d.special_report.title) + '</a>' : '')
     + (bi !== null ? '<span class="chip">Risk Barometer <b>' + (bi > 0 ? '+' : bi < 0 ? '&minus;' : '') + Math.abs(bi).toFixed(2) + '</b> ' + (bi <= -d.barometer.thresh ? 'risk-off' : bi >= d.barometer.thresh ? 'risk-on' : 'neutral') + '</span>' : '');
 
   const t = d.barometer.thresh || 0.3333;
@@ -283,6 +313,8 @@ function render(d){
   html.push('<section><h2>What could cause the turn</h2><ol class="triggers">'
     + d.triggers.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol>'
     + '<div class="callout">' + minus(d.callout) + '</div></section>');
+
+  if(d.special_report) html.push(renderSpecial(d.special_report));
 
   html.push('<section><h2>Sources</h2><ol class="sources">'
     + d.sources.filter(x => /^https?:\/\//.test(x.url)).map(x => '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.title) + '</a></li>').join('') + '</ol></section>');

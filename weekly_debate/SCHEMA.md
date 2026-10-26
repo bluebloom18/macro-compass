@@ -22,3 +22,21 @@ See `narrative_example.json` for a complete example.
 | `sources` | `[{title, url}]` | Every source behind a number or claim. http(s) only. |
 
 Write negatives with a plain hyphen (`-8.9`); the page turns them into minus signs.
+
+## Optional: `special_report`
+
+A one-off deep dive shown below the debate (with a "Special report" chip in the header). Only
+include it when the user has asked for one for that week; never carry it forward. Past ones live
+in `specials/` (e.g. `specials/special_ai_2026-10-26.json`, the AI bubble-vs-shortage report).
+
+`special_report`: `{title, summary, blocks, sources}`. `blocks` is an ordered list of:
+
+| `type` | Fields |
+|---|---|
+| `h` | `text`: a sub-heading |
+| `p` | `text`: a paragraph |
+| `callout` | `text`: a shaded takeaway box |
+| `points` | `items` [`{title, text}`], `ordered` (bool) |
+| `tilts` | `items` [`{what, why}`]: positioning rows |
+| `debate` | `bear` / `bull` [`{title, text}`], optional `bear_title` / `bull_title` |
+| `table` | `head` [strings], `rows` [[strings]], optional `note` |

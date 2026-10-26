@@ -56,6 +56,9 @@ def validate(n):
         errs.append("triggers: items with title and text")
     if not n["sources"] or not all(isinstance(x, dict) and x.get("title") and re.match(r"https?://", x.get("url", "")) for x in n["sources"]):
         errs.append("sources: non-empty list of {title, url} with http(s) urls")
+    sr = n.get("special_report")
+    if sr is not None and not (isinstance(sr, dict) and sr.get("title") and isinstance(sr.get("blocks"), list)):
+        errs.append("special_report must have a title and a blocks list")
     lw = n.get("last_week")
     if lw is not None and not isinstance(lw, str):
         errs.append("last_week must be a string or null")
@@ -99,6 +102,9 @@ def email_html(doc, editions=()):
     h2 = 'style="font-family:Georgia,serif;font-size:18px;margin:18px 0 6px"'
     r = doc["regime"]
     ax = doc["axes"]
+    sr = doc.get("special_report")
+    special_html = ('<h2 %s>Special report: %s</h2><p style="margin:0">%s <a href="%s#e%s">Read it on the page.</a></p>' % (
+        h2, e(sr.get("title", "")), e(sr.get("summary", "")), PAGE_URL, e(doc["id"]))) if isinstance(sr, dict) else ""
     past = [x for x in editions if x["id"] != doc["id"]][:8]
     past_html = ('<h2 %s>Past editions</h2><ul style="margin:0;padding-left:20px">%s</ul>' % (h2, "".join(
         '<li><a href="%s#e%s">%s</a> &middot; %s</li>' % (PAGE_URL, e(x["id"]), e(x["id"]), e(x.get("headline", ""))) for x in past))) if past else ""
@@ -119,10 +125,11 @@ def email_html(doc, editions=()):
 <h2 {h2}>How to be positioned</h2><ul style="margin:0;padding-left:20px">{posn}</ul>
 <h2 {h2}>What could cause the turn</h2><ol style="margin:0;padding-left:20px">{trig}</ol>
 <p style="margin:10px 0 0;padding:8px 12px;background:#EDEFF5;border-radius:6px">{callout}</p>
+{special_html}
 {past_html}
 <p style="margin:18px 0 0;font-size:12px;color:#6F7A90">Indicator readings from Macro Compass. Sources are linked on the page. Not investment advice.</p>
 </div>""".format(
-        past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
+        special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
         gu=len(ax["growth"]["up"]), gd=len(ax["growth"]["down"]), iu=len(ax["inflation"]["up"]), idn=len(ax["inflation"]["down"]),
         ri=("%+.2f" % doc["barometer"]["index"][-1]) if doc["barometer"]["index"][-1] is not None else "n/a",
         h2=h2, bottom=li(doc["bottom_line"]), last_week=last_week, context=e(doc["context"]), rows=rows,

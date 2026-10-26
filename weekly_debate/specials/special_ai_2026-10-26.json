@@ -1,0 +1,80 @@
+{
+  "special_report": {
+    "title": "AI: bubble or shortage?",
+    "summary": "Bubbles don't burst during shortages. They burst when the supply the shortage pulled in finally arrives, and shortages are normal late in a boom: telecom had them in 2000, right before the glut. What's different now is that power and grid limits slow how fast supply can arrive. The bigger near-term risk is that AI hardware stocks fall hard just from capex growth slowing, even with full data centres.",
+    "blocks": [
+      {"type": "h", "text": "Now vs the 2000 telecom bubble"},
+      {"type": "table", "head": ["", "AI now (2026)", "Telecom 2000"], "rows": [
+        ["Capex", "Big 4 ~$725bn in 2026, +77% y/y. Street models >$1trn for 2027", "Telecom capex peak"],
+        ["Share of US GDP", "Computers + data centres ~1.3-1.5%", "Telecom ~1.0-1.4% at peak"],
+        ["Utilisation", "North American data-centre vacancy ~1%, third straight year", "Only 2-5% of installed fiber was lit"],
+        ["Pricing", "H100 rent ~$3.75/hr, up 26% y/y. B200 up 79% in 3 months", "Bandwidth prices collapsing"],
+        ["Demand backlog", "Microsoft commercial RPO $627bn (+99%), Google Cloud backlog $514bn", "Carriers mostly sold capacity to each other"],
+        ["Who spends", "Mostly cash-rich mega-caps, now borrowing (~$220bn of bonds by August)", "Leveraged telcos and startups on junk bonds and vendor finance"],
+        ["Equity valuations", "S&P forward P/E 18.7", "Nasdaq P/E above 100"]
+      ], "note": "On size, this boom matches telecom. On every other measure (utilisation, pricing, valuations, who's spending), it looks much healthier."},
+      {"type": "debate", "bear_title": "Bear case: shortages are what the top looks like", "bull_title": "Bull case: this is not 2000",
+        "bear": [
+          {"title": "The 2000 shortage looked the same.", "text": "In mid-2000, Cisco faced long lead times on optical parts and double-ordered components. Its customers ordered from several vendors and kept whichever delivered first. When lead times normalised, the duplicate orders vanished, and Cisco wrote off $2.2bn of inventory in spring 2001. Today's 36-52 week GPU lead times and 5-year transformer waits are the same conditions that produce double-ordering."},
+          {"title": "Revenue is far behind spending.", "text": "OpenAI's run-rate is about $50bn, $20bn below what was previously reported. Year-end forecasts were cut to about $74bn against at least $518bn of infrastructure commitments. A spending plan that depends on one or two customers growing 5-10x is fragile."},
+          {"title": "Financing is cracking at the edges.", "text": "CoreWeave's 2031 bonds yield over 15% and its CDS trade at distressed levels. Its 2026 capex is about 3x its revenue. Meta's free cash flow turned negative and its CDS hit a record. In 2000, the weakest borrowers broke first, then their suppliers' orders collapsed."},
+          {"title": "Depreciation may flatter profits.", "text": "The hyperscalers depreciate GPUs over 5-6 years. Critics such as Burry argue the useful life is 2-3 years, which would understate costs by about $176bn over 2026-28 and overstate returns on AI capex."},
+          {"title": "Efficiency gains could do what WDM did to fiber.", "text": "The telecom glut wasn't only overbuilding. WDM technology let each fiber carry vastly more traffic, so effective supply exploded. Big jumps in model or inference efficiency could do the same to compute demand per dollar."}
+        ],
+        "bull": [
+          {"title": "The capacity is being used.", "text": "Vacancy is around 1% and GPU rents are rising. In 2000, 95% of fiber sat dark. A bubble needs idle supply, and there isn't any."},
+          {"title": "Supply is physically capped.", "text": "About half of the US data-centre capacity planned for 2026 (~12 GW) faces delays or cancellation. Lead times on high-voltage transformers are now over 5 years. AI can't build power faster than the grid allows, and that limit prevents the overbuild."},
+          {"title": "Paying customers exist.", "text": "Cloud revenue grew 37-82% y/y in Q2 and all three big clouds say they're short of capacity. Anthropic made $1.70 of revenue per $1 of compute last quarter and is profitable on an adjusted basis."},
+          {"title": "The main spenders can afford it.", "text": "Microsoft, Google, Amazon and Meta can fund most of this from cash flow. In 2000, the spenders were WorldCom and Global Crossing: levered, and in some cases fraudulent."},
+          {"title": "Valuations aren't euphoric.", "text": "A market at 19x forward earnings is nothing like a Nasdaq at 100x."}
+        ]},
+      {"type": "h", "text": "Why a financing squeeze matters most"},
+      {"type": "p", "text": "A financing squeeze would slow future investment. That makes a glut less likely, because it caps the overbuild. The question is who gets hurt."},
+      {"type": "points", "ordered": false, "items": [
+        {"title": "The hyperscalers would benefit.", "text": "Lower capex means better free cash flow, and a scarce asset base keeps pricing firm."},
+        {"title": "Suppliers get hit hard.", "text": "Their earnings depend on capex growth, not capex level. Cisco's revenue didn't fall because fiber went unused. It fell because carriers stopped increasing spending. If 2027 capex comes in at +10% instead of the >$1trn the Street models, GPU, networking and memory names re-rate down even with full data centres."},
+        {"title": "The neoclouds get hit hardest.", "text": "CoreWeave-type lessors need constant access to new capital, as the telecom startups did."}
+      ]},
+      {"type": "callout", "text": "The likely bust this time isn't a 2001-style glut. It's a slowdown in capex growth, driven by financing, that hits suppliers and leveraged lessors while the cash-rich platforms come through fine."},
+      {"type": "h", "text": "Positioning (a judgment call, not a model output)"},
+      {"type": "tilts", "items": [
+        {"what": "Bottleneck owners", "why": "Prefer power equipment, grid and transformers, cooling, and HBM memory. Shortages give them pricing power, and their order books last longer than GPU cycles."},
+        {"what": "Platforms vs suppliers", "why": "Prefer the platforms with net cash over companies that depend on AI capex growth. Size suppliers to how much they rely on 2027 capex beating expectations."},
+        {"what": "Neoclouds", "why": "Avoid neoclouds and debt-funded builders. They are this cycle's CLECs, the startup carriers that failed first in 2001."},
+        {"what": "Expect chop", "why": "Expect a choppy period rather than a 2001-style collapse while power limits supply and demand outruns capacity."}
+      ]},
+      {"type": "h", "text": "Signs the shortage is turning into a glut"},
+      {"type": "table", "head": ["Signal", "Now", "Warning sign"], "rows": [
+        ["Data-centre vacancy", "~1%", "Rising above ~5%"],
+        ["GPU rental prices", "Rising", "Falling while lead times shorten (the Cisco 2001 pattern)"],
+        ["Order behaviour", "Long lead times", "Cancellations, distributor inventory building up"],
+        ["Hyperscaler capex guidance", "Still being raised", "First cut, or 2027 growth guided to a single digit"],
+        ["AI credit", "CoreWeave distressed, Meta CDS at a record", "Stress spreading to investment-grade hyperscaler spreads"],
+        ["AI lab revenue vs commitments", "~$74bn vs >$518bn", "Commitments renegotiated or deferred"]
+      ], "note": "This week matters: Microsoft, Alphabet and Amazon report on Wednesday and Thursday, and their 2027 capex comments and how they plan to fund them are the most important signal here."}
+    ],
+    "sources": [
+      {"title": "Big 4 plan $725B AI capex in 2026 (AI Weekly)", "url": "https://aiweekly.co/alerts/amazon-microsoft-alphabet-meta-plan-725b-ai-capex-in-2026"},
+      {"title": "Hyperscaler capex tracker 2026 (Yield Theory)", "url": "https://www.yieldtheory.app/research/hyperscaler-ai-capex-tracker-2026"},
+      {"title": "Power hardware shortages delaying data centres (Dig.watch)", "url": "https://dig.watch/updates/power-hardware-shortages-are-delaying-ai-data-centre-expansion-despite-record-investment"},
+      {"title": "US AI data centre delays (Tech Insider)", "url": "https://tech-insider.org/us-ai-data-center-delays-cancellations-7gw-capacity-crisis-2026/"},
+      {"title": "CoreWeave CDS hit distress levels (CNBC, 15 Oct)", "url": "https://www.cnbc.com/2026/10/15/coreweave-credit-default-swaps-hit-distress-levels-as-investors-sour-on-ai-debt.html"},
+      {"title": "Hyperscaler bond issuance ~$220bn (MLQ)", "url": "https://mlq.ai/news/hyperscaler-bond-issuance-reaches-about-220-billion-as-ai-financing-costs-rise/"},
+      {"title": "The half-trillion-dollar AI debt boom (Forbes, 22 Oct)", "url": "https://www.forbes.com/sites/mayrarodriguezvalladares/2026/10/22/the-half-trillion-dollar-silicon-gamble-inside-the-ai-debt-boom/"},
+      {"title": "Hyperscalers: now also a credit story (J.P. Morgan AM)", "url": "https://am.jpmorgan.com/ch/en/asset-management/per/insights/market-insights/market-updates/on-the-minds-of-investors/hyperscaler-debt-issuance-ai-buildout/"},
+      {"title": "GPU rental market trends, October 2026 (Thunder Compute)", "url": "https://www.thundercompute.com/blog/ai-gpu-rental-market-trends"},
+      {"title": "B200 price up 79% (Shattered)", "url": "https://shattered.io/nvidia-b200-cloud-price-79-percent-surge-2026/"},
+      {"title": "Is the AI chip shortage over? (ValueAdd VC)", "url": "https://valueaddvc.com/blog/is-the-ai-chip-shortage-over-in-2026-gpu-pricing-and-what-comes-next"},
+      {"title": "Internet bubble vs AI buildout (Cycle Desk)", "url": "https://cycledesk.substack.com/p/internet-bubble-vs-todays-ai-buildout"},
+      {"title": "What lasted after the telecom bubble (Opus Interactive)", "url": "https://www.opusinteractive.com/opus-blog/post/the-telecom-overbuild-that-built-the-cloud-lessons-from-fiber-glut-to-hyperscale-success/"},
+      {"title": "Cisco supply chain case study (ICMR)", "url": "https://www.icmrindia.org/free%20resources/casestudies/cisco-supply-chain-3.htm"},
+      {"title": "OpenAI revenue $20bn lighter than reported (Axios, 8 Oct)", "url": "https://www.axios.com/2026/10/08/openai-50-billion-arr-anthropic-revenue-accounting"},
+      {"title": "OpenAI revenue gap rattles AI stocks (TechXplore)", "url": "https://techxplore.com/news/2026-10-openai-revenue-gap-rattles-ai.html"},
+      {"title": "Anthropic narrows revenue gap (PYMNTS)", "url": "https://www.pymnts.com/news/artificial-intelligence/2026/anthropic-narrows-revenue-gap-with-openai-before-ipo/"},
+      {"title": "Google Cloud +82%, Azure +43%, AWS +37% (Motley Fool, Aug 2026)", "url": "https://www.fool.com/investing/2026/08/18/google-cloud-grew-82-last-quarter-azure-grew-43-and-aws-grew-37/"},
+      {"title": "Google Cloud backlog (Briefs)", "url": "https://www.briefs.co/news/google-clouds-backlog-hits-462-billion-as-growth-tops-aws-and-azure/"},
+      {"title": "GPU depreciation debate (Barchart)", "url": "https://www.barchart.com/story/news/36576792/how-fast-does-an-ai-chip-depreciate-and-why-does-it-matter-for-nvidia-stock"},
+      {"title": "Burry's $176bn depreciation question (Dave Friedman)", "url": "https://davefriedman.substack.com/p/the-176-billion-accounting-question"}
+    ]
+  }
+}
