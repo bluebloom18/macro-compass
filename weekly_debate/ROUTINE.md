@@ -59,6 +59,10 @@ each number from. If WebFetch fails with `ENOTFOUND` or a 403 (the environment's
 may have been tightened), stop fetching, work from `extended` WebSearch results instead, and say
 so in the report.
 
+Use free, public pages only. FactSet's weekly earnings update is free on insight.factset.com
+(the FactSet platform itself is paid; don't try it). AAII posts its survey publicly. The BofA Fund
+Manager Survey is client-only, so cite a news write-up of it. Skip paywalled pages.
+
 Rules: every number in the narrative comes from `debate_data.json` or from a source you list.
 Check every date against its source on its own; don't let a date drift to fit the story. If two
 sources disagree, use the primary one or leave the number out.
