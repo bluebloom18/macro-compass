@@ -167,7 +167,7 @@ repo; otherwise the database copy (`regime/nfci`) still carries the series.
 `weekly_debate/` produces a weekly bull-vs-bear commentary page
 (<https://claude.ai/artifact/2oL3DoQuEie7vWd5WxbMfd>, source `weekly_debate/page.html`). The page reads
 each edition from its own database (collection `debate`: one doc per edition plus an `index`), so
-past weeks stay browsable. A cloud routine runs every Monday 07:00 SGT and follows
+past weeks stay browsable: each edition has its own link (`…/2oL3DoQuEie7vWd5WxbMfd#e<YYYY-MM-DD>`), listed under "Past editions" on the page and in each email. A cloud routine runs every Monday 07:00 SGT and follows
 `weekly_debate/ROUTINE.md`: `debate_data.py` builds the numbers from the Macro Compass database
 and Yahoo/FRED, the routine researches the week and writes `narrative.json` (`SCHEMA.md`),
 `assemble.py` validates and merges them and renders the email, and the edition is written to the

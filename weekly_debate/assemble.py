@@ -82,7 +82,7 @@ def fmt_chg(v, kind):
     return sign + ("%.1f%%" % abs(v) if kind == "pct" else "%dbp" % abs(round(v)))
 
 
-def email_html(doc):
+def email_html(doc, editions=()):
     e = html.escape
     pos, neg = "#1F5FBF", "#C0392B"
     def col(v):
@@ -99,11 +99,14 @@ def email_html(doc):
     h2 = 'style="font-family:Georgia,serif;font-size:18px;margin:18px 0 6px"'
     r = doc["regime"]
     ax = doc["axes"]
+    past = [x for x in editions if x["id"] != doc["id"]][:8]
+    past_html = ('<h2 %s>Past editions</h2><ul style="margin:0;padding-left:20px">%s</ul>' % (h2, "".join(
+        '<li><a href="%s#e%s">%s</a> &middot; %s</li>' % (PAGE_URL, e(x["id"]), e(x["id"]), e(x.get("headline", ""))) for x in past))) if past else ""
     last_week = ('<h2 %s>Last week\'s call</h2><p style="margin:0">%s</p>' % (h2, e(doc["last_week"]))) if doc.get("last_week") else ""
     return """<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1D2330;max-width:720px">
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6F7A90">Macro Compass weekly debate &middot; readings as of {asof}</p>
 <h1 style="margin:0 0 6px;font-family:Georgia,serif;font-size:24px">{headline}</h1>
-<p style="margin:0 0 14px">Full page with tables and past editions: <a href="{url}">{url}</a></p>
+<p style="margin:0 0 14px">Full page with tables: <a href="{url}#e{eid}">{url}#e{eid}</a></p>
 <p style="margin:0 0 14px;padding:8px 12px;background:#EDEFF5;border-radius:6px"><b>Regime:</b> {regime} ({rpct}% of votes) &nbsp;|&nbsp; growth signals {gu} rising, {gd} falling &nbsp;|&nbsp; inflation signals {iu} rising, {idn} falling &nbsp;|&nbsp; <b>Risk Barometer:</b> {ri}</p>
 <h2 {h2}>Bottom line</h2><ul style="margin:0;padding-left:20px">{bottom}</ul>
 {last_week}
@@ -116,9 +119,10 @@ def email_html(doc):
 <h2 {h2}>How to be positioned</h2><ul style="margin:0;padding-left:20px">{posn}</ul>
 <h2 {h2}>What could cause the turn</h2><ol style="margin:0;padding-left:20px">{trig}</ol>
 <p style="margin:10px 0 0;padding:8px 12px;background:#EDEFF5;border-radius:6px">{callout}</p>
+{past_html}
 <p style="margin:18px 0 0;font-size:12px;color:#6F7A90">Indicator readings from Macro Compass. Sources are linked on the page. Not investment advice.</p>
 </div>""".format(
-        asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
+        past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
         gu=len(ax["growth"]["up"]), gd=len(ax["growth"]["down"]), iu=len(ax["inflation"]["up"]), idn=len(ax["inflation"]["down"]),
         ri=("%+.2f" % doc["barometer"]["index"][-1]) if doc["barometer"]["index"][-1] is not None else "n/a",
         h2=h2, bottom=li(doc["bottom_line"]), last_week=last_week, context=e(doc["context"]), rows=rows,
@@ -154,7 +158,7 @@ def main():
     with open(os.path.join(HERE, "index_doc.json"), "w") as f:
         json.dump(dict(editions=editions), f)
     with open(os.path.join(HERE, "email.html"), "w") as f:
-        f.write(email_html(doc))
+        f.write(email_html(doc, editions))
     print("OK edition %s (%d editions in index); wrote edition_doc.json, index_doc.json, email.html" % (doc["id"], len(editions)))
 
 

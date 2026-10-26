@@ -143,6 +143,14 @@ td.dim{color:var(--ink-muted);}
 .state{background:var(--surface); border:1px dashed var(--border); border-radius:12px; padding:22px; color:var(--ink-muted);}
 .lastweek{background:var(--surface-2); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px;}
 .lastweek h2{font-size:17px;}
+/* archive */
+.archive-list{list-style:none; margin:0; padding:0; background:var(--surface); border:1px solid var(--border); border-radius:12px;}
+.archive-list li{display:grid; grid-template-columns:150px 90px minmax(0,1fr); gap:12px; padding:10px 16px; border-bottom:1px solid var(--border); font-size:14px; align-items:baseline;}
+.archive-list li:last-child{border-bottom:none;}
+.archive-list a{font-family:var(--font-mono); font-size:13px;}
+.archive-list .reg{color:var(--ink-faint); font-size:12.5px;}
+.archive-list .hl{color:var(--ink-muted);}
+@media (max-width:560px){.archive-list li{grid-template-columns:1fr; gap:2px;}}
 /* sources */
 .sources{font-size:13px; color:var(--ink-muted); columns:2 280px; column-gap:28px; margin:0; padding-left:18px;}
 .sources li{margin-bottom:6px; break-inside:avoid;}
@@ -164,6 +172,8 @@ footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; c
   <div id="content">
     <div class="state" id="state">Loading the latest edition&hellip;</div>
   </div>
+
+  <section id="archive" hidden></section>
 
   <footer>Indicator readings from Macro Compass (regime model, Risk Barometer). Market context from the sources listed in each edition. Not investment advice.</footer>
 </div>
@@ -291,20 +301,34 @@ function openEdition(id){
   }, () => showState('This edition could not be loaded. Reload the page to try again.'));
 }
 
+function hashEdition(){ const m = /^#e(\d{4}-\d{2}-\d{2})$/.exec(location.hash || ''); return m ? m[1] : null; }
+function renderArchive(eds){
+  const el = document.getElementById('archive');
+  if(eds.length < 2){ el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = '<h2>Past editions</h2><ul class="archive-list">' + eds.map(e =>
+    '<li><a href="#e' + esc(e.id) + '">' + day(e.id, true) + '</a><span class="reg">' + esc(e.regime || '') + '</span><span class="hl">' + esc(e.headline || '') + '</span></li>').join('') + '</ul>';
+}
+
 (async () => {
   db = await claude.use('db');
   if(!db){ showState('Sign in to claude.ai to read the weekly editions.'); return; }
   const sel = document.getElementById('edition');
-  let current = null;
+  let current = null, editions = [];
+  function go(id){
+    if(!editions.some(e => e.id === id)) id = editions[0].id;
+    sel.value = id;
+    if(id !== current){ current = id; openEdition(id); }
+  }
   db.doc('debate/index').onSnapshot(snap => {
-    const eds = snap.exists ? (snap.data().editions || []) : [];
-    if(!eds.length){ showState('No editions yet. The first one appears after the Monday refresh.'); return; }
-    sel.innerHTML = eds.map((e, i) => '<option value="' + esc(e.id) + '">' + day(e.id, true) + (i === 0 ? ' (latest)' : '') + ' · ' + esc(e.regime || '') + '</option>').join('');
-    document.getElementById('editionBar').hidden = eds.length < 2;
-    const want = (current && eds.some(e => e.id === current)) ? current : eds[0].id;
-    sel.value = want;
-    if(want !== current){ current = want; openEdition(want); }
+    editions = snap.exists ? (snap.data().editions || []) : [];
+    if(!editions.length){ showState('No editions yet. The first one appears after the Monday refresh.'); return; }
+    sel.innerHTML = editions.map((e, i) => '<option value="' + esc(e.id) + '">' + day(e.id, true) + (i === 0 ? ' (latest)' : '') + ' · ' + esc(e.regime || '') + '</option>').join('');
+    document.getElementById('editionBar').hidden = editions.length < 2;
+    renderArchive(editions);
+    go(hashEdition() || current || editions[0].id);
   }, () => showState('The edition list could not be loaded. Reload the page to try again.'));
-  sel.addEventListener('change', () => { current = sel.value; openEdition(current); window.scrollTo({top:0}); });
+  sel.addEventListener('change', () => { location.hash = 'e' + sel.value; });
+  window.addEventListener('hashchange', () => { const id = hashEdition(); if(id && editions.length){ go(id); window.scrollTo({top:0}); } });
 })();
 </script>
