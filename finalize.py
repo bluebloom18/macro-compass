@@ -26,6 +26,49 @@ outperform = dict(
     fx_outperform=goldilocks_regime or reflation_regime,
 )
 
+# Day-over-day vote changes over the last five sessions (newest first): which signals changed
+# state, the regime votes each one gained or lost, and the vote shares before and after.
+def votes_for(state, weights):
+    if state == "bull":
+        v = weights
+    elif state == "bear":
+        v = [1 - x for x in weights]
+    else:
+        return []
+    return [k + 1 for k in range(4) if v[k] == 1]
+
+vote_changes = []
+recent_states = d.get("signal_states_recent")
+if recent_states:
+    rdates = recent_states["dates"]
+    off = n - len(rdates)
+    pct_keys = ("goldilocks_pct", "reflation_pct", "inflation_pct", "deflation_pct")
+    for j in range(len(rdates) - 1, 0, -1):
+        changes, net = [], {1: 0, 2: 0, 3: 0, 4: 0}
+        for key, states in recent_states["states"].items():
+            before, after = states[j - 1], states[j]
+            if before == after:
+                continue
+            w = SIGNALS[key]["weights"]
+            old, new = votes_for(before, w), votes_for(after, w)
+            gained = [k for k in new if k not in old]
+            lost = [k for k in old if k not in new]
+            for k in gained:
+                net[k] += 1
+            for k in lost:
+                net[k] -= 1
+            changes.append(dict(key=key, label=SIGNALS[key]["label"], weights=list(w),
+                                before=before, after=after, gained=gained, lost=lost))
+        vote_changes.append(dict(
+            date=rdates[j], prev_date=rdates[j - 1],
+            shares_before=[d[k][off + j - 1] for k in pct_keys],
+            shares_after=[d[k][off + j] for k in pct_keys],
+            regime_before=d["regime_history"][off + j - 1],
+            regime_after=d["regime_history"][off + j],
+            net=[net[k] for k in (1, 2, 3, 4)],
+            changes=changes,
+        ))
+
 latest = dict(
     asof=dates[-1],
     goldilocks_pct=d["goldilocks_pct"][-1],
@@ -36,6 +79,7 @@ latest = dict(
     regime_name=regime_name,
     outperform=outperform,
     per_signal=d["per_signal_last"],
+    vote_changes=vote_changes,
     errors=d["errors"],
     n_signals_total=len(SIGNALS),
     n_signals_ready=sum(1 for s in d["per_signal_last"] if s.get("ready")),

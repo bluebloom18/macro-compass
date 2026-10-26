@@ -37,6 +37,9 @@ def fetch_signal_raw(key, spec):
     raise ValueError(spec["kind"])
 
 
+RECENT_STATE_DAYS = 6  # five day-over-day changes
+
+
 def main():
     print("Fetching master calendar (%s)..." % MASTER_CALENDAR_SYMBOL, file=sys.stderr)
     master_raw = cached_fetch("yahoo_" + MASTER_CALENDAR_SYMBOL.replace("/", "_"),
@@ -145,6 +148,17 @@ def main():
             as_of=master_dates[i] if i >= 0 else None,
             data_through=ps["last_date"],
         ))
+
+    # Each signal's state over the last few sessions, for the dashboard's day-by-day vote changes
+    recent_n = min(RECENT_STATE_DAYS, n)
+    out["signal_states_recent"] = dict(dates=master_dates[-recent_n:], states={})
+    for key in SIGNALS:
+        if key not in per_signal:
+            continue
+        ps = per_signal[key]
+        out["signal_states_recent"]["states"][key] = [
+            ("bull" if ps["bull"][i] else "bear" if ps["bear"][i] else "flat") if ps["ready"][i] else "na"
+            for i in range(n - recent_n, n)]
 
     with open(os.path.join(os.path.dirname(__file__), "output.json"), "w") as f:
         json.dump(out, f)
