@@ -161,3 +161,14 @@ shows a warning naming any failed signals if a partial reading is ever live.
 
 The routine can only push `nfci/first_prints.csv` if the Claude GitHub App has access to this
 repo; otherwise the database copy (`regime/nfci`) still carries the series.
+
+## Weekly macro debate
+
+`weekly_debate/` produces a weekly bull-vs-bear commentary page
+(<https://claude.ai/artifact/2oL3DoQuEie7vWd5WxbMfd>, source `weekly_debate/page.html`). The page reads
+each edition from its own database (collection `debate`: one doc per edition plus an `index`), so
+past weeks stay browsable. A cloud routine runs every Monday 07:00 SGT and follows
+`weekly_debate/ROUTINE.md`: `debate_data.py` builds the numbers from the Macro Compass database
+and Yahoo/FRED, the routine researches the week and writes `narrative.json` (`SCHEMA.md`),
+`assemble.py` validates and merges them and renders the email, and the edition is written to the
+page database and emailed.

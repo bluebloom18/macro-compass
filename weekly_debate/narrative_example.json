@@ -1,0 +1,81 @@
+{
+  "id": "2026-10-26",
+  "written": "2026-10-26",
+  "headline": "Stagflation signals, strong earnings: stay cautious, start buying duration",
+  "bottom_line": [
+    "Stay cautious but don't capitulate. The macro signals are firmly in stagflation mode, but earnings are strong and valuations aren't stretched.",
+    "Only retail investors are bearish. Fund managers are still long, so this isn't a washed-out low yet.",
+    "Oil is the key. If Brent breaks lower, the first move on the model is probably a shift to Deflation, which favours bonds, before anything risk-on.",
+    "This week matters: the Fed decides on Wednesday 28 Oct, and Microsoft, Alphabet and Amazon report Wednesday and Thursday."
+  ],
+  "last_week": null,
+  "context": "An oil supply shock is driving everything. Houthi strikes on Saudi energy sites and attacks on tankers pushed Brent up about 31% in three months. Headline CPI rose to 3.7% and the Fed hiked in September for the first time in over three years. On top of that, Meta's capex turned its free cash flow negative and CDS on the big AI spenders jumped.",
+  "axis_notes": {
+    "growth": "Only the S&P 500, copper and bitcoin still point up. Small caps, Hong Kong, EM, cyclicals, FX and all three credit spreads point down.",
+    "inflation": "Brent, US 2Y and 10Y, breakevens and Bund, Gilt and JGB yields are all rising. Agricultural commodities went flat on Friday."
+  },
+  "barometer_note": "Last week improved because yields fell (rates pillar turned positive) and the growth data firmed. Credit and equity positioning got worse.",
+  "bear": [
+    {"title": "The regime is not borderline.", "text": "Growth signals net -11 and inflation signals +7 with none falling. This is a clear stagflation reading."},
+    {"title": "Credit is cracking.", "text": "HY and IG spreads are at 52-week wides. Meta's CDS hit a record, and Oracle, Microsoft and Broadcom CDS climbed too. \"AI capex funded by debt\" is now a credit story."},
+    {"title": "The Fed is tightening into a slowdown.", "text": "September payrolls rose just 29k and unemployment is 4.2%. Markets still expect another hike in December."},
+    {"title": "Fund managers aren't defensive.", "text": "BofA's October survey has cash at 3.9%, which is a contrarian sell signal. Tech is the biggest overweight since 2020. The big holders haven't sold."},
+    {"title": "Asia pays most for $110 oil.", "text": "It's an oil importer facing a firm dollar. Hang Seng, EEM and Asian FX signals are all bearish."}
+  ],
+  "bull": [
+    {"title": "Core inflation is calm.", "text": "Core CPI is 2.6%. This is an energy shock, not a wage spiral, and it fades if oil stops climbing. The New York Fed's Williams sees \"no need for urgency.\""},
+    {"title": "Earnings are strong.", "text": "Q3 S&P EPS growth is tracking +29.5% with 83% beating. The forward P/E of 18.7 is below both its 5- and 10-year averages."},
+    {"title": "Yields may have peaked.", "text": "The 10Y fell from 5.35% to 4.99% and the rates pillar flipped positive. BofA's survey puts the level that would pull money from stocks into bonds at 5.9%."},
+    {"title": "Breadth is improving.", "text": "Stocks above their 20-day average went from 20% to 53% last week. Equal-weight beat cap-weight."},
+    {"title": "Risk-off readings have paid.", "text": "After risk-off weeks on the Barometer, the S&P has averaged +5.8% over the next 13 weeks (78% positive), versus +1.7% after risk-on weeks. This is in-sample with overlapping weeks, so treat it as a tendency."}
+  ],
+  "sentiment": {
+    "text": "For retail investors, yes. For professionals, no. That split matters. A real capitulation low usually needs fund managers raising cash, and they haven't. Contrarians can lean against the retail mood, but if the AI credit story worsens, the crowded tech overweight is what gets sold next.",
+    "retail_label": "Retail: fearful",
+    "retail": [
+      {"k": "AAII bears (w/e 21 Oct)", "v": "45.8%"},
+      {"k": "Weeks above 31.5% average", "v": "37"},
+      {"k": "Bull-bear spread", "v": "-8.9"},
+      {"k": "CNN Fear & Greed", "v": "21"}
+    ],
+    "pro_label": "Fund managers: still long",
+    "pro": [
+      {"k": "BofA FMS cash (Oct)", "v": "3.9%"},
+      {"k": "Tech overweight, net", "v": "37%"},
+      {"k": "Consumer discretionary, net", "v": "-34%"},
+      {"k": "BofA Bull & Bear indicator", "v": "8.1"}
+    ],
+    "note": "Cash at or below 4.0% and a Bull & Bear reading above 8.0 are BofA's contrarian sell levels. The survey's growth expectations turned negative for the first time in four months, while allocations stayed bullish."
+  },
+  "positioning": [
+    {"what": "Equities", "why": "Modest underweight, not a big bet. Earnings and valuations don't justify getting very defensive, but the regime and credit say don't add risk yet."},
+    {"what": "Within equities", "why": "Energy over metals, quality and defensives over cyclicals. Avoid capex-heavy AI names that fund with debt, and the neoclouds. Mega-caps with net cash are a different case from the leveraged builders."},
+    {"what": "Duration", "why": "Start building. A 5% 10Y with 2.6% core inflation is attractive. Add on yield spikes rather than all at once."},
+    {"what": "Asia", "why": "Underweight oil-importer cyclicals while Brent is above $100. Hang Seng and EM will rally first on any de-escalation, so keep a buy list ready."},
+    {"what": "Cash / short rates", "why": "The Inflation regime favours short over long rates. T-bills pay while you wait."}
+  ],
+  "triggers": [
+    {"title": "Oil breaks lower.", "text": "This matters most. De-escalation in the Gulf or normal shipping through Hormuz would pull down Brent, breakevens and yields, and empty the inflation side of the vote."},
+    {"title": "This week's catalysts go right.", "text": "The FOMC on Wednesday 28 Oct signals it's close to done. Microsoft and Alphabet (Wednesday) and Amazon (Thursday) show capex is funded from cash flow. Q3 GDP and September PCE also land this week."},
+    {"title": "Credit stabilises.", "text": "HY spreads stop widening and hyperscaler CDS turn down. Credit is the swing pillar on the Barometer."},
+    {"title": "The dollar weakens.", "text": "Four FX signals (DXY, AUD, EUR, GBP) currently vote for slower growth. A softer dollar flips them and helps Asia most."}
+  ],
+  "callout": "After an oil break, the first regime change would most likely be Inflation to Deflation, not straight to Goldilocks, because inflation signals roll over before growth signals recover. Deflation is where the switching strategy holds long bonds. A move to Goldilocks or Reflation would also need small caps, EM and FX to turn. The vote-changes table on Macro Compass will show which path we're on.",
+  "sources": [
+    {"title": "Oil hovering around $110 (Yahoo Finance)", "url": "https://finance.yahoo.com/energy/articles/geopolitical-tensions-keep-rising-oil-185414654.html"},
+    {"title": "Higher inflation on tap as oil rises (US News, 12 Oct)", "url": "https://www.usnews.com/news/national-news/articles/2026-10-12/higher-inflation-on-tap-as-oil-prices-rise-amid-geopolitical-turmoil"},
+    {"title": "Will the Fed hike in October? (Chase)", "url": "https://www.chase.com/personal/investments/learning-and-insights/article/will-the-federal-reserve-hike-rates-at-october-2026-fomc-meeting"},
+    {"title": "Fed rate decision October 2026 (Admiral Markets)", "url": "https://admiralmarkets.com/analytics/traders-blog/fed-rate-decision-october-2026"},
+    {"title": "AAII Sentiment Survey: Pessimism Pushes On", "url": "https://www.aaii.com/latest/article/556561-aaii-sentiment-survey-pessimism-pushes-on"},
+    {"title": "BofA Global Fund Manager Survey, October (Finvaulta)", "url": "https://finvaulta.com/research/bank-of-america/global-fund-manager-survey-the-sixth-sense-2026-10-13"},
+    {"title": "BofA FMS October (MaceNews)", "url": "https://macenews.com/bofa-global-research-fund-manager-survey-lower-growth-and-lower-inflation-expectations-lead-to-tweaking-of-asset-allocations-in-october/"},
+    {"title": "Tech drags stocks but breadth improves (Fundstrat, 25 Oct)", "url": "https://fundstratdirect.com/market-intelligence/fsi-snapshot/2026/10/25/tech-drags-stocks-but-breadth-improves"},
+    {"title": "AI turmoil: neoclouds struggle, credit risks jump (CNBC, 23 Oct)", "url": "https://www.cnbc.com/2026/10/23/ai-turmoil-neoclouds-struggle-credit-risks-jump-solidigm-pulls-ipo.html"},
+    {"title": "Week 43 market update (Atrani Capital)", "url": "https://atranicapital.substack.com/p/week-43-market-update-for-october-13c"},
+    {"title": "S&P 500 earnings season update, 23 Oct (FactSet)", "url": "https://insight.factset.com/sp-500-earnings-season-update-october-23-2026"},
+    {"title": "Why the 10-year yield hit a 24-year high (Forbes, 7 Oct)", "url": "https://www.forbes.com/sites/garthfriesen/2026/10/07/why-the-10-year-treasury-yield-just-hit-a-24-year-high/"},
+    {"title": "Treasury yields snapshot, 23 Oct (ETF Trends)", "url": "https://www.etftrends.com/fixed-income-content-hub/treasury-yields-snapshot-october-23-2026/"},
+    {"title": "Gold falls below $4,000 (Discovery Alert)", "url": "https://discoveryalert.com/news/gold-price-below-4000-oil-spike-october-2026/"},
+    {"title": "Week ahead: Alphabet, Microsoft, Amazon (Opening Bell)", "url": "https://www.openingbelldailynews.com/p/stock-market-week-ahead-oct-26-2026"}
+  ]
+}

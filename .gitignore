@@ -13,3 +13,8 @@ nfci/nfci_doc.json
 risk_doc.json
 alerts.json
 scratch_db/
+weekly_debate/narrative.json
+weekly_debate/debate_data.json
+weekly_debate/edition_doc.json
+weekly_debate/index_doc.json
+weekly_debate/email.html

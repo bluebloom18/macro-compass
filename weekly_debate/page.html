@@ -1,0 +1,310 @@
+<title>Weekly Macro Debate</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column for a memo; bull and bear sit side by side, then stack on phones.
+   Palette and type borrowed from the Macro Compass dashboard so the two read as a set. */
+:root{
+  --bg:#F6F7FA; --surface:#FFFFFF; --surface-2:#EDEFF5; --border:#D5DAE5;
+  --ink:#1D2330; --ink-muted:#4A5468; --ink-faint:#6F7A90;
+  --accent:#5B4BC4;
+  --gold:#A87920; --refl:#2C8A66; --infl:#C04A3D; --defl:#3F6FB0;
+  --bull:#2C8A66; --bear:#C04A3D; --bull-bg:rgba(44,138,102,.10); --bear-bg:rgba(192,74,61,.10);
+  --amber:#A87920; --amber-bg:rgba(168,121,32,.12);
+  --pos:#1F5FBF; --neg:#C0392B;
+  --font-display:'Fraunces',Georgia,'Times New Roman',serif;
+  --font-body:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#1D2330; --surface:#262E3F; --surface-2:#313B50; --border:#4C5A78;
+  --ink:#F5F3EE; --ink-muted:#C7CEDC; --ink-faint:#A6AFC4;
+  --accent:#B0A2F5;
+  --gold:#D9A64C; --refl:#5CC09A; --infl:#EE8476; --defl:#82A9E0;
+  --bull:#5CC09A; --bear:#EE8476; --bull-bg:rgba(92,192,154,.12); --bear-bg:rgba(238,132,118,.12);
+  --amber:#E3B868; --amber-bg:rgba(227,184,104,.14);
+  --pos:#7AAEF5; --neg:#F08A7E;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#1D2330; --surface:#262E3F; --surface-2:#313B50; --border:#4C5A78;
+  --ink:#F5F3EE; --ink-muted:#C7CEDC; --ink-faint:#A6AFC4;
+  --accent:#B0A2F5;
+  --gold:#D9A64C; --refl:#5CC09A; --infl:#EE8476; --defl:#82A9E0;
+  --bull:#5CC09A; --bear:#EE8476; --bull-bg:rgba(92,192,154,.12); --bear-bg:rgba(238,132,118,.12);
+  --amber:#E3B868; --amber-bg:rgba(227,184,104,.14);
+  --pos:#7AAEF5; --neg:#F08A7E;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;}
+body{background:var(--bg); color:var(--ink); font-family:var(--font-body); margin:0; padding-inline:20px; padding-block:36px 64px; font-size:15.5px; line-height:1.55;}
+a{color:var(--accent);}
+a:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+.wrap{max-width:860px; margin:0 auto; display:flex; flex-direction:column; gap:40px;}
+h1,h2,h3{font-family:var(--font-display); font-weight:600; margin:0; text-wrap:balance;}
+.mono{font-family:var(--font-mono);}
+.eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint);}
+p{margin:0;}
+section{display:flex; flex-direction:column; gap:14px;}
+section > h2{font-size:22px;}
+.lede{color:var(--ink-muted); max-width:66ch;}
+
+/* header */
+header{display:flex; flex-direction:column; gap:10px; padding-bottom:22px; border-bottom:1px solid var(--border);}
+header h1{font-size:38px; letter-spacing:-.01em; line-height:1.1;}
+header p{color:var(--ink-muted); max-width:62ch;}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;}
+.chip{font-family:var(--font-mono); font-size:12px; padding:4px 10px; border-radius:100px; border:1px solid var(--border); background:var(--surface); color:var(--ink-muted);}
+.chip b{color:var(--ink); font-weight:600;}
+.chip.infl{border-color:var(--infl); color:var(--infl);}
+.chip.infl b{color:var(--infl);}
+
+/* bottom line */
+.verdict{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px 22px; display:flex; flex-direction:column; gap:10px;}
+.verdict h2{font-size:19px;}
+.verdict ul{margin:0; padding-left:18px; display:flex; flex-direction:column; gap:6px;}
+
+/* tables */
+.table-scroll{overflow-x:auto; border:1px solid var(--border); border-radius:12px; background:var(--surface);}
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th{text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:500; padding:10px 12px; border-bottom:1px solid var(--border); white-space:nowrap;}
+td{padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+td.num, th.num{text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums; white-space:nowrap;}
+td.k{font-weight:600; white-space:nowrap;}
+td.pos{color:var(--pos);}
+td.neg{color:var(--neg);}
+td.dim{color:var(--ink-muted);}
+
+/* vote strips */
+.axes{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;}
+@media (max-width:640px){.axes{grid-template-columns:1fr;}}
+.axis{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px; display:flex; flex-direction:column; gap:8px; min-width:0;}
+.axis h3{font-family:var(--font-body); font-size:14px; font-weight:600;}
+.strip{display:flex; height:12px; border-radius:6px; overflow:hidden; background:var(--surface-2);}
+.strip span{display:block; height:100%;}
+.axis .nums{display:flex; flex-wrap:wrap; gap:4px 14px; font-size:12.5px; color:var(--ink-muted);}
+.axis .nums b{font-family:var(--font-mono); color:var(--ink);}
+.axis .nums i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:5px;}
+.axis small{font-size:12.5px; color:var(--ink-muted);}
+
+/* barometer heat table */
+.heat td.c{text-align:center; font-family:var(--font-mono); font-size:12.5px; font-variant-numeric:tabular-nums; border-radius:0;}
+.heat td.on{background:var(--bull-bg); color:var(--bull);}
+.heat td.off{background:var(--bear-bg); color:var(--bear);}
+.heat td.mid{background:var(--amber-bg); color:var(--amber);}
+.heat tr.total td{font-weight:600;}
+.legend{display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--ink-muted);}
+.legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px;}
+
+/* debate */
+.debate{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;}
+@media (max-width:720px){.debate{grid-template-columns:1fr;}}
+.side{border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:12px; min-width:0; border:1px solid var(--border); background:var(--surface);}
+.side.bear{border-top:4px solid var(--bear);}
+.side.bull{border-top:4px solid var(--bull);}
+.side h3{font-size:19px;}
+.side.bear h3{color:var(--bear);}
+.side.bull h3{color:var(--bull);}
+.side ol{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:10px;}
+.side li b{display:block;}
+.side li span{color:var(--ink-muted); font-size:14.5px;}
+
+/* sentiment split */
+.split{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px;}
+@media (max-width:640px){.split{grid-template-columns:1fr;}}
+.gauge{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:10px; min-width:0;}
+.gauge .tag{align-self:flex-start; font-size:12px; font-weight:600; padding:3px 10px; border-radius:100px;}
+.tag.fear{background:var(--bear-bg); color:var(--bear);}
+.tag.greed{background:var(--bull-bg); color:var(--bull);}
+.gauge dl{margin:0; display:grid; grid-template-columns:1fr auto; gap:6px 12px; font-size:14px;}
+.gauge dt{color:var(--ink-muted);}
+.gauge dd{margin:0; font-family:var(--font-mono); font-variant-numeric:tabular-nums; text-align:right;}
+
+/* positioning + triggers */
+.tilts{display:flex; flex-direction:column; gap:0; background:var(--surface); border:1px solid var(--border); border-radius:12px;}
+.tilt{display:grid; grid-template-columns:150px minmax(0,1fr); gap:14px; padding:12px 16px; border-bottom:1px solid var(--border);}
+.tilt:last-child{border-bottom:none;}
+.tilt .what{font-weight:600;}
+.tilt .why{color:var(--ink-muted); font-size:14.5px;}
+@media (max-width:560px){.tilt{grid-template-columns:1fr; gap:2px;}}
+.note{font-size:13px; color:var(--ink-faint);}
+.triggers{margin:0; padding-left:22px; display:flex; flex-direction:column; gap:12px;}
+.triggers li b{display:block;}
+.triggers li span{color:var(--ink-muted); font-size:14.5px;}
+.callout{background:var(--surface-2); border-radius:10px; padding:14px 16px; font-size:14.5px;}
+.callout b{color:var(--ink);}
+
+/* edition picker + states */
+.edition-bar{display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:4px;}
+.edition-bar label{font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint);}
+.edition-bar select{font-family:var(--font-mono); font-size:13px; color:var(--ink); background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:5px 10px; max-width:100%;}
+.edition-bar select:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+.state{background:var(--surface); border:1px dashed var(--border); border-radius:12px; padding:22px; color:var(--ink-muted);}
+.lastweek{background:var(--surface-2); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:6px;}
+.lastweek h2{font-size:17px;}
+/* sources */
+.sources{font-size:13px; color:var(--ink-muted); columns:2 280px; column-gap:28px; margin:0; padding-left:18px;}
+.sources li{margin-bottom:6px; break-inside:avoid;}
+footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; color:var(--ink-faint);}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="eyebrow">Macro Compass weekly debate</div>
+    <h1 id="headline">Weekly macro debate</h1>
+    <p id="intro">Bull vs bear on the week's macro tape: where the indicators sit, whether sentiment is too bearish, how to be positioned and what could cause the turn. A new edition lands every Monday morning.</p>
+    <div class="chips" id="chips"></div>
+    <div class="edition-bar" id="editionBar" hidden>
+      <label for="edition">Edition</label>
+      <select id="edition"></select>
+    </div>
+  </header>
+
+  <div id="content">
+    <div class="state" id="state">Loading the latest edition&hellip;</div>
+  </div>
+
+  <footer>Indicator readings from Macro Compass (regime model, Risk Barometer). Market context from the sources listed in each edition. Not investment advice.</footer>
+</div>
+
+<script>
+const REGIME = {
+  1:{name:'Goldilocks', v:'--gold'}, 2:{name:'Reflation', v:'--refl'},
+  3:{name:'Inflation', v:'--infl'}, 4:{name:'Deflation', v:'--defl'}
+};
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function esc(s){ return (s===null||s===undefined) ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function day(iso, withDow){ const d = new Date(iso + 'T12:00:00Z'); return (withDow ? WEEKDAYS[d.getUTCDay()] + ' ' : '') + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + (withDow ? ' ' + d.getUTCFullYear() : ''); }
+function minus(s){ return esc(s).replace(/(^|[\s(])-(?=\d)/g, '$1&minus;'); }
+
+function fmtLevel(m){
+  const v = m.level;
+  if(/^US (10Y|2Y)/.test(m.name)) return v.toFixed(2) + '%';
+  if(/spread/.test(m.name)) return Math.round(v * 100) + 'bp';
+  if(m.name === 'Brent crude' || m.name === 'Gold') return '$' + Math.round(v).toLocaleString('en-US');
+  if(m.name === 'Copper') return '$' + v.toFixed(2) + '/lb';
+  return v >= 1000 ? Math.round(v).toLocaleString('en-US') : v.toFixed(2);
+}
+function chgCell(v, kind){
+  if(v === null || v === undefined) return '<td class="num"></td>';
+  const cls = v > 0 ? ' pos' : v < 0 ? ' neg' : '';
+  const sign = v > 0 ? '+' : v < 0 ? '&minus;' : '';
+  const txt = kind === 'pct' ? Math.abs(v).toFixed(1) + '%' : Math.round(Math.abs(v)) + 'bp';
+  return '<td class="num' + cls + '">' + sign + txt + '</td>';
+}
+function scoreCell(v, t){
+  if(v === null || v === undefined) return '<td class="c">&mdash;</td>';
+  const cls = v <= -t ? 'off' : v >= t ? 'on' : 'mid';
+  return '<td class="c ' + cls + '">' + (v > 0 ? '+' : v < 0 ? '&minus;' : '') + Math.abs(v).toFixed(2) + '</td>';
+}
+function strip(c, kind){
+  const n = c.up.length + c.flat.length + c.down.length || 1;
+  const upCol = kind === 'growth' ? 'var(--bull)' : 'var(--infl)';
+  const downCol = kind === 'growth' ? 'var(--bear)' : 'var(--defl)';
+  return '<div class="strip" role="img" aria-label="' + c.up.length + ' rising, ' + c.flat.length + ' flat, ' + c.down.length + ' falling">'
+    + '<span style="width:' + (100*c.up.length/n) + '%;background:' + upCol + '"></span>'
+    + '<span style="width:' + (100*c.flat.length/n) + '%;background:var(--ink-faint)"></span>'
+    + '<span style="width:' + (100*c.down.length/n) + '%;background:' + downCol + '"></span></div>'
+    + '<div class="nums"><span><i style="background:' + upCol + '"></i>Rising <b>' + c.up.length + '</b></span>'
+    + '<span><i style="background:var(--ink-faint)"></i>Flat <b>' + c.flat.length + '</b></span>'
+    + '<span><i style="background:' + downCol + '"></i>Falling <b>' + c.down.length + '</b></span></div>';
+}
+const STATE_TXT = {bull:'bullish', bear:'bearish', flat:'flat', na:'no data'};
+
+function render(d){
+  const r = d.regime || {}, rm = REGIME[r.code];
+  document.getElementById('eyebrow').textContent = 'Macro Compass weekly debate · readings as of ' + day(d.asof, true) + ' · written ' + day(d.written, true);
+  document.getElementById('headline').textContent = d.headline || 'Weekly macro debate';
+  document.getElementById('intro').hidden = true;
+  const ax = d.axes, bi = d.barometer.index[d.barometer.index.length - 1];
+  document.getElementById('chips').innerHTML =
+    (rm ? '<span class="chip infl" style="border-color:var(' + rm.v + ');color:var(' + rm.v + ')">Regime <b style="color:var(' + rm.v + ')">' + esc(rm.name) + '</b> ' + r.pct[r.code - 1].toFixed(1) + '%</span>' : '')
+    + '<span class="chip">Growth signals <b>' + ax.growth.up.length + '&uarr; ' + ax.growth.down.length + '&darr;</b></span>'
+    + '<span class="chip">Inflation signals <b>' + ax.inflation.up.length + '&uarr; ' + ax.inflation.down.length + '&darr;</b></span>'
+    + (bi !== null ? '<span class="chip">Risk Barometer <b>' + (bi > 0 ? '+' : bi < 0 ? '&minus;' : '') + Math.abs(bi).toFixed(2) + '</b> ' + (bi <= -d.barometer.thresh ? 'risk-off' : bi >= d.barometer.thresh ? 'risk-on' : 'neutral') + '</span>' : '');
+
+  const t = d.barometer.thresh || 0.3333;
+  const gNet = ax.growth.up.length - ax.growth.down.length, iNet = ax.inflation.up.length - ax.inflation.down.length;
+  const vc = d.vote_changes_5d;
+  const vcRows = vc && vc.changes && vc.changes.length ? vc.changes.map(c =>
+      '<tr><td class="num dim">' + day(c.date) + '</td><td>' + esc(c.label) + '</td><td>' + STATE_TXT[c.before] + ' &rarr; ' + STATE_TXT[c.after] + '</td><td>'
+      + c.gained.map(k => '<span style="color:var(' + REGIME[k].v + ')">+' + REGIME[k].name + '</span>').join(' ')
+      + (c.gained.length && c.lost.length ? ' ' : '')
+      + c.lost.map(k => '<span style="color:var(' + REGIME[k].v + ')">&minus;' + REGIME[k].name + '</span>').join(' ') + '</td></tr>').join('')
+    : '<tr><td colspan="4" class="dim">No signal changed reading over the five sessions.</td></tr>';
+
+  const html = [];
+  html.push('<div class="verdict"><h2>Bottom line</h2><ul>' + d.bottom_line.map(x => '<li>' + minus(x) + '</li>').join('') + '</ul></div>');
+  if(d.last_week) html.push('<div class="lastweek"><h2>Last week\'s call</h2><p>' + minus(d.last_week) + '</p></div>');
+
+  html.push('<section><h2>Where the indicators sit</h2><p class="lede">' + minus(d.context) + '</p>'
+    + '<div class="table-scroll"><table><thead><tr><th>Market</th><th class="num">Level</th><th class="num">1 month</th><th class="num">vs 52w high</th></tr></thead><tbody>'
+    + d.markets.map(m => '<tr><td class="k">' + esc(m.name) + '</td><td class="num">' + fmtLevel(m) + '</td>' + chgCell(m.m1, m.kind) + chgCell(m.vs_high, m.kind) + '</tr>').join('')
+    + '</tbody></table></div><p class="note">Closes from the Macro Compass data feed (Yahoo Finance, FRED). Yield and spread changes are in basis points.</p>'
+    + '<h3 style="font-size:17px; margin-top:6px;">Regime votes</h3><div class="axes">'
+    + '<div class="axis"><h3>Growth signals &middot; ' + (ax.growth.up.length + ax.growth.flat.length + ax.growth.down.length) + '</h3>' + strip(ax.growth, 'growth') + '<small>' + minus(d.axis_notes.growth) + '</small></div>'
+    + '<div class="axis"><h3>Inflation signals &middot; ' + (ax.inflation.up.length + ax.inflation.flat.length + ax.inflation.down.length) + '</h3>' + strip(ax.inflation, 'inflation') + '<small>' + minus(d.axis_notes.inflation) + '</small></div>'
+    + '</div><p class="note">Growth net ' + (gNet > 0 ? '+' : gNet < 0 ? '&minus;' : '') + Math.abs(gNet) + ', inflation net ' + (iNet > 0 ? '+' : iNet < 0 ? '&minus;' : '') + Math.abs(iNet) + '.</p>'
+    + (vc ? '<h3 style="font-size:17px; margin-top:6px;">Vote changes, ' + day(vc.start) + ' &rarr; ' + day(vc.end) + '</h3>'
+      + '<div class="table-scroll"><table><thead><tr><th class="num">Date</th><th>Signal</th><th>Change</th><th>Effect</th></tr></thead><tbody>' + vcRows + '</tbody></table></div>' : '')
+    + '<h3 style="font-size:17px; margin-top:6px;">Risk Barometer, last five Fridays</h3>'
+    + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.33)</span><span><i style="background:var(--amber)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.33)</span></div>'
+    + '<div class="table-scroll"><table class="heat"><thead><tr><th>Pillar</th>' + d.barometer.dates.map(x => '<th class="num">' + day(x) + '</th>').join('') + '</tr></thead><tbody>'
+    + d.barometer.pillars.map(p => '<tr><td class="k">' + esc(p.name) + '</td>' + p.scores.map(v => scoreCell(v, t)).join('') + '</tr>').join('')
+    + '<tr class="total"><td class="k">Risk Index</td>' + d.barometer.index.map(v => scoreCell(v, t)).join('') + '</tr>'
+    + '</tbody></table></div><p class="note">' + minus(d.barometer_note) + '</p></section>');
+
+  const side = (cls, title, items) => '<div class="side ' + cls + '"><h3>' + title + '</h3><ol>'
+    + items.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div>';
+  html.push('<section><h2>The debate</h2><div class="debate">' + side('bear', 'Bear case', d.bear) + side('bull', 'Bull case', d.bull) + '</div></section>');
+
+  const s = d.sentiment;
+  const gauge = (cls, label, rows) => '<div class="gauge"><span class="tag ' + cls + '">' + esc(label) + '</span><dl>'
+    + rows.map(r => '<dt>' + esc(r.k) + '</dt><dd>' + minus(r.v) + '</dd>').join('') + '</dl></div>';
+  html.push('<section><h2>Is sentiment too bearish?</h2><p class="lede">' + minus(s.text) + '</p><div class="split">'
+    + gauge('fear', s.retail_label || 'Retail investors', s.retail) + gauge('greed', s.pro_label || 'Fund managers', s.pro) + '</div>'
+    + (s.note ? '<p class="note">' + minus(s.note) + '</p>' : '') + '</section>');
+
+  html.push('<section><h2>How to be positioned</h2><p class="note">This is a judgment call, not a model output.</p><div class="tilts">'
+    + d.positioning.map(x => '<div class="tilt"><span class="what">' + esc(x.what) + '</span><span class="why">' + minus(x.why) + '</span></div>').join('') + '</div></section>');
+
+  html.push('<section><h2>What could cause the turn</h2><ol class="triggers">'
+    + d.triggers.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol>'
+    + '<div class="callout">' + minus(d.callout) + '</div></section>');
+
+  html.push('<section><h2>Sources</h2><ol class="sources">'
+    + d.sources.filter(x => /^https?:\/\//.test(x.url)).map(x => '<li><a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.title) + '</a></li>').join('') + '</ol></section>');
+
+  document.getElementById('content').innerHTML = html.join('');
+}
+
+function showState(msg){ document.getElementById('content').innerHTML = '<div class="state">' + esc(msg) + '</div>'; }
+
+let db = null, unsubEdition = null;
+function openEdition(id){
+  if(unsubEdition){ unsubEdition(); unsubEdition = null; }
+  unsubEdition = db.doc('debate/' + id).onSnapshot(snap => {
+    if(snap.exists) render(snap.data());
+    else showState('That edition could not be found.');
+  }, () => showState('This edition could not be loaded. Reload the page to try again.'));
+}
+
+(async () => {
+  db = await claude.use('db');
+  if(!db){ showState('Sign in to claude.ai to read the weekly editions.'); return; }
+  const sel = document.getElementById('edition');
+  let current = null;
+  db.doc('debate/index').onSnapshot(snap => {
+    const eds = snap.exists ? (snap.data().editions || []) : [];
+    if(!eds.length){ showState('No editions yet. The first one appears after the Monday refresh.'); return; }
+    sel.innerHTML = eds.map((e, i) => '<option value="' + esc(e.id) + '">' + day(e.id, true) + (i === 0 ? ' (latest)' : '') + ' · ' + esc(e.regime || '') + '</option>').join('');
+    document.getElementById('editionBar').hidden = eds.length < 2;
+    const want = (current && eds.some(e => e.id === current)) ? current : eds[0].id;
+    sel.value = want;
+    if(want !== current){ current = want; openEdition(want); }
+  }, () => showState('The edition list could not be loaded. Reload the page to try again.'));
+  sel.addEventListener('change', () => { current = sel.value; openEdition(current); window.scrollTo({top:0}); });
+})();
+</script>
