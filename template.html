@@ -202,30 +202,19 @@ section{margin-bottom:40px;}
 .axis-dir{font-size:12.5px; color:var(--ink-muted); white-space:nowrap;}
 
 /* ---------- recent vote changes ---------- */
-.vc-list{display:flex; flex-direction:column; gap:12px;}
-.vc-day{padding:16px 18px; display:flex; flex-direction:column; gap:12px; min-width:0;}
-.vc-head{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 16px;}
-.vc-date{font-family:var(--font-display); font-size:17px; font-weight:600;}
-.vc-date small{font-family:var(--font-mono); font-size:11px; font-weight:400; color:var(--ink-faint); margin-left:8px; letter-spacing:.04em;}
-.vc-regime{font-size:12.5px; color:var(--ink-muted);}
-.vc-shares{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;}
-@media (max-width:600px){.vc-shares{grid-template-columns:repeat(2,minmax(0,1fr));}}
-.vc-share{background:var(--surface-2); border-radius:8px; padding:7px 10px; display:flex; flex-direction:column; gap:2px; border-left:3px solid var(--border);}
-.vc-share .nm{font-size:11.5px; color:var(--ink-muted);}
-.vc-share .v{font-family:var(--font-mono); font-size:13px; font-variant-numeric:tabular-nums;}
-.vc-share .v span{color:var(--ink-faint); font-size:11.5px; margin-left:6px;}
-.vc-share .v span.up{color:var(--ink);}
-.vc-text{margin:0; font-size:13.5px; color:var(--ink-muted); max-width:90ch;}
-.vc-text b{color:var(--ink); font-weight:600;}
+.vc-shares{display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12.5px; color:var(--ink-muted); margin-bottom:10px;}
+.vc-share i{display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:6px;}
+.vc-share b{font-family:var(--font-mono); color:var(--ink); font-weight:600;}
 .vc-quiet{color:var(--ink-faint); font-size:13px;}
 .vc-table{width:100%; border-collapse:collapse; font-size:13px;}
-.vc-table th{text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:500; padding:6px 10px; border-bottom:1px solid var(--border); white-space:nowrap;}
-.vc-table td{padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle;}
+.vc-table th{text-align:left; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:500; padding:9px 12px; border-bottom:1px solid var(--border); white-space:nowrap;}
+.vc-table td{padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:middle;}
 .vc-table tr:last-child td{border-bottom:none;}
-.vc-table td.chg{white-space:nowrap;}
+.vc-table td.chg, .vc-table td.when{white-space:nowrap;}
+.vc-table td.when{font-family:var(--font-mono); font-size:12px; color:var(--ink-muted);}
 .vc-table .arrow{color:var(--ink-faint); margin:0 6px; font-family:var(--font-mono);}
 .vc-table tr.net td{font-family:var(--font-mono); font-size:12px; color:var(--ink-muted); background:var(--surface-2);}
-.vote.lost{background:none !important; border:1px solid currentColor; text-decoration:line-through; text-decoration-thickness:1px;}
+.vote.lost{background:none; border:1px solid currentColor;}
 
 /* ---------- methodology / footer ---------- */
 .methodology{padding:22px 24px; font-size:13.5px; color:var(--ink-muted);}
@@ -345,10 +334,10 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 
   <section>
     <div class="section-head">
-      <h2>Recent vote changes</h2>
-      <div class="hint">Last five sessions, newest first &middot; which signals changed and the votes they moved. Shares can shift with no new votes when the number of votes cast changes.</div>
+      <h2>Vote changes &middot; last five sessions</h2>
+      <div class="hint"><span id="vcRange"></span> &middot; every signal that changed reading, newest first. A share can move without new votes when the total votes cast changes.</div>
     </div>
-    <div class="vc-list" id="voteChanges"></div>
+    <div id="voteChanges"></div>
   </section>
 
   <section>
@@ -633,88 +622,33 @@ function renderVotes(latest){
     + head('inflation', 'Inflation axis') + rows.inflation.map(r => row(r, 'inflation')).join('');
 }
 
-const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-function fmtDay(iso){ const d = new Date(iso + 'T12:00:00Z'); return WEEKDAYS[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()]; }
+function fmtDay(iso){ const d = new Date(iso + 'T12:00:00Z'); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()]; }
 const STATE_TEXT = {bull:'bullish', bear:'bearish', flat:'flat', na:'no data'};
-const STATE_PILL = {bull:'bull', bear:'bear', flat:'flat', na:'na'};
-function statePill(st){ return '<span class="pill '+STATE_PILL[st]+'">'+STATE_TEXT[st]+'</span>'; }
-// +1 when a state reads its axis rising, -1 falling, 0 flat (same logic as the signal table)
-function axisDir(st, w){
-  const votes = signalVotes({ready: st !== 'na', weights: w, bull: st === 'bull', bear: st === 'bear'});
-  if(!votes.length) return 0;
-  return signalAxis(w) === 'growth' ? ((votes.includes(1) && votes.includes(2)) ? 1 : -1)
-                                    : ((votes.includes(2) && votes.includes(3)) ? 1 : -1);
-}
-function listJoin(a){ return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
-
-function voteChangeText(day){
-  if(!day.changes.length) return '<p class="vc-quiet">No signal changed state, so the vote shares held.</p>';
-  const parts = [];
-  const byDelta = {};
-  day.net.forEach((v, idx) => { if(v){ (byDelta[v] = byDelta[v] || []).push(REGIME_META[idx + 1].name); } });
-  const deltas = Object.keys(byDelta).map(Number).sort((a, b) => b - a);
-  const netBits = deltas.map(v => {
-    const names = byDelta[v], n = Math.abs(v), each = names.length > 1 ? ' each' : '';
-    return '<b>' + listJoin(names) + '</b>' + each + ' ' + (v > 0 ? 'gained' : 'lost') + ' ' + n + ' vote' + (n > 1 ? 's' : '');
-  });
-  if(netBits.length) parts.push(netBits.join('; ') + '.');
-  ['growth', 'inflation'].forEach(axis => {
-    const up = [], down = [];
-    day.changes.filter(c => signalAxis(c.weights) === axis).forEach(c => {
-      const delta = axisDir(c.after, c.weights) - axisDir(c.before, c.weights);
-      const bit = esc(c.label) + ' ' + (c.after === 'flat' ? 'went flat' : c.after === 'na' ? 'dropped out' : 'turned ' + STATE_TEXT[c.after]);
-      if(delta > 0) up.push(bit); else if(delta < 0) down.push(bit);
-    });
-    const name = axis === 'growth' ? 'Growth' : 'Inflation';
-    if(down.length) parts.push(name + ' readings weakened: ' + listJoin(down) + '.');
-    if(up.length) parts.push(name + ' readings firmed: ' + listJoin(up) + '.');
-  });
-  // a share that moved with no net votes of its own moved only because the total changed
-  const passive = [];
-  day.net.forEach((v, idx) => {
-    const a = day.shares_before[idx], b = day.shares_after[idx];
-    if(!v && a !== null && b !== null && Math.abs(b - a) >= 0.05)
-      passive.push(REGIME_META[idx + 1].name + ' ' + (b > a ? 'rose' : 'fell') + ' from ' + a.toFixed(1) + '% to ' + b.toFixed(1) + '%');
-  });
-  if(passive.length) parts.push(listJoin(passive) + ' with no new votes of ' + (passive.length > 1 ? 'their' : 'its') + ' own, because the total votes cast changed.');
-  return '<p class="vc-text">' + parts.join(' ') + '</p>';
-}
+function statePill(st){ return '<span class="pill '+st+'">'+STATE_TEXT[st]+'</span>'; }
 
 function renderVoteChanges(latest){
   const el = document.getElementById('voteChanges');
-  const days = latest.vote_changes;
-  if(!days || !days.length){
-    el.innerHTML = '<div class="card vc-day"><p class="vc-quiet">Day-by-day changes appear after the next daily refresh.</p></div>';
+  const vc = latest.vote_changes_5d;
+  if(!vc){
+    el.innerHTML = '<p class="vc-quiet">Appears after the next daily refresh.</p>';
     return;
   }
-  el.innerHTML = days.map(day => {
-    const shares = [1,2,3,4].map(k => {
-      const a = day.shares_before[k-1], b = day.shares_after[k-1], m = REGIME_META[k];
-      const dv = (a === null || b === null) ? null : b - a;
-      const dTxt = dv === null ? '' : (Math.abs(dv) < 0.05 ? '0.0' : (dv > 0 ? '+' : '&minus;') + Math.abs(dv).toFixed(1));
-      return '<div class="vc-share" style="border-left-color:' + m.hex + '"><span class="nm">' + m.name + '</span>'
-        + '<span class="v">' + fmtPct(b) + '<span' + (dv !== null && Math.abs(dv) >= 0.05 ? ' class="up"' : '') + '>' + dTxt + '</span></span></div>';
-    }).join('');
-    const rb = REGIME_META[day.regime_before] || REGIME_META[0], ra = REGIME_META[day.regime_after] || REGIME_META[0];
-    const regime = day.regime_before === day.regime_after
-      ? 'Regime held: <span style="color:' + ra.hex + '">' + ra.name + '</span>'
-      : 'Regime changed: <span style="color:' + rb.hex + '">' + rb.name + '</span> &rarr; <b style="color:' + ra.hex + '">' + ra.name + '</b>';
-    let table = '';
-    if(day.changes.length){
-      const chips = (codes, cls) => codes.length ? codes.map(k => cls
-          ? '<span class="vote lost" style="color:' + REGIME_META[k].hex + '">' + REGIME_META[k].name + '</span>'
-          : voteChip(k)).join('') : '<span class="vote none">&mdash;</span>';
-      const netCells = [1,2,3,4].filter(k => day.net[k-1]).map(k => REGIME_META[k].name + ' ' + (day.net[k-1] > 0 ? '+' : '&minus;') + Math.abs(day.net[k-1])).join(' &middot; ');
-      table = '<div class="table-scroll"><table class="vc-table"><thead><tr><th>Signal</th><th>Change</th><th>Votes gained</th><th>Votes lost</th></tr></thead><tbody>'
-        + day.changes.map(c => '<tr><td>' + esc(c.label) + '</td><td class="chg">' + statePill(c.before) + '<span class="arrow">&rarr;</span>' + statePill(c.after) + '</td>'
-          + '<td>' + chips(c.gained) + '</td><td>' + chips(c.lost, true) + '</td></tr>').join('')
-        + '<tr class="net"><td colspan="4">Net votes &middot; ' + (netCells || 'no change') + '</td></tr>'
-        + '</tbody></table></div>';
-    }
-    return '<div class="card vc-day"><div class="vc-head"><span class="vc-date">' + fmtDay(day.date) + '<small>vs ' + fmtDay(day.prev_date) + '</small></span>'
-      + '<span class="vc-regime">' + regime + '</span></div>'
-      + '<div class="vc-shares">' + shares + '</div>' + voteChangeText(day) + table + '</div>';
+  document.getElementById('vcRange').textContent = fmtDay(vc.start) + ' → ' + fmtDay(vc.end);
+  const shares = [1,2,3,4].map(k => {
+    const a = vc.shares_before[k-1], b = vc.shares_after[k-1], m = REGIME_META[k];
+    if(a === null || b === null) return '';
+    const dv = b - a, dTxt = Math.abs(dv) < 0.05 ? '0.0' : (dv > 0 ? '+' : '&minus;') + Math.abs(dv).toFixed(1);
+    return '<span class="vc-share"><i style="background:' + m.hex + '"></i>' + m.name + ' <b>' + a.toFixed(1) + '% &rarr; ' + b.toFixed(1) + '%</b> (' + dTxt + ')</span>';
   }).join('');
+  const effect = c => c.gained.map(k => '<span class="vote" style="background:' + REGIME_META[k].hex + '">+' + REGIME_META[k].name + '</span>').join('')
+    + c.lost.map(k => '<span class="vote lost" style="color:' + REGIME_META[k].hex + '">&minus;' + REGIME_META[k].name + '</span>').join('');
+  const rows = vc.changes.length
+    ? vc.changes.map(c => '<tr><td class="when">' + fmtDay(c.date) + '</td><td>' + esc(c.label) + '</td><td class="chg">' + statePill(c.before) + '<span class="arrow">&rarr;</span>' + statePill(c.after) + '</td>'
+        + '<td>' + (effect(c) || '<span class="vote none">&mdash;</span>') + '</td></tr>').join('')
+      + '<tr class="net"><td colspan="4">Net votes &middot; ' + ([1,2,3,4].filter(k => vc.net[k-1]).map(k => REGIME_META[k].name + ' ' + (vc.net[k-1] > 0 ? '+' : '&minus;') + Math.abs(vc.net[k-1])).join(' &middot; ') || 'no change') + '</td></tr>'
+    : '<tr><td colspan="4" class="vc-quiet">No signal changed state over the five sessions.</td></tr>';
+  el.innerHTML = '<div class="vc-shares">' + shares + '</div>'
+    + '<div class="table-scroll"><table class="vc-table"><thead><tr><th>Date</th><th>Signal</th><th>Change</th><th>Effect</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
 function renderQuadrant(latest, recent){
