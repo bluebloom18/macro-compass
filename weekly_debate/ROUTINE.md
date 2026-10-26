@@ -50,6 +50,12 @@ WebFetch on the best pages. Cover:
   positioning.
 - The week ahead: Fed and other central-bank meetings, key data and big earnings, with dates.
 
+The cloud sandbox may block direct page fetches (WebFetch fails with `ENOTFOUND`, curl gets a
+403). Try WebFetch once. If it fails, don't keep retrying: work from WebSearch results instead,
+using `extended` mode for anything that matters. Run at least 12 searches, one topic per search,
+so each number comes from a result that states it. Cite the URL of the result that gave you the
+number. Take your time: a good edition takes several minutes of research, not two.
+
 Rules: every number in the narrative comes from `debate_data.json` or from a source you list.
 Check every date against its source on its own; don't let a date drift to fit the story. If two
 sources disagree, use the primary one or leave the number out.
