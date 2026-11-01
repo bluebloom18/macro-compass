@@ -73,7 +73,8 @@ Breakevens and credit spreads come from FRED, exactly as the original does (`FRE
 - `align.py` — forward-fill alignment onto a common trading calendar
 - `model.py` — faithful port of `signal_logic()`, `vol_stop()`, `regime_contribution()`
 - `build.py` — orchestrates fetch → align → signal computation → regime aggregation
-- `risk_barometer.py` — 8-pillar Risk Barometer (see below), writes `risk_doc.json`
+- `risk_gauge.py` — Risk Gauge, the coincident market-stress score (see below); run alone for its validation printout
+- `risk_barometer.py` — 8-pillar Risk Barometer (see below), writes `risk_doc.json` with the Risk Gauge embedded
 - `finalize.py` — computes the outperform table, samples history weekly (last trading day of
   each ISO week, plus the last ~2 years daily for the quadrant path), writes
   `latest_doc.json` / `history_doc.json`; `latest.complete` is false when any signal failed
@@ -91,7 +92,7 @@ Breakevens and credit spreads come from FRED, exactly as the original does (`FRE
 python3 build.py       # fetch + compute -> output.json
 python3 finalize.py    # -> latest_doc.json, history_doc.json (+ artifact_seed.json)
 python3 backtest.py    # -> backtest.json (LAG=0 for the same-close variant)
-python3 risk_barometer.py --refresh   # -> risk_doc.json (Risk Barometer section)
+python3 risk_barometer.py --refresh   # -> risk_doc.json (Risk Gauge + Risk Barometer section)
 python3 render.py      # optional: -> macro_compass.html for local preview
 ```
 
@@ -112,6 +113,35 @@ python3 render.py      # optional: -> macro_compass.html for local preview
   weekly changes (persisted in `first_prints.csv`), `backtest_summary.json`, and `backtest_curves.json` (growth-of-100 equity curves for the same rules,
   weekly). The last two are regenerated only by a full local run and committed.
 
+## Risk Gauge
+
+`risk_gauge.py` is the dashboard's headline risk read: a coincident market-stress score built to
+measure risk as it happens, from fast market prices only, in three equal-weight blocks:
+
+| Block | Inputs |
+|---|---|
+| Volatility | VIX (log), VIX / VIX3M term structure, MOVE (log) |
+| Credit | HYG / IEF and LQD / IEF total-return ratios, distance below their 52-week high |
+| Equity trend | S&P 500 distance below its 52-week high, S&P 500 vs its 50-day average |
+
+- Weekly samples (Friday, plus the latest day). Each input is scored against its whole history
+  since 2000 (expanding window) with a robust z-score, (x − median) / (1.4826 × MAD), signed so
+  positive = risk-on, divided by 3 and capped at ±1. Blocks average their inputs; the gauge
+  averages the blocks. Tiers: risk on > +0.15, risk off < −0.15, stress < −0.40.
+- Design choices, all tested against 2008–26 data: an expanding window instead of a rolling 3-year
+  one (a rolling window makes a small wobble after a calm spell read like a crisis); median/MAD
+  instead of mean/sd (drawdowns and VIX are one-sided, so mean/sd scored a 9% S&P drawdown as
+  normal); dividend-adjusted ETF prices (a plain HYG/IEF price ratio drifts down with HYG's higher
+  yield); no macro or survey inputs (monthly/weekly prints added noise, not coincident signal).
+- Validation (2008-04 to 2026-10, printed by `python3 risk_gauge.py` and shown on the dashboard):
+  rank correlation 0.80 with S&P 20-day realised volatility and 0.90 with its drawdown; 89% of
+  stressed weeks (realised vol > 25% or drawdown > 15%) read off/stress, 0% of calm weeks did; all
+  11 S&P drawdowns of 10%+ reached risk off, typically 1–5 weeks after the peak. On the same weeks
+  since 2013 the 8-pillar barometer scored 0.63 / 0.60 and flagged half the stressed weeks. For
+  reference, the St. Louis Fed (STLFSI4) and OFR stress indexes correlate with it at 0.65 and 0.73.
+- Like stress itself, its worst readings cluster near market lows, so forward S&P returns after
+  stress readings aren't worse than average: it's a thermometer, not a forecast.
+
 ## Risk Barometer
 
 `risk_barometer.py` builds an 8-pillar weekly risk-on/risk-off score modelled on Lion Global
@@ -128,7 +158,8 @@ reverse-engineered from a 5-week sample of their table and fitted loosely to it 
   10-week average for trend-follower positioning, HYG/LQD/EMB vs IEF for credit spreads (FRED's
   ICE BofA OAS series only serve the last 3 years). Weekly FRED prints are lagged to their
   release date.
-- It's a coincident stress gauge, not a timing signal: since 2013 the S&P 500 has done better
+- A broader, slower backdrop to the Risk Gauge (it adds macro pillars and rolls a 3-year window),
+  and the weaker coincident measure of the two. It's not a timing signal either: since 2013 the S&P 500 has done better
   over the following 4-13 weeks after risk-off readings than after risk-on ones.
 
 ## Alerts
@@ -138,7 +169,8 @@ previous live copies (`latest.json`, `nfci.json` as saved by the refresh's datab
 `alerts.json`: a list of changes plus an email subject/body. It flags a macro regime change and any
 NFCI switching-rule flip (52-week MA, 1-week change, 1-week change > 0.02), using the same rule
 definitions as the dashboard tiles. It also flags an incomplete refresh: any regime signal that
-failed to fetch, or a Risk Barometer / NFCI doc that wasn't produced. The refresh routine emails the
+failed to fetch, or a Risk Barometer / Risk Gauge / NFCI doc that wasn't produced. It flags a Risk
+Gauge tier change too, when the previous `regime/risk` was saved as `risk.json` in the prev dir. The refresh routine emails the
 result via the Gmail connector, only when something changed.
 
 ## Keeping the live dashboard current

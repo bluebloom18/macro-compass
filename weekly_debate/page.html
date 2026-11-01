@@ -182,7 +182,7 @@ footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; c
 
   <section id="archive" hidden></section>
 
-  <footer>Indicator readings from Macro Compass (regime model, Risk Barometer). Market context from the sources listed in each edition. Not investment advice.</footer>
+  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, Risk Barometer). Market context from the sources listed in each edition. Not investment advice.</footer>
 </div>
 
 <script>
@@ -252,17 +252,24 @@ function renderSpecial(sr){
     + '</section>';
 }
 
+function sgn2(v){ return (v > 0 ? '+' : v < 0 ? '&minus;' : '') + Math.abs(v).toFixed(2); }
+function gTier(v, t){ return v < t.stress ? 'stress' : v < t.off ? 'risk-off' : v > t.on ? 'risk-on' : 'neutral'; }
+// same colours as the barometer cells; scoreCell's threshold set to the gauge's tier line
+function gaugeCell(v, t){ return scoreCell(v, t.on); }
+
 function render(d){
   const r = d.regime || {}, rm = REGIME[r.code];
   document.getElementById('eyebrow').textContent = 'Macro Compass weekly debate · readings as of ' + day(d.asof, true) + ' · written ' + day(d.written, true);
   document.getElementById('headline').textContent = d.headline || 'Weekly macro debate';
   document.getElementById('intro').hidden = true;
   const ax = d.axes, bi = d.barometer.index[d.barometer.index.length - 1];
+  const gi = d.gauge ? d.gauge.index[d.gauge.index.length - 1] : null;   // editions before 2 Nov 2026 have no gauge
   document.getElementById('chips').innerHTML =
     (rm ? '<span class="chip infl" style="border-color:var(' + rm.v + ');color:var(' + rm.v + ')">Regime <b style="color:var(' + rm.v + ')">' + esc(rm.name) + '</b> ' + r.pct[r.code - 1].toFixed(1) + '%</span>' : '')
     + '<span class="chip">Growth signals <b>' + ax.growth.up.length + '&uarr; ' + ax.growth.down.length + '&darr;</b></span>'
     + '<span class="chip">Inflation signals <b>' + ax.inflation.up.length + '&uarr; ' + ax.inflation.down.length + '&darr;</b></span>'
     + (d.special_report ? '<a class="chip" href="#special" style="text-decoration:none;border-color:var(--accent);color:var(--accent)">Special report: ' + esc(d.special_report.title) + '</a>' : '')
+    + (gi !== null ? '<span class="chip">Risk Gauge <b>' + sgn2(gi) + '</b> ' + gTier(gi, d.gauge.tiers) + '</span>' : '')
     + (bi !== null ? '<span class="chip">Risk Barometer <b>' + (bi > 0 ? '+' : bi < 0 ? '&minus;' : '') + Math.abs(bi).toFixed(2) + '</b> ' + (bi <= -d.barometer.thresh ? 'risk-off' : bi >= d.barometer.thresh ? 'risk-on' : 'neutral') + '</span>' : '');
 
   const t = d.barometer.thresh || 0.3333;
@@ -289,6 +296,12 @@ function render(d){
     + '</div><p class="note">Growth net ' + (gNet > 0 ? '+' : gNet < 0 ? '&minus;' : '') + Math.abs(gNet) + ', inflation net ' + (iNet > 0 ? '+' : iNet < 0 ? '&minus;' : '') + Math.abs(iNet) + '.</p>'
     + (vc ? '<h3 style="font-size:17px; margin-top:6px;">Vote changes, ' + day(vc.start) + ' &rarr; ' + day(vc.end) + '</h3>'
       + '<div class="table-scroll"><table><thead><tr><th class="num">Date</th><th>Signal</th><th>Change</th><th>Effect</th></tr></thead><tbody>' + vcRows + '</tbody></table></div>' : '')
+    + (d.gauge ? '<h3 style="font-size:17px; margin-top:6px;">Risk Gauge, last five Fridays</h3>'
+      + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.15; stress below &minus;0.40)</span><span><i style="background:var(--amber)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.15)</span></div>'
+      + '<div class="table-scroll"><table class="heat"><thead><tr><th>Block</th>' + d.gauge.dates.map(x => '<th class="num">' + day(x) + '</th>').join('') + '</tr></thead><tbody>'
+      + d.gauge.blocks.map(b => '<tr><td class="k">' + esc(b.name) + '</td>' + b.scores.map(v => gaugeCell(v, d.gauge.tiers)).join('') + '</tr>').join('')
+      + '<tr class="total"><td class="k">Risk Gauge</td>' + d.gauge.index.map(v => gaugeCell(v, d.gauge.tiers)).join('') + '</tr>'
+      + '</tbody></table></div><p class="note">Coincident market stress: volatility (VIX, VIX term structure, MOVE), credit (high-yield and investment-grade bonds vs Treasuries) and the S&amp;P 500 trend, each scored against its history since 2000.</p>' : '')
     + '<h3 style="font-size:17px; margin-top:6px;">Risk Barometer, last five Fridays</h3>'
     + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.33)</span><span><i style="background:var(--amber)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.33)</span></div>'
     + '<div class="table-scroll"><table class="heat"><thead><tr><th>Pillar</th>' + d.barometer.dates.map(x => '<th class="num">' + day(x) + '</th>').join('') + '</tr></thead><tbody>'

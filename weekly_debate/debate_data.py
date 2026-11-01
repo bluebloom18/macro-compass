@@ -1,5 +1,5 @@
 """Numbers for the weekly macro debate page: the market table, regime vote counts per axis,
-the last five Risk Barometer weeks and the five-session vote changes.
+the last five Risk Gauge and Risk Barometer weeks and the five-session vote changes.
 
 Run from the repo root after build.py, finalize.py and risk_barometer.py (it reads their
 output and reuses build.py's fetch cache). Writes weekly_debate/debate_data.json, which
@@ -94,6 +94,14 @@ def main():
         thresh=risk.get("thresh", 0.3333),
     )
 
+    g = risk.get("gauge")
+    gauge = dict(
+        dates=g["dates"][-5:],
+        index=g["index"][-5:],
+        blocks=[dict(name=b["name"], scores=b["scores"][-5:]) for b in g["blocks"]],
+        tiers=g["tiers"],
+    ) if g else None
+
     out = dict(
         asof=latest["asof"],
         complete=latest.get("complete", True),
@@ -101,6 +109,7 @@ def main():
                     pct=[round(latest[k], 1) for k in ("goldilocks_pct", "reflation_pct", "inflation_pct", "deflation_pct")]),
         axes=axis_counts(latest["per_signal"]),
         vote_changes_5d=latest.get("vote_changes_5d"),
+        gauge=gauge,
         barometer=barometer,
         markets=markets,
     )
@@ -111,6 +120,8 @@ def main():
     print("regime:", out["regime"]["name"], out["regime"]["pct"])
     for a, c in out["axes"].items():
         print(a, {k: len(v) for k, v in c.items()})
+    if gauge:
+        print("risk gauge:", gauge["dates"][-1], gauge["index"][-1])
     print("risk index:", barometer["dates"][-1], barometer["index"][-1])
     for m in markets:
         print("  %-24s %s %10.2f  1m %6s  vs hi %6s" % (m["name"], m["date"], m["level"], m["m1"], m["vs_high"]))

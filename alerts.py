@@ -7,13 +7,16 @@ definitions as the dashboard's Financial conditions tiles:
   * 1-week change   - risk on when this week's (first-print) change is <= 0
   * 1-week > 0.02   - flips only on a weekly move beyond +-0.02, otherwise keeps its position
 
+Also flags a Risk Gauge tier change (risk_doc.json vs the previous regime/risk, when the routine
+saved it as risk.json; tiers as in risk_gauge.TIERS: Risk on / Neutral / Risk off / Stress).
+
 Also flags an incomplete refresh: any regime signal that failed to fetch (the routine then keeps
 yesterday's regime docs live), or a Risk Barometer / NFCI doc that wasn't produced tonight.
 
 Writes alerts.json: {"changes": [...], "subject": ..., "body": ...}; "changes" is empty when
 nothing flipped. Exit code is always 0 so the refresh never blocks on this step.
 
-Usage: python3 alerts.py --prev-dir <dir holding the previous latest.json and nfci.json>
+Usage: python3 alerts.py --prev-dir <dir holding the previous latest.json, nfci.json and risk.json>
 """
 import json
 import os
@@ -22,6 +25,17 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 DASHBOARD = "https://claude.ai/artifact/UEmVNVipYMysgeGjCV8DPm"
 BAND = 0.02
+
+
+TIER_NAMES = {"on": "Risk on", "neutral": "Neutral", "off": "Risk off", "stress": "Stress"}
+
+
+def gauge_tier(g):
+    """Tier of the gauge's latest reading, with the thresholds stored in the doc."""
+    v, t = g["index"][-1], g["tiers"]
+    if v is None:
+        return None
+    return "stress" if v < t["stress"] else "off" if v < t["off"] else "on" if v > t["on"] else "neutral"
 
 
 def load(path):
@@ -70,8 +84,21 @@ def main():
     else:
         notes.append("regime: previous or new doc missing, not compared")
 
-    if not os.path.exists(os.path.join(HERE, "risk_doc.json")):
+    new_rk = load(os.path.join(HERE, "risk_doc.json"))
+    if not new_rk:
         changes.append("Refresh incomplete: Risk Barometer not refreshed (risk_doc.json missing)")
+    elif not new_rk.get("gauge"):
+        changes.append("Refresh incomplete: Risk Gauge not refreshed (no gauge in risk_doc.json)")
+    old_rk = load(os.path.join(prev_dir, "risk.json")) if prev_dir else None
+    if new_rk and new_rk.get("gauge") and old_rk and old_rk.get("gauge"):
+        a, b = gauge_tier(old_rk["gauge"]), gauge_tier(new_rk["gauge"])
+        if a and b and a != b:
+            g = new_rk["gauge"]
+            changes.append("Risk Gauge: %s -> %s (as of %s, gauge %+.2f; %s)" % (
+                TIER_NAMES[a], TIER_NAMES[b], g["asof"], g["index"][-1],
+                ", ".join("%s %+.2f" % (bl["name"], bl["scores"][-1]) for bl in g["blocks"])))
+    else:
+        notes.append("risk gauge: previous or new doc missing, not compared")
     new_nf = load(os.path.join(HERE, "nfci", "nfci_doc.json"))
     if not new_nf:
         changes.append("Refresh incomplete: NFCI not refreshed (nfci_doc.json missing)")

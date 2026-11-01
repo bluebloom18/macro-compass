@@ -11,7 +11,8 @@ into a 3-year rolling z-score, signed so positive = risk-on, and clipped to [-1,
 is the mean of its inputs; the Risk Index is the mean of the 8 pillars. Cells are coloured
 Risk On / Neutral / Off at +/-1/3.
 
-Writes risk_doc.json, the dashboard doc (db: regime/risk). --refresh refetches the raw data
+Writes risk_doc.json, the dashboard doc (db: regime/risk), with the Risk Gauge (risk_gauge.py, the
+coincident market-stress score) embedded under "gauge". --refresh refetches the raw data
 (otherwise the cache/ copy is reused).
 """
 import datetime as dt
@@ -20,6 +21,7 @@ import math
 import os
 import sys
 
+import risk_gauge
 from fetch import fetch_yahoo, fetch_fred
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -257,6 +259,10 @@ def main():
     t = PARAMS["thresh"]
     first = next(i for i, v in enumerate(index) if v is not None)
     doc = dashboard_doc(dates, s, pillars, index, inputs, first)
+    try:
+        doc["gauge"] = risk_gauge.gauge_doc(risk_gauge.load_raw(refresh="--refresh" in sys.argv))
+    except Exception as e:  # noqa: BLE001 - keep the barometer; alerts.py flags the missing gauge
+        print("Risk Gauge failed, written without it: %s" % e, file=sys.stderr)
     with open(os.path.join(HERE, "risk_doc.json"), "w") as f:
         json.dump(doc, f, separators=(",", ":"))
     print("Wrote risk_doc.json (%d weeks from %s, %d bytes)" % (
@@ -265,6 +271,9 @@ def main():
     print("%-32s" % "" + "".join("%11s" % dates[i][5:] for i in cols))
     for name, sc in list(pillars.items()) + [("Risk Index", index)]:
         print("%-32s" % name + "".join("%11s" % ("%+.2f %s" % (sc[i], colour(sc[i], t)[:3])) for i in cols))
+    if "gauge" in doc:
+        gd = doc["gauge"]
+        print("%-32s" % "Risk Gauge" + "".join("%11s" % ("%+.2f %s" % (v, risk_gauge.tier(v)[:3])) for v in gd["index"][-5:]))
 
 
 if __name__ == "__main__":
