@@ -518,6 +518,7 @@ const SEED = __SEED_JSON__;
 let BACKTEST = __BACKTEST_JSON__;
 let NFCI = __NFCI_JSON__;
 let RISK = __RISK_JSON__;
+const SEED_GAUGE = RISK && RISK.gauge;   // shown until the live regime/risk doc carries a gauge
 const REGIME_META = {
   1:{name:'Goldilocks', color:'var(--gold)', hex:'#BD8A32', desc:'growth accelerating, inflation cooling'},
   2:{name:'Reflation',  color:'var(--refl)', hex:'#3D9C79', desc:'growth accelerating, inflation rising'},
@@ -1575,7 +1576,7 @@ function rbDefaultLo(){ return Math.max(0, RB.doc.dates.length-1-Math.round(RB_D
 
 function renderRisk(doc){
   if(!doc || !doc.dates) return;
-  renderGauge(doc.gauge);
+  renderGauge(doc.gauge || SEED_GAUGE);
   const prevN = RB.doc ? RB.doc.dates.length : 0;
   const wasDefault = !RB.doc || (RB.hi===prevN-1 && !RB.userRange);
   RB.doc = doc;
