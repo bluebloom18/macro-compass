@@ -204,6 +204,54 @@ def compute(dates, s, p=PARAMS, pillars=PILLARS):
     return pillar_scores, index, inputs
 
 
+# Macro pressure: the barometer's slow macro pillars, averaged. Weak (< -1/3) while the Risk Gauge is
+# calm has been an early warning of market stress (research/macro_lead.py), so it rides along with the
+# gauge on the dashboard. Gold is left out (structural trend bias), the market pillars too (they
+# overlap the gauge).
+MACRO_PILLARS = ["Economic Surprise & Sentiment", "Liquidity", "Rates", "Foreign Exchange"]
+MACRO_WEAK = -1 / 3
+
+
+def macro_pressure(dates, spx, pillars, gauge):
+    """Macro composite aligned to the gauge's dates, plus its record as an early warning: from calm
+    weeks (gauge not risk off), how often the gauge went risk off / the S&P fell 5%+ afterwards,
+    when the composite was weak vs not."""
+    macro = [None if None in v else sum(v) / len(v) for v in zip(*(pillars[n] for n in MACRO_PILLARS))]
+    gmap = dict(zip(gauge["dates"], gauge["index"]))
+    g = [gmap.get(d) for d in dates]
+    off = gauge["tiers"]["off"]
+    idx = [i for i in range(len(dates) - 13) if macro[i] is not None and g[i] is not None and g[i] >= off]
+
+    def rates(sel, h):
+        ii = [i for i in idx if sel(macro[i])]
+        if not ii:
+            return None
+        goff = sum(any(g[k] is not None and g[k] < off for k in range(i + 1, i + h + 1)) for i in ii) / len(ii)
+        dd = sum(min(spx[k] / spx[i] for k in range(i + 1, i + h + 1)) < 0.95 for i in ii) / len(ii)
+        return {"weeks": len(ii), "gauge_off": round(goff, 3), "spx_dd5": round(dd, 3)}
+
+    weak_idx = [i for i in idx if macro[i] < MACRO_WEAK]
+    episodes, hits = 0, 0
+    for k, i in enumerate(weak_idx):   # a run of weak weeks (gaps up to 2 weeks merged) is one episode
+        if k and i - weak_idx[k - 1] <= 3:
+            continue
+        episodes += 1
+        hits += any(g[j] is not None and g[j] < off for j in range(i + 1, i + 14))
+    mmap = dict(zip(dates, macro))
+    first = next(i for i in idx)
+    return {
+        "pillars": MACRO_PILLARS,
+        "weak": round(MACRO_WEAK, 4),
+        "index": [None if mmap.get(d) is None else round(mmap[d], 2) for d in gauge["dates"]],
+        "stats": {
+            "from": dates[first], "to": dates[-1],
+            "h4": {"weak": rates(lambda v: v < MACRO_WEAK, 4), "rest": rates(lambda v: v >= MACRO_WEAK, 4)},
+            "h13": {"weak": rates(lambda v: v < MACRO_WEAK, 13), "rest": rates(lambda v: v >= MACRO_WEAK, 13)},
+            "episodes": episodes, "episode_hits13": hits,
+        },
+    }
+
+
 def colour(v, thresh):
     if v is None:
         return None
@@ -261,6 +309,7 @@ def main():
     doc = dashboard_doc(dates, s, pillars, index, inputs, first)
     try:
         doc["gauge"] = risk_gauge.gauge_doc(risk_gauge.load_raw(refresh="--refresh" in sys.argv))
+        doc["gauge"]["macro"] = macro_pressure(dates, s["spx"], pillars, doc["gauge"])
     except Exception as e:  # noqa: BLE001 - keep the barometer; alerts.py flags the missing gauge
         print("Risk Gauge failed, written without it: %s" % e, file=sys.stderr)
     with open(os.path.join(HERE, "risk_doc.json"), "w") as f:
@@ -274,6 +323,11 @@ def main():
     if "gauge" in doc:
         gd = doc["gauge"]
         print("%-32s" % "Risk Gauge" + "".join("%11s" % ("%+.2f %s" % (v, risk_gauge.tier(v)[:3])) for v in gd["index"][-5:]))
+        print("%-32s" % "Macro pressure" + "".join("%11s" % ("%+.2f %s" % (v, "wk" if v < MACRO_WEAK else "ok"))
+                                                    for v in gd["macro"]["index"][-5:]))
+        st = gd["macro"]["stats"]
+        print("  calm + macro weak -> gauge off within 4w %.0f%% (vs %.0f%%), %d of %d episodes within 13w" % (
+            100 * st["h4"]["weak"]["gauge_off"], 100 * st["h4"]["rest"]["gauge_off"], st["episode_hits13"], st["episodes"]))
 
 
 if __name__ == "__main__":

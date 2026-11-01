@@ -142,6 +142,17 @@ measure risk as it happens, from fast market prices only, in three equal-weight 
 - Like stress itself, its worst readings cluster near market lows, so forward S&P returns after
   stress readings aren't worse than average: it's a thermometer, not a forecast.
 
+### Macro pressure (early warning)
+
+`risk_barometer.py` also attaches a macro composite to the gauge doc (`gauge.macro`): the mean of
+the barometer's Economic Surprise & Sentiment, Liquidity, Rates and FX pillars (Gold and the market
+pillars left out). Weak (< -0.33) while the gauge is calm has preceded stress more often than not
+(`research/macro_lead.py`, 2013-26): from calm weeks the gauge went risk off within 4 weeks 43% of the
+time vs 16% otherwise, and the S&P fell 5%+ within 13 weeks 40% vs 21%; 10 of 16 episodes reached risk
+off within 13 weeks (base rate about 41%). The result holds in both halves and without the revised NFCI
+input. Liquidity carries most of it; Econ adds nothing. A watch signal, not a trading rule: about half
+the episodes came to nothing, and the 2018 Q4 and 2025 selloffs had no prior warning.
+
 ## Risk Barometer
 
 `risk_barometer.py` builds an 8-pillar weekly risk-on/risk-off score modelled on Lion Global

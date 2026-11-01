@@ -456,6 +456,11 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
         <div class="chart-tooltip" id="rgTooltip" hidden></div>
       </div>
     </div>
+    <div class="card bt-card" id="rgMacroCard" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow">Macro pressure &middot; early warning</div></div>
+      <div class="rg-stats" id="rgMacro"></div>
+      <p class="bt-note" style="margin:0">The average of the barometer's slow macro pillars (economic surprise, liquidity, rates, FX), drawn under the gauge above. When it is weak (below &minus;0.33) while the gauge is still calm, market stress has tended to follow &mdash; red marks on the chart. A watch signal, not a sell signal: about half of these episodes came to nothing, and the 2018 Q4 and 2025 selloffs came without one.</p>
+    </div>
     <div class="card bt-card" style="margin-top:14px;">
       <div class="bt-controls"><div class="eyebrow" id="rgValTitle">Does it read stress as it happens?</div></div>
       <div class="rg-stats" id="rgStats"></div>
@@ -1408,7 +1413,7 @@ function renderGauge(g){
   if(wasDefault){ RG.hi = n-1; RG.lo = Math.max(0, n-1-Math.round(RG_DEFAULT_MONTHS*52/12)); }
   if(RG.hi > n-1){ RG.lo = 0; RG.hi = n-1; }
   document.getElementById('rgHint').textContent = 'volatility · credit · equity trend · weekly · as of ' + fmtDate(g.asof);
-  renderRgTiles(); renderRgTable(); renderRgValidation();
+  renderRgTiles(); renderRgTable(); renderRgValidation(); renderRgMacro();
   if(!RG.wired) wireGauge();
   drawGauge();
 }
@@ -1437,6 +1442,22 @@ function renderRgTable(){
   });
   h += '<tr class="total"><td class="name">Risk gauge</td>' + cols.map(i=>cell(g.index[i])).join('') + '</tr></tbody>';
   document.getElementById('rgTable').innerHTML = h;
+}
+
+function rgMacroWarn(i){ const g = RG.doc, m = g.macro; return !!m && m.index[i]!==null && g.index[i]!==null && m.index[i] < m.weak && g.index[i] >= g.tiers.off; }
+function renderRgMacro(){
+  const g = RG.doc, m = g.macro, card = document.getElementById('rgMacroCard');
+  if(!m){ card.style.display = 'none'; return; }
+  card.style.display = '';
+  const n = g.dates.length, v = m.index[n-1], st = m.stats, warn = rgMacroWarn(n-1);
+  let since = n-1; if(warn) while(since>0 && rgMacroWarn(since-1)) since--;
+  const state = v===null ? '&mdash;' : warn ? '<span class="risk-pill off">▼ Pressure building</span>'
+    : v < m.weak ? '<span class="risk-pill off">Weak, gauge already risk off</span>' : '<span class="risk-pill neutral">● No macro warning</span>';
+  document.getElementById('rgMacro').innerHTML =
+    '<span>Now <b>'+(v===null?'&mdash;':fmtNum(v,2))+'</b> '+state+(warn?' since '+rbDay(g.dates[since]):'')+'</span>'
+    + '<span>From calm weeks, gauge risk off within 4 weeks: <b>'+fmtPct0(st.h4.weak.gauge_off)+'</b> when macro weak vs <b>'+fmtPct0(st.h4.rest.gauge_off)+'</b> otherwise</span>'
+    + '<span>S&amp;P down 5%+ within 13 weeks: <b>'+fmtPct0(st.h13.weak.spx_dd5)+'</b> vs <b>'+fmtPct0(st.h13.rest.spx_dd5)+'</b></span>'
+    + '<span>Episodes followed by gauge risk off within 13 weeks: <b>'+st.episode_hits13+' of '+st.episodes+'</b> &middot; '+fmtMonth(st.from)+' – '+fmtMonth(st.to)+'</span>';
 }
 
 function renderRgValidation(){
@@ -1474,7 +1495,9 @@ function drawGauge(){
   const padL = narrow ? 76 : 88, padR = 12, padT = 22, axisH = 24, gap = 32, rowH = narrow ? 13 : 15;
   const lineH = narrow ? 140 : 180, B = g.blocks.length;
   const lineTop = padT, stripTop = lineTop + lineH + gap, stripH = rowH*B;
-  const H = stripTop + stripH + axisH + 4;
+  const hasMacro = !!g.macro, macroH = hasMacro ? (narrow ? 56 : 70) : 0;
+  const macroTop = stripTop + stripH + (hasMacro ? gap : 0);
+  const H = macroTop + macroH + axisH + 4;
   svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('height', H);
   const {lo, hi} = RG, plotW = W - padL - padR, t = g.tiers;
   const xAt = i => padL + plotW*(i-lo)/Math.max(1,hi-lo), colW = plotW/(hi-lo+1);
@@ -1502,7 +1525,22 @@ function drawGauge(){
       parts.push('<rect x="'+(xAt(i)-colW/2).toFixed(2)+'" y="'+(yy+0.5)+'" width="'+bw.toFixed(2)+'" height="'+(rowH-1)+'" fill="'+rgFill(v)+'"/>');
     }
   });
-  const axisY = stripTop + stripH, spanMonths = (hi-lo)/4.345, minPx = narrow ? 44 : 52;
+  if(hasMacro){
+    const mm = g.macro, yM = v => macroTop + macroH*(1-(v+1)/2);
+    parts.push('<text x="'+padL+'" y="'+(macroTop-8)+'" font-family="Archivo" font-size="12" font-weight="600" fill="#F5F3EE">Macro pressure</text>');
+    parts.push('<text x="'+(padL+plotW)+'" y="'+(macroTop-8)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#A6AFC4">red = weak while the gauge is calm</text>');
+    for(let i=lo;i<=hi;i++) if(rgMacroWarn(i))
+      parts.push('<rect x="'+(xAt(i)-colW/2).toFixed(2)+'" y="'+macroTop+'" width="'+bw.toFixed(2)+'" height="'+macroH+'" fill="rgb('+RG_RGB.off+')" opacity="0.35"/>');
+    for(const v of [1, 0, mm.weak, -1]){
+      const yy = yM(v).toFixed(1);
+      parts.push('<line x1="'+padL+'" y1="'+yy+'" x2="'+(padL+plotW)+'" y2="'+yy+'" stroke="#4C5A78" stroke-width="1" opacity="'+(v===0?'0.9':'0.35')+'"'+(v===mm.weak?' stroke-dasharray="3 3"':'')+'/>');
+      parts.push('<text x="'+(padL-6)+'" y="'+(+yy+3.5)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" fill="#A6AFC4">'+(v===0?'0':fmtNum(v,2).replace('&minus;','−'))+'</text>');
+    }
+    let mp = '', pen2 = false;
+    for(let i=lo;i<=hi;i++){ const v = mm.index[i]; if(v===null){ pen2=false; continue; } mp += (pen2?'L':'M')+xAt(i).toFixed(1)+','+yM(v).toFixed(1); pen2 = true; }
+    parts.push('<path d="'+mp+'" fill="none" stroke="#C7CEDC" stroke-width="1.5" stroke-linejoin="round"/>');
+  }
+  const axisY = macroTop + macroH, spanMonths = (hi-lo)/4.345, minPx = narrow ? 44 : 52;
   let step = spanMonths<=15 ? 1 : spanMonths<=40 ? 3 : spanMonths<=80 ? 6 : 12;
   while(step>=12 && plotW/(spanMonths/step) < minPx) step += 12;
   if(step<12 && plotW/(spanMonths/step) < minPx) step = step===1 ? 3 : step===3 ? 6 : 12;
@@ -1545,7 +1583,8 @@ function wireGauge(){
     const wrapW = svg.parentElement.clientWidth;
     tooltip.style.left = Math.max(110, Math.min(wrapW-110, x/gm.W*wrapW))+'px'; tooltip.style.top = '-6px'; tooltip.hidden = false;
     tooltip.innerHTML = 'Week ending '+fmtDate(g.dates[i])+'<br><b>Risk gauge '+(v===null?'&mdash;':fmtNum(v,2))+(v===null?'':' · '+RG_NAME[rgState(v)])+'</b>'
-      + g.blocks.map(b=>'<br><span style="color:rgb('+(RG_RGB[rgState(b.scores[i])]||'166,175,196')+')">■</span> '+esc(b.name)+' '+(b.scores[i]===null?'&mdash;':fmtNum(b.scores[i],2))).join('');
+      + g.blocks.map(b=>'<br><span style="color:rgb('+(RG_RGB[rgState(b.scores[i])]||'166,175,196')+')">■</span> '+esc(b.name)+' '+(b.scores[i]===null?'&mdash;':fmtNum(b.scores[i],2))).join('')
+      + (g.macro && g.macro.index[i]!==null ? '<br>Macro pressure '+fmtNum(g.macro.index[i],2)+(rgMacroWarn(i)?' <span style="color:#EE9A8F">· warning</span>':'') : '');
   });
   svg.addEventListener('pointerleave', ()=>{
     ['rgCross','rgDot'].forEach(id=>{ const e = svg.querySelector('#'+id); if(e) e.setAttribute('opacity','0'); });
