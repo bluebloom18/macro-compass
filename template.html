@@ -128,7 +128,7 @@ section{margin-bottom:40px;}
 .risk-pill{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; padding:3px 10px; border-radius:100px; font-size:12px; font-weight:600;}
 .risk-pill.on{background:rgba(61,156,121,.18); color:#7FCBAE;}
 .risk-pill.off{background:rgba(208,89,75,.18); color:#EE9A8F;}
-.risk-pill.neutral{background:rgba(189,138,50,.18); color:#E3B868;}
+.risk-pill.neutral{background:rgba(226,209,170,.18); color:#E2D1AA;}
 .risk-pill.stress{background:rgba(150,36,52,.45); color:#F6B3AA;}
 .nf-legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-muted); margin:0 0 10px;}
 .nf-legend span{display:inline-flex; align-items:center; gap:6px;}
@@ -455,7 +455,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
         <div class="rb-legend">
           <span><i style="background:#962434"></i>Stress</span>
           <span><i style="background:#D0594B"></i>Risk off</span>
-          <span><i style="background:#BD8A32"></i>Neutral</span>
+          <span><i style="background:#E2D1AA"></i>Neutral</span>
           <span><i style="background:#3D9C79"></i>Risk on</span>
         </div>
       </div>
@@ -505,7 +505,7 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
         <div class="eyebrow">Current reading vs the last four Fridays &middot; click a row for its inputs</div>
         <div class="rb-legend">
           <span><i style="background:#D0594B"></i>Risk off</span>
-          <span><i style="background:#BD8A32"></i>Neutral</span>
+          <span><i style="background:#E2D1AA"></i>Neutral</span>
           <span><i style="background:#3D9C79"></i>Risk on</span>
         </div>
       </div>
@@ -1414,12 +1414,12 @@ function wireNfci(){
 
 // ---------- risk gauge ----------
 const RG = {doc:null, lo:0, hi:0, userRange:false, wired:false, open:{}};
-const RG_RGB = {on:'61,156,121', neutral:'189,138,50', off:'208,89,75', stress:'150,36,52'};
+const RG_RGB = {on:'61,156,121', neutral:'226,209,170', off:'208,89,75', stress:'150,36,52'};
 const RG_LABEL = {on:'▲ Risk on', neutral:'● Neutral', off:'▼ Risk off', stress:'▼▼ Stress'};
 const RG_NAME = {on:'Risk on', neutral:'Neutral', off:'Risk off', stress:'Stress'};
 const RG_DEFAULT_MONTHS = 60;
 function rgState(v){ const t = RG.doc.tiers; return v===null||v===undefined ? null : v<t.stress ? 'stress' : v<t.off ? 'off' : v>t.on ? 'on' : 'neutral'; }
-function rgFill(v){ const s = rgState(v); return s ? 'rgba('+RG_RGB[s]+','+(0.35+0.55*Math.min(1,Math.abs(v)*1.6)).toFixed(2)+')' : 'transparent'; }
+function rgFill(v){ const s = rgState(v); if(s==='neutral') return 'rgba('+RG_RGB.neutral+',.85)'; return s ? 'rgba('+RG_RGB[s]+','+(0.35+0.55*Math.min(1,Math.abs(v)*1.6)).toFixed(2)+')' : 'transparent'; }
 function rgPill(v){ const s = rgState(v); return s ? '<span class="risk-pill '+s+'">'+RG_LABEL[s]+'</span>' : ''; }
 function fmtPct0(x){ return x===null||x===undefined ? '&mdash;' : Math.round(x*100)+'%'; }
 
@@ -1451,7 +1451,7 @@ function renderRgTiles(){
 function renderRgTable(){
   const g = RG.doc, n = g.dates.length;
   const cols = [n-1, n-2, n-3, n-4, n-5].filter(i=>i>=0);
-  const cell = v => '<td style="background:'+rgFill(v)+'">'+(v===null?'&mdash;':fmtNum(v,2))+'</td>';
+  const cell = v => '<td style="background:'+rgFill(v)+(rgState(v)==='neutral'?';color:#1D2330':'')+'">'+(v===null?'&mdash;':fmtNum(v,2))+'</td>';
   let h = '<thead><tr><th>Block</th>' + cols.map((i,k)=>'<th>'+(k===0?'Current<small style="display:block;text-transform:none;letter-spacing:0;font-size:10px;opacity:.8">'+rbDay(g.dates[i])+'</small>':rbDay(g.dates[i]))+'</th>').join('') + '</tr></thead><tbody>';
   g.blocks.forEach((b, bi)=>{
     const open = !!RG.open[bi];
@@ -1627,10 +1627,10 @@ function wireGauge(){
 const RB = {doc:null, lo:0, hi:0, userRange:false, wired:false, open:{}};
 const RB_SHORT = {'Economic Surprise & Sentiment':'Econ surprise','Liquidity':'Liquidity','Credit Spreads':'Credit',
   'Rates':'Rates','Equity Market Positioning':'Positioning','Equity Volatility':'Volatility','Foreign Exchange':'FX','Gold':'Gold'};
-const RB_RGB = {on:'61,156,121', neutral:'189,138,50', off:'208,89,75'};
+const RB_RGB = {on:'61,156,121', neutral:'226,209,170', off:'208,89,75'};
 const RB_DEFAULT_MONTHS = 24;
 function rbState(v){ const t = RB.doc.thresh; return v===null||v===undefined ? null : v>t ? 'on' : v<-t ? 'off' : 'neutral'; }
-function rbFill(v){ const s = rbState(v); return s ? 'rgba('+RB_RGB[s]+','+(0.35+0.55*Math.min(1,Math.abs(v))).toFixed(2)+')' : 'transparent'; }
+function rbFill(v){ const s = rbState(v); if(s==='neutral') return 'rgba('+RB_RGB.neutral+',.85)'; return s ? 'rgba('+RB_RGB[s]+','+(0.35+0.55*Math.min(1,Math.abs(v))).toFixed(2)+')' : 'transparent'; }
 function rbPill(v){ const s = rbState(v); return '<span class="risk-pill '+s+'">'+({on:'▲ Risk on',off:'▼ Risk off',neutral:'● Neutral'})[s]+'</span>'; }
 function rbDay(d){ return (+d.slice(8,10))+' '+MONTHS[+d.slice(5,7)-1]; }
 function rbDefaultLo(){ return Math.max(0, RB.doc.dates.length-1-Math.round(RB_DEFAULT_MONTHS*52/12)); }
@@ -1660,7 +1660,7 @@ function renderRbTiles(){
     + '<div class="card nf-tile"><div class="eyebrow">Week on week</div><div class="val">'+fmtNum(v-p,2)+'</div>'
       + '<div class="sub">from '+fmtNum(p,2)+' on '+rbDay(doc.dates[n-2])+'</div></div>'
     + '<div class="card nf-tile"><div class="eyebrow">Pillars, of 8</div><div class="val">'+cnt.off+' &middot; '+cnt.neutral+' &middot; '+cnt.on+'</div>'
-      + '<div class="sub"><span style="color:#EE9A8F">off</span> &middot; <span style="color:#E3B868">neutral</span> &middot; <span style="color:#7FCBAE">on</span>, at &plusmn;'+doc.thresh.toFixed(2)+'</div></div>'
+      + '<div class="sub"><span style="color:#EE9A8F">off</span> &middot; <span style="color:#E2D1AA">neutral</span> &middot; <span style="color:#7FCBAE">on</span>, at &plusmn;'+doc.thresh.toFixed(2)+'</div></div>'
     + '<div class="card nf-tile"><div class="eyebrow">Weakest &middot; strongest</div>'
       + '<div class="sub" style="font-size:13px;color:var(--ink)">'+esc(lo.name)+' <span class="mono">'+fmtNum(lo.v,2)+'</span></div>'
       + '<div class="sub" style="font-size:13px;color:var(--ink)">'+esc(hi.name)+' <span class="mono">'+fmtNum(hi.v,2)+'</span></div></div>';
@@ -1669,7 +1669,7 @@ function renderRbTiles(){
 function renderRbTable(){
   const doc = RB.doc, n = doc.dates.length;
   const cols = [n-1, n-2, n-3, n-4, n-5].filter(i=>i>=0);
-  const cell = v => '<td style="background:'+rbFill(v)+'">'+(v===null?'&mdash;':fmtNum(v,2))+'</td>';
+  const cell = v => '<td style="background:'+rbFill(v)+(rbState(v)==='neutral'?';color:#1D2330':'')+'">'+(v===null?'&mdash;':fmtNum(v,2))+'</td>';
   let h = '<thead><tr><th>Indicators</th>' + cols.map((i,k)=>'<th>'+(k===0?'Current<small style="display:block;text-transform:none;letter-spacing:0;font-size:10px;opacity:.8">'+rbDay(doc.dates[i])+'</small>':rbDay(doc.dates[i]))+'</th>').join('') + '</tr></thead><tbody>';
   doc.pillars.forEach((pl, pi)=>{
     const open = !!RB.open[pi];
