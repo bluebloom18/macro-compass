@@ -453,10 +453,10 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       <div class="bt-controls">
         <div class="eyebrow">Current reading vs the last four Fridays &middot; click a row for its inputs</div>
         <div class="rb-legend">
-          <span><i style="background:#962434"></i>Stress</span>
-          <span><i style="background:#D0594B"></i>Risk off</span>
+          <span><i style="background:#C42848"></i>Stress</span>
+          <span><i style="background:#E26050"></i>Risk off</span>
           <span><i style="background:#E2D1AA"></i>Neutral</span>
-          <span><i style="background:#3D9C79"></i>Risk on</span>
+          <span><i style="background:#48BA8C"></i>Risk on</span>
         </div>
       </div>
       <div style="overflow-x:auto;"><table class="rb-table" id="rgTable"></table></div>
@@ -504,9 +504,9 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       <div class="bt-controls">
         <div class="eyebrow">Current reading vs the last four Fridays &middot; click a row for its inputs</div>
         <div class="rb-legend">
-          <span><i style="background:#D0594B"></i>Risk off</span>
+          <span><i style="background:#E26050"></i>Risk off</span>
           <span><i style="background:#E2D1AA"></i>Neutral</span>
-          <span><i style="background:#3D9C79"></i>Risk on</span>
+          <span><i style="background:#48BA8C"></i>Risk on</span>
         </div>
       </div>
       <div style="overflow-x:auto;"><table class="rb-table" id="rbTable"></table></div>
@@ -1414,12 +1414,12 @@ function wireNfci(){
 
 // ---------- risk gauge ----------
 const RG = {doc:null, lo:0, hi:0, userRange:false, wired:false, open:{}};
-const RG_RGB = {on:'61,156,121', neutral:'226,209,170', off:'208,89,75', stress:'150,36,52'};
+const RG_RGB = {on:'72,186,140', neutral:'226,209,170', off:'226,96,80', stress:'196,40,72'};
 const RG_LABEL = {on:'▲ Risk on', neutral:'● Neutral', off:'▼ Risk off', stress:'▼▼ Stress'};
 const RG_NAME = {on:'Risk on', neutral:'Neutral', off:'Risk off', stress:'Stress'};
 const RG_DEFAULT_MONTHS = 60;
 function rgState(v){ const t = RG.doc.tiers; return v===null||v===undefined ? null : v<t.stress ? 'stress' : v<t.off ? 'off' : v>t.on ? 'on' : 'neutral'; }
-function rgFill(v){ const s = rgState(v); if(s==='neutral') return 'rgba('+RG_RGB.neutral+',.85)'; return s ? 'rgba('+RG_RGB[s]+','+(0.35+0.55*Math.min(1,Math.abs(v)*1.6)).toFixed(2)+')' : 'transparent'; }
+function rgFill(v){ const s = rgState(v); if(s==='neutral') return 'rgba('+RG_RGB.neutral+',.85)'; return s ? 'rgba('+RG_RGB[s]+','+(0.6+0.35*Math.min(1,Math.abs(v)*1.6)).toFixed(2)+')' : 'transparent'; }
 function rgPill(v){ const s = rgState(v); return s ? '<span class="risk-pill '+s+'">'+RG_LABEL[s]+'</span>' : ''; }
 function fmtPct0(x){ return x===null||x===undefined ? '&mdash;' : Math.round(x*100)+'%'; }
 
@@ -1525,7 +1525,10 @@ function drawGauge(){
   const yAt = v => lineTop + lineH*(0.5-v)/1.5;   // -1 .. +0.5: drawdown inputs cap the upside
   const parts = [];
   const band = (a, b, k, op) => parts.push('<rect x="'+padL+'" y="'+yAt(a)+'" width="'+plotW+'" height="'+(yAt(b)-yAt(a))+'" fill="rgb('+RG_RGB[k]+')" opacity="'+op+'"/>');
-  band(0.5, t.on, 'on', 0.10); band(t.off, t.stress, 'off', 0.10); band(t.stress, -1, 'stress', 0.16);
+  // one distinct colour per zone, strong enough to read on the dark background, labelled on the right
+  band(0.5, t.on, 'on', 0.24); band(t.on, t.off, 'neutral', 0.13); band(t.off, t.stress, 'off', 0.26); band(t.stress, -1, 'stress', 0.55);
+  const zoneLbl = (a, b, k, txt) => parts.push('<text x="'+(padL+plotW-6)+'" y="'+((yAt(a)+yAt(b))/2+3.5).toFixed(1)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" font-weight="600" fill="rgb('+RG_RGB[k]+')" opacity="0.95">'+txt+'</text>');
+  zoneLbl(0.5, t.on, 'on', 'RISK ON'); zoneLbl(t.on, t.off, 'neutral', 'NEUTRAL'); zoneLbl(t.off, t.stress, 'off', 'RISK OFF'); zoneLbl(t.stress, -1, 'stress', 'STRESS');
   for(const v of [0.5, t.on, 0, t.off, t.stress, -0.7, -1]){
     const yy = yAt(v).toFixed(1), tierLine = (v===t.on||v===t.off||v===t.stress);
     parts.push('<line x1="'+padL+'" y1="'+yy+'" x2="'+(padL+plotW)+'" y2="'+yy+'" stroke="#4C5A78" stroke-width="1" opacity="'+(v===0?'0.9':'0.35')+'"'+(tierLine?' stroke-dasharray="3 3"':'')+'/>');
@@ -1627,10 +1630,10 @@ function wireGauge(){
 const RB = {doc:null, lo:0, hi:0, userRange:false, wired:false, open:{}};
 const RB_SHORT = {'Economic Surprise & Sentiment':'Econ surprise','Liquidity':'Liquidity','Credit Spreads':'Credit',
   'Rates':'Rates','Equity Market Positioning':'Positioning','Equity Volatility':'Volatility','Foreign Exchange':'FX','Gold':'Gold'};
-const RB_RGB = {on:'61,156,121', neutral:'226,209,170', off:'208,89,75'};
+const RB_RGB = {on:'72,186,140', neutral:'226,209,170', off:'226,96,80'};
 const RB_DEFAULT_MONTHS = 24;
 function rbState(v){ const t = RB.doc.thresh; return v===null||v===undefined ? null : v>t ? 'on' : v<-t ? 'off' : 'neutral'; }
-function rbFill(v){ const s = rbState(v); if(s==='neutral') return 'rgba('+RB_RGB.neutral+',.85)'; return s ? 'rgba('+RB_RGB[s]+','+(0.35+0.55*Math.min(1,Math.abs(v))).toFixed(2)+')' : 'transparent'; }
+function rbFill(v){ const s = rbState(v); if(s==='neutral') return 'rgba('+RB_RGB.neutral+',.85)'; return s ? 'rgba('+RB_RGB[s]+','+(0.6+0.35*Math.min(1,Math.abs(v))).toFixed(2)+')' : 'transparent'; }
 function rbPill(v){ const s = rbState(v); return '<span class="risk-pill '+s+'">'+({on:'▲ Risk on',off:'▼ Risk off',neutral:'● Neutral'})[s]+'</span>'; }
 function rbDay(d){ return (+d.slice(8,10))+' '+MONTHS[+d.slice(5,7)-1]; }
 function rbDefaultLo(){ return Math.max(0, RB.doc.dates.length-1-Math.round(RB_DEFAULT_MONTHS*52/12)); }
