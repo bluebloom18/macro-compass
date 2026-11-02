@@ -1188,6 +1188,13 @@ function nfDefaultLo(){ return Math.max(0, NF.d.n-1-Math.round(NF_DEFAULT_MONTHS
 function riskPill(on){ return '<span class="risk-pill '+(on?'on':'off')+'">'+(on?'▲ Risk on':'▼ Risk off')+'</span>'; }
 function fmtNum(x, dp){ return (x>0?'+':x<0?'&minus;':'')+Math.abs(x).toFixed(dp===undefined?3:dp); }
 
+// the >0.02 rule only switches on a big weekly move, so say how long it has been holding
+function nfHeld(on, since, weeks, chg){
+  if(weeks===0) return 'Switched to '+(on?'risk on':'risk off')+' this week: NFCI moved '+fmtNum(chg)+'.';
+  const age = weeks < 9 ? weeks+(weeks===1?' week':' weeks') : Math.round(weeks/4.345)+' months';
+  return 'Holding '+(on?'risk on':'risk off')+' since '+fmtDate(since)+' ('+age+'), when NFCI moved '+fmtNum(chg)
+    + '. No weekly move has cleared &plusmn;0.02 since.';
+}
 function renderNfTiles(){
   const doc = NF.doc, d = NF.d, i = d.n-1;
   let lastBig = null;
@@ -1203,7 +1210,7 @@ function renderNfTiles(){
     + '<div class="card nf-tile"><div class="eyebrow">1-week change rule</div>'+riskPill(d.sROC[i])
       + '<div class="sub">This week '+fmtNum(d.chg[i])+(d.sROC[i]?' (eased)':' (tightened)')+'</div></div>'
     + '<div class="card nf-tile"><div class="eyebrow">1-week change &gt; 0.02 rule</div>'+riskPill(d.sBand[i])
-      + '<div class="sub">'+(lastBig!==null?'Last move &gt; 0.02: '+fmtNum(d.chg[lastBig])+' on '+fmtDate(doc.dates[lastBig]):'No move &gt; 0.02 yet')+'</div></div>';
+      + '<div class="sub">'+(lastBig!==null?nfHeld(d.sBand[i], doc.dates[lastBig], i-lastBig, d.chg[lastBig]):'No move &gt; 0.02 yet')+'</div></div>';
 }
 
 function renderNfBacktest(){
