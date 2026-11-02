@@ -1,10 +1,7 @@
 """Risk Barometer: 8-pillar weekly risk-on/risk-off score on free data (Yahoo + FRED).
 
-A reconstruction of the Lion Global Investors "Risk Barometer Index" layout (8 pillars,
-red/amber/green cells, one averaged Risk Index), whose methodology isn't published.
-Reverse-engineered from a 5-week sample of their table: cells are a continuous score
-bucketed into colours (same colours, different index values), the index is the equal-weight
-pillar mean, and the red/amber line on the index sits between -0.30 and -0.44.
+Eight pillars, red/amber/green cells and one averaged Risk Index: each cell is a continuous
+score bucketed into colours, and the index is the equal-weight pillar mean.
 
 Each input is sampled weekly (Friday close, or the latest bar for the current week), turned
 into a 3-year rolling z-score, signed so positive = risk-on, and clipped to [-1, 1]. A pillar

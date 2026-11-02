@@ -120,8 +120,8 @@ On a version conflict, re-read the named document, update `if_version` and resen
 
 ## 8. Email
 
-Send one email with the Gmail send tool: to `["lienberluen@lionglobalinvestors.com"]`, cc
-`["lienbl@gmail.com"]`, subject `Weekly macro debate (<d Mon YYYY>): <headline>`, `htmlBody` = the
+Send one email with the Gmail send tool to the to and cc addresses given in the routine prompt
+(they are kept out of this public repo), subject `Weekly macro debate (<d Mon YYYY>): <headline>`, `htmlBody` = the
 contents of `weekly_debate/email.html` exactly, and a short plain-text `body` with the headline,
 the bottom line and the page link. If the Gmail tool is unavailable or the send fails, say so in
 the report.

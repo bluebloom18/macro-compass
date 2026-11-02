@@ -155,11 +155,9 @@ the episodes came to nothing, and the 2018 Q4 and 2025 selloffs had no prior war
 
 ## Risk Barometer
 
-`risk_barometer.py` builds an 8-pillar weekly risk-on/risk-off score modelled on Lion Global
-Investors' Risk Barometer table (Economic Surprise & Sentiment, Liquidity, Credit Spreads, Rates,
-Equity Positioning, Equity Volatility, FX, Gold). Their method isn't published; this one was
-reverse-engineered from a 5-week sample of their table and fitted loosely to it (index within
-~0.11 on average, 18/32 cell colours), using free data only.
+`risk_barometer.py` builds an 8-pillar weekly risk-on/risk-off score (Economic Surprise &
+Sentiment, Liquidity, Credit Spreads, Rates, Equity Positioning, Equity Volatility, FX, Gold),
+using free data only.
 
 - Each input is sampled weekly (Friday, plus the latest day as "Current"), turned into a 3-year
   rolling z-score of its level, 4-week change or distance from a moving average, signed so
