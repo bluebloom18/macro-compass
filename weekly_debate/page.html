@@ -12,6 +12,8 @@
   --bull:#2C8A66; --bear:#C04A3D; --bull-bg:rgba(44,138,102,.10); --bear-bg:rgba(192,74,61,.10);
   --amber:#A87920; --amber-bg:rgba(168,121,32,.12);
   --pos:#1F5FBF; --neg:#C0392B;
+  --cell-on:rgba(44,138,102,.30); --cell-off:rgba(192,74,61,.30); --cell-mid:#F3EAD3;
+  --cell-on-ink:#17573F; --cell-off-ink:#8E2A20; --cell-mid-ink:#5C4A23;
   --font-display:'Fraunces',Georgia,'Times New Roman',serif;
   --font-body:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
   --font-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Consolas,monospace;
@@ -24,6 +26,8 @@
   --bull:#5CC09A; --bear:#EE8476; --bull-bg:rgba(92,192,154,.12); --bear-bg:rgba(238,132,118,.12);
   --amber:#E3B868; --amber-bg:rgba(227,184,104,.14);
   --pos:#7AAEF5; --neg:#F08A7E;
+  --cell-on:rgba(92,192,154,.34); --cell-off:rgba(238,132,118,.34); --cell-mid:rgba(226,209,170,.38);
+  --cell-on-ink:#CFF2E3; --cell-off-ink:#FFD9D3; --cell-mid-ink:#F5F3EE;
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
@@ -34,6 +38,8 @@
   --bull:#5CC09A; --bear:#EE8476; --bull-bg:rgba(92,192,154,.12); --bear-bg:rgba(238,132,118,.12);
   --amber:#E3B868; --amber-bg:rgba(227,184,104,.14);
   --pos:#7AAEF5; --neg:#F08A7E;
+  --cell-on:rgba(92,192,154,.34); --cell-off:rgba(238,132,118,.34); --cell-mid:rgba(226,209,170,.38);
+  --cell-on-ink:#CFF2E3; --cell-off-ink:#FFD9D3; --cell-mid-ink:#F5F3EE;
   color-scheme:dark;
 }
 *{box-sizing:border-box;}
@@ -90,9 +96,9 @@ td.dim{color:var(--ink-muted);}
 
 /* barometer heat table */
 .heat td.c{text-align:center; font-family:var(--font-mono); font-size:12.5px; font-variant-numeric:tabular-nums; border-radius:0;}
-.heat td.on{background:var(--bull-bg); color:var(--bull);}
-.heat td.off{background:var(--bear-bg); color:var(--bear);}
-.heat td.mid{background:var(--amber-bg); color:var(--amber);}
+.heat td.on{background:var(--cell-on); color:var(--cell-on-ink); font-weight:600;}
+.heat td.off{background:var(--cell-off); color:var(--cell-off-ink); font-weight:600;}
+.heat td.mid{background:var(--cell-mid); color:var(--cell-mid-ink);}
 .heat tr.total td{font-weight:600;}
 .legend{display:flex; flex-wrap:wrap; gap:14px; font-size:12.5px; color:var(--ink-muted);}
 .legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:6px; vertical-align:-1px;}
@@ -300,7 +306,7 @@ function render(d){
     + (vc ? '<h3 style="font-size:17px; margin-top:6px;">Vote changes, ' + day(vc.start) + ' &rarr; ' + day(vc.end) + '</h3>'
       + '<div class="table-scroll"><table><thead><tr><th class="num">Date</th><th>Signal</th><th>Change</th><th>Effect</th></tr></thead><tbody>' + vcRows + '</tbody></table></div>' : '')
     + (d.gauge ? '<h3 style="font-size:17px; margin-top:6px;">Risk Gauge, last five Fridays</h3>'
-      + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.15; stress below &minus;0.40)</span><span><i style="background:var(--amber)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.15)</span></div>'
+      + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.15; stress below &minus;0.40)</span><span><i style="background:var(--cell-mid);box-shadow:inset 0 0 0 1px var(--border)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.15)</span></div>'
       + '<div class="table-scroll"><table class="heat"><thead><tr><th>Block</th>' + d.gauge.dates.map(x => '<th class="num">' + day(x) + '</th>').join('') + '</tr></thead><tbody>'
       + d.gauge.blocks.map(b => '<tr><td class="k">' + esc(b.name) + '</td>' + b.scores.map(v => gaugeCell(v, d.gauge.tiers)).join('') + '</tr>').join('')
       + '<tr class="total"><td class="k">Risk Gauge</td>' + d.gauge.index.map(v => gaugeCell(v, d.gauge.tiers)).join('') + '</tr>'
@@ -308,7 +314,7 @@ function render(d){
       + '</tbody></table></div><p class="note">Coincident market stress: volatility (VIX, VIX term structure, MOVE), credit (high-yield and investment-grade bonds vs Treasuries) and the S&amp;P 500 trend, each scored against its history since 2000.'
       + (d.gauge.macro ? ' Macro pressure averages the slower economic surprise, liquidity, rates and FX readings. Below &minus;0.33 while the gauge is still calm, it has been an early warning: the gauge went risk off within 4 weeks 43% of the time, against 16% otherwise.' : '') + '</p>' : '')
     + (d.gauge ? '' : '<h3 style="font-size:17px; margin-top:6px;">Risk Barometer, last five Fridays</h3>'
-    + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.33)</span><span><i style="background:var(--amber)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.33)</span></div>'
+    + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.33)</span><span><i style="background:var(--cell-mid);box-shadow:inset 0 0 0 1px var(--border)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.33)</span></div>'
     + '<div class="table-scroll"><table class="heat"><thead><tr><th>Pillar</th>' + d.barometer.dates.map(x => '<th class="num">' + day(x) + '</th>').join('') + '</tr></thead><tbody>'
     + d.barometer.pillars.map(p => '<tr><td class="k">' + esc(p.name) + '</td>' + p.scores.map(v => scoreCell(v, t)).join('') + '</tr>').join('')
     + '<tr class="total"><td class="k">Risk Index</td>' + d.barometer.index.map(v => scoreCell(v, t)).join('') + '</tr>'
