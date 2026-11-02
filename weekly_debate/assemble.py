@@ -74,6 +74,16 @@ def gauge_txt(g):
     return "%+.2f %s" % (v, name)
 
 
+def macro_txt(g):
+    """'-0.25 no warning' for the email summary line: weak macro pillars while the gauge is calm = warning."""
+    m = g.get("macro") if g else None
+    if not m or m["index"][-1] is None:
+        return None
+    v, gi = m["index"][-1], g["index"][-1]
+    state = "no warning" if v >= m["weak"] else "pressure building" if gi is not None and gi >= g["tiers"]["off"] else "weak, gauge already risk-off"
+    return "%+.2f %s" % (v, state)
+
+
 def fmt_level(m):
     v = m["level"]
     if m["name"].startswith(("US 10Y", "US 2Y")):
@@ -122,7 +132,7 @@ def email_html(doc, editions=()):
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6F7A90">Macro Compass weekly debate &middot; readings as of {asof}</p>
 <h1 style="margin:0 0 6px;font-family:Georgia,serif;font-size:24px">{headline}</h1>
 <p style="margin:0 0 14px">Full page with tables: <a href="{url}#e{eid}">{url}#e{eid}</a></p>
-<p style="margin:0 0 14px;padding:8px 12px;background:#EDEFF5;border-radius:6px"><b>Regime:</b> {regime} ({rpct}% of votes) &nbsp;|&nbsp; growth signals {gu} rising, {gd} falling &nbsp;|&nbsp; inflation signals {iu} rising, {idn} falling &nbsp;|&nbsp; <b>Risk Gauge:</b> {rg} &nbsp;|&nbsp; <b>Risk Barometer:</b> {ri}</p>
+<p style="margin:0 0 14px;padding:8px 12px;background:#EDEFF5;border-radius:6px"><b>Regime:</b> {regime} ({rpct}% of votes) &nbsp;|&nbsp; growth signals {gu} rising, {gd} falling &nbsp;|&nbsp; inflation signals {iu} rising, {idn} falling &nbsp;|&nbsp; <b>Risk Gauge:</b> {rg} &nbsp;|&nbsp; {ri}</p>
 <h2 {h2}>Bottom line</h2><ul style="margin:0;padding-left:20px">{bottom}</ul>
 {last_week}
 <h2 {h2}>Markets and indicators</h2><p style="margin:0 0 10px">{context}</p>
@@ -141,7 +151,9 @@ def email_html(doc, editions=()):
         special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
         gu=len(ax["growth"]["up"]), gd=len(ax["growth"]["down"]), iu=len(ax["inflation"]["up"]), idn=len(ax["inflation"]["down"]),
         rg=gauge_txt(doc.get("gauge")),
-        ri=("%+.2f" % doc["barometer"]["index"][-1]) if doc["barometer"]["index"][-1] is not None else "n/a",
+        # macro pressure replaced the barometer in the summary from the 2 Nov 2026 edition
+        ri=("<b>Macro pressure:</b> " + macro_txt(doc["gauge"])) if macro_txt(doc.get("gauge")) else
+           ("<b>Risk Barometer:</b> " + (("%+.2f" % doc["barometer"]["index"][-1]) if doc["barometer"]["index"][-1] is not None else "n/a")),
         h2=h2, bottom=li(doc["bottom_line"]), last_week=last_week, context=e(doc["context"]), rows=rows,
         bear=pts(doc["bear"]), bull=pts(doc["bull"]), sent=e(doc["sentiment"]["text"]),
         posn="".join("<li><b>%s:</b> %s</li>" % (e(x["what"]), e(x["why"])) for x in doc["positioning"]),

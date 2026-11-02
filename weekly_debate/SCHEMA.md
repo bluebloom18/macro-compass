@@ -13,7 +13,7 @@ See `narrative_example.json` for a complete example.
 | `last_week` | string or `null` | How last week's call played out, including misses. |
 | `context` | string | One paragraph: what is driving the tape. |
 | `axis_notes` | `{growth, inflation}` | One sentence each under the vote bars: which signals point which way. |
-| `barometer_note` | string | What changed in the Risk Gauge and the Risk Barometer this week, and why. Lead with the gauge (the coincident stress read); the barometer is the slower macro backdrop. |
+| `barometer_note` | string | What changed in the Risk Gauge and macro pressure this week, and why. The gauge is the coincident stress read; macro pressure (the barometer's economic surprise, liquidity, rates and FX pillars) is the early warning, flagged when it is below its weak line while the gauge is still calm. The page no longer shows the 8-pillar barometer, so don't cite its other pillars. |
 | `bear`, `bull` | 4-6 `{title, text}` | `title` is the claim, `text` the evidence. |
 | `sentiment` | object | `text` (the answer), `retail_label`, `retail` [`{k, v}`], `pro_label`, `pro` [`{k, v}`], `note` (optional). |
 | `positioning` | `[{what, why}]` | Judgment call. |

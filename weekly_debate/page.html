@@ -182,7 +182,7 @@ footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; c
 
   <section id="archive" hidden></section>
 
-  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, Risk Barometer). Market context from the sources listed in each edition. Not investment advice.</footer>
+  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, macro pressure). Market context from the sources listed in each edition. Not investment advice.</footer>
 </div>
 
 <script>
@@ -256,6 +256,8 @@ function sgn2(v){ return (v > 0 ? '+' : v < 0 ? '&minus;' : '') + Math.abs(v).to
 function gTier(v, t){ return v < t.stress ? 'stress' : v < t.off ? 'risk-off' : v > t.on ? 'risk-on' : 'neutral'; }
 // same colours as the barometer cells; scoreCell's threshold set to the gauge's tier line
 function gaugeCell(v, t){ return scoreCell(v, t.on); }
+// macro pressure: weak below m.weak; a warning only while the gauge itself is still calm
+function macroState(m, g, i){ const v = m.index[i], gi = g.index[i]; return v === null ? '' : v >= m.weak ? 'no warning' : (gi !== null && gi >= g.tiers.off) ? 'pressure building' : 'weak, gauge already risk-off'; }
 
 function render(d){
   const r = d.regime || {}, rm = REGIME[r.code];
@@ -270,7 +272,8 @@ function render(d){
     + '<span class="chip">Inflation signals <b>' + ax.inflation.up.length + '&uarr; ' + ax.inflation.down.length + '&darr;</b></span>'
     + (d.special_report ? '<a class="chip" href="#special" style="text-decoration:none;border-color:var(--accent);color:var(--accent)">Special report: ' + esc(d.special_report.title) + '</a>' : '')
     + (gi !== null ? '<span class="chip">Risk Gauge <b>' + sgn2(gi) + '</b> ' + gTier(gi, d.gauge.tiers) + '</span>' : '')
-    + (bi !== null ? '<span class="chip">Risk Barometer <b>' + (bi > 0 ? '+' : bi < 0 ? '&minus;' : '') + Math.abs(bi).toFixed(2) + '</b> ' + (bi <= -d.barometer.thresh ? 'risk-off' : bi >= d.barometer.thresh ? 'risk-on' : 'neutral') + '</span>' : '');
+    + (d.gauge && d.gauge.macro ? '<span class="chip">Macro pressure <b>' + sgn2(d.gauge.macro.index[d.gauge.macro.index.length - 1]) + '</b> ' + macroState(d.gauge.macro, d.gauge, d.gauge.index.length - 1) + '</span>'
+      : bi !== null ? '<span class="chip">Risk Barometer <b>' + (bi > 0 ? '+' : bi < 0 ? '&minus;' : '') + Math.abs(bi).toFixed(2) + '</b> ' + (bi <= -d.barometer.thresh ? 'risk-off' : bi >= d.barometer.thresh ? 'risk-on' : 'neutral') + '</span>' : '');
 
   const t = d.barometer.thresh || 0.3333;
   const gNet = ax.growth.up.length - ax.growth.down.length, iNet = ax.inflation.up.length - ax.inflation.down.length;
@@ -301,13 +304,15 @@ function render(d){
       + '<div class="table-scroll"><table class="heat"><thead><tr><th>Block</th>' + d.gauge.dates.map(x => '<th class="num">' + day(x) + '</th>').join('') + '</tr></thead><tbody>'
       + d.gauge.blocks.map(b => '<tr><td class="k">' + esc(b.name) + '</td>' + b.scores.map(v => gaugeCell(v, d.gauge.tiers)).join('') + '</tr>').join('')
       + '<tr class="total"><td class="k">Risk Gauge</td>' + d.gauge.index.map(v => gaugeCell(v, d.gauge.tiers)).join('') + '</tr>'
-      + '</tbody></table></div><p class="note">Coincident market stress: volatility (VIX, VIX term structure, MOVE), credit (high-yield and investment-grade bonds vs Treasuries) and the S&amp;P 500 trend, each scored against its history since 2000.</p>' : '')
-    + '<h3 style="font-size:17px; margin-top:6px;">Risk Barometer, last five Fridays</h3>'
+      + (d.gauge.macro ? '<tr><td class="k">Macro pressure</td>' + d.gauge.macro.index.map(v => scoreCell(v, -d.gauge.macro.weak)).join('') + '</tr>' : '')
+      + '</tbody></table></div><p class="note">Coincident market stress: volatility (VIX, VIX term structure, MOVE), credit (high-yield and investment-grade bonds vs Treasuries) and the S&amp;P 500 trend, each scored against its history since 2000.'
+      + (d.gauge.macro ? ' Macro pressure averages the slower economic surprise, liquidity, rates and FX readings. Below &minus;0.33 while the gauge is still calm, it has been an early warning: the gauge went risk off within 4 weeks 43% of the time, against 16% otherwise.' : '') + '</p>' : '')
+    + (d.gauge ? '' : '<h3 style="font-size:17px; margin-top:6px;">Risk Barometer, last five Fridays</h3>'
     + '<div class="legend"><span><i style="background:var(--bear)"></i>Risk off (below &minus;0.33)</span><span><i style="background:var(--amber)"></i>Neutral</span><span><i style="background:var(--bull)"></i>Risk on (above +0.33)</span></div>'
     + '<div class="table-scroll"><table class="heat"><thead><tr><th>Pillar</th>' + d.barometer.dates.map(x => '<th class="num">' + day(x) + '</th>').join('') + '</tr></thead><tbody>'
     + d.barometer.pillars.map(p => '<tr><td class="k">' + esc(p.name) + '</td>' + p.scores.map(v => scoreCell(v, t)).join('') + '</tr>').join('')
     + '<tr class="total"><td class="k">Risk Index</td>' + d.barometer.index.map(v => scoreCell(v, t)).join('') + '</tr>'
-    + '</tbody></table></div><p class="note">' + minus(d.barometer_note) + '</p></section>');
+    + '</tbody></table></div>') + '<p class="note">' + minus(d.barometer_note) + '</p></section>');
 
   const side = (cls, title, items) => '<div class="side ' + cls + '"><h3>' + title + '</h3><ol>'
     + items.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div>';

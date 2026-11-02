@@ -26,7 +26,7 @@ send tool (query `gmail send_message`). If ArtifactData is missing, stop and rep
    use their output, and say so in the report.
 2. Run `python3 weekly_debate/debate_data.py`. It writes `weekly_debate/debate_data.json`: the
    market table, regime vote counts per axis, the five-session vote changes and the last five
-   Risk Gauge and Risk Barometer weeks. Those numbers are fixed; the narrative must agree with them.
+   Risk Gauge weeks with macro pressure. Those numbers are fixed; the narrative must agree with them.
 
 ## 3. Last week's edition
 
@@ -132,7 +132,7 @@ Commit nothing. `narrative.json`, `debate_data.json`, `edition_doc.json`, `index
 `email.html`, `latest_doc.json` and `risk_doc.json` are gitignored scratch files. If a stop hook
 asks you to commit untracked files, delete the scratch files instead.
 
-Report: the edition id and headline, the regime, Risk Gauge and Risk Index used, whether the database
+Report: the edition id and headline, the regime, Risk Gauge and macro pressure used, whether the database
 readings were fresh or rebuilt, the number of sources, whether the database write and the email
 succeeded, and anything you could not verify.
 
