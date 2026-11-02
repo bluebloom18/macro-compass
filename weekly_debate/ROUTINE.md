@@ -75,6 +75,17 @@ structure and tone.
 
 Tone: plain and human. Short sentences, one idea each. No stacked hedges, no analyst jargon
 piles, no em-dash asides, no "not X, but Y" framing. Explain the mechanism in everyday words.
+Write like a fund manager's internal note, not a newsletter. State the fact and its effect, then
+stop. Avoid AI-sounding phrasing:
+
+- No dramatic verbs or metaphors for markets: "cracked", "turned ugly", "landed", "lands",
+  "pays the price", "the tape", "where things sit/stand", "the turn".
+- No one-line punchlines that announce importance: "That split matters.", "This matters most.",
+  "This is not a recession setup.", "X is the key.", "This week matters".
+- No "a different problem/case from", "is now a ... story", "on top of that", colon-then-reveal
+  sentences ("Last week made the case for it: ...") or rhetorical questions.
+- Titles of bear/bull points and catalysts are plain statements of fact or condition
+  ("Credit spreads are widening.", "Oil falls."), not slogans.
 
 - `id` and `written`: today's date (YYYY-MM-DD, Singapore time).
 - `headline`: the week's call in one line, with no colon-then-reveal.

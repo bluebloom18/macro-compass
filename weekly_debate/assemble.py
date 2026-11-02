@@ -125,14 +125,14 @@ def email_html(doc, editions=()):
 <p style="margin:0 0 14px;padding:8px 12px;background:#EDEFF5;border-radius:6px"><b>Regime:</b> {regime} ({rpct}% of votes) &nbsp;|&nbsp; growth signals {gu} rising, {gd} falling &nbsp;|&nbsp; inflation signals {iu} rising, {idn} falling &nbsp;|&nbsp; <b>Risk Gauge:</b> {rg} &nbsp;|&nbsp; <b>Risk Barometer:</b> {ri}</p>
 <h2 {h2}>Bottom line</h2><ul style="margin:0;padding-left:20px">{bottom}</ul>
 {last_week}
-<h2 {h2}>Where things stand</h2><p style="margin:0 0 10px">{context}</p>
+<h2 {h2}>Markets and indicators</h2><p style="margin:0 0 10px">{context}</p>
 <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;width:100%;max-width:560px">
 <tr><th style="text-align:left;padding:4px 8px;color:#6F7A90">Market</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">Level</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">1 month</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">vs 52w high</th></tr>{rows}</table>
 <h2 {h2}>Bear case</h2><ol style="margin:0;padding-left:20px">{bear}</ol>
 <h2 {h2}>Bull case</h2><ol style="margin:0;padding-left:20px">{bull}</ol>
-<h2 {h2}>Is sentiment too bearish?</h2><p style="margin:0">{sent}</p>
-<h2 {h2}>How to be positioned</h2><ul style="margin:0;padding-left:20px">{posn}</ul>
-<h2 {h2}>What could cause the turn</h2><ol style="margin:0;padding-left:20px">{trig}</ol>
+<h2 {h2}>Sentiment</h2><p style="margin:0">{sent}</p>
+<h2 {h2}>Positioning</h2><ul style="margin:0;padding-left:20px">{posn}</ul>
+<h2 {h2}>Catalysts to watch</h2><ol style="margin:0;padding-left:20px">{trig}</ol>
 <p style="margin:10px 0 0;padding:8px 12px;background:#EDEFF5;border-radius:6px">{callout}</p>
 {special_html}
 {past_html}

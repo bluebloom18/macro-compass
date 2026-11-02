@@ -168,7 +168,7 @@ footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; c
   <header>
     <div class="eyebrow" id="eyebrow">Macro Compass weekly debate</div>
     <h1 id="headline">Weekly macro debate</h1>
-    <p id="intro">Bull vs bear on the week's macro tape: where the indicators sit, whether sentiment is too bearish, how to be positioned and what could cause the turn. A new edition lands every Monday morning.</p>
+    <p id="intro">A weekly bull and bear review of macro indicators, sentiment, positioning and catalysts. Updated every Monday morning.</p>
     <div class="chips" id="chips"></div>
     <div class="edition-bar" id="editionBar" hidden>
       <label for="edition">Edition</label>
@@ -286,7 +286,7 @@ function render(d){
   html.push('<div class="verdict"><h2>Bottom line</h2><ul>' + d.bottom_line.map(x => '<li>' + minus(x) + '</li>').join('') + '</ul></div>');
   if(d.last_week) html.push('<div class="lastweek"><h2>Last week\'s call</h2><p>' + minus(d.last_week) + '</p></div>');
 
-  html.push('<section><h2>Where the indicators sit</h2><p class="lede">' + minus(d.context) + '</p>'
+  html.push('<section><h2>Markets and indicators</h2><p class="lede">' + minus(d.context) + '</p>'
     + '<div class="table-scroll"><table><thead><tr><th>Market</th><th class="num">Level</th><th class="num">1 month</th><th class="num">vs 52w high</th></tr></thead><tbody>'
     + d.markets.map(m => '<tr><td class="k">' + esc(m.name) + '</td><td class="num">' + fmtLevel(m) + '</td>' + chgCell(m.m1, m.kind) + chgCell(m.vs_high, m.kind) + '</tr>').join('')
     + '</tbody></table></div><p class="note">Closes from the Macro Compass data feed (Yahoo Finance, FRED). Yield and spread changes are in basis points.</p>'
@@ -311,19 +311,19 @@ function render(d){
 
   const side = (cls, title, items) => '<div class="side ' + cls + '"><h3>' + title + '</h3><ol>'
     + items.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div>';
-  html.push('<section><h2>The debate</h2><div class="debate">' + side('bear', 'Bear case', d.bear) + side('bull', 'Bull case', d.bull) + '</div></section>');
+  html.push('<section><h2>Bear and bull case</h2><div class="debate">' + side('bear', 'Bear case', d.bear) + side('bull', 'Bull case', d.bull) + '</div></section>');
 
   const s = d.sentiment;
   const gauge = (cls, label, rows) => '<div class="gauge"><span class="tag ' + cls + '">' + esc(label) + '</span><dl>'
     + rows.map(r => '<dt>' + esc(r.k) + '</dt><dd>' + minus(r.v) + '</dd>').join('') + '</dl></div>';
-  html.push('<section><h2>Is sentiment too bearish?</h2><p class="lede">' + minus(s.text) + '</p><div class="split">'
+  html.push('<section><h2>Sentiment</h2><p class="lede">' + minus(s.text) + '</p><div class="split">'
     + gauge('fear', s.retail_label || 'Retail investors', s.retail) + gauge('greed', s.pro_label || 'Fund managers', s.pro) + '</div>'
     + (s.note ? '<p class="note">' + minus(s.note) + '</p>' : '') + '</section>');
 
-  html.push('<section><h2>How to be positioned</h2><p class="note">This is a judgment call, not a model output.</p><div class="tilts">'
+  html.push('<section><h2>Positioning</h2><p class="note">Discretionary view, separate from the model signals.</p><div class="tilts">'
     + d.positioning.map(x => '<div class="tilt"><span class="what">' + esc(x.what) + '</span><span class="why">' + minus(x.why) + '</span></div>').join('') + '</div></section>');
 
-  html.push('<section><h2>What could cause the turn</h2><ol class="triggers">'
+  html.push('<section><h2>Catalysts to watch</h2><ol class="triggers">'
     + d.triggers.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol>'
     + '<div class="callout">' + minus(d.callout) + '</div></section>');
 

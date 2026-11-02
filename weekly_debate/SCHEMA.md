@@ -17,7 +17,7 @@ See `narrative_example.json` for a complete example.
 | `bear`, `bull` | 4-6 `{title, text}` | `title` is the claim, `text` the evidence. |
 | `sentiment` | object | `text` (the answer), `retail_label`, `retail` [`{k, v}`], `pro_label`, `pro` [`{k, v}`], `note` (optional). |
 | `positioning` | `[{what, why}]` | Judgment call. |
-| `triggers` | `[{title, text}]` | What could cause the turn. |
+| `triggers` | `[{title, text}]` | Catalysts to watch. |
 | `callout` | string | What to watch on the Macro Compass dashboard. |
 | `sources` | `[{title, url}]` | Every source behind a number or claim. http(s) only. |
 
