@@ -1526,7 +1526,7 @@ function drawGauge(){
   const parts = [];
   const band = (a, b, k, op) => parts.push('<rect x="'+padL+'" y="'+yAt(a)+'" width="'+plotW+'" height="'+(yAt(b)-yAt(a))+'" fill="rgb('+RG_RGB[k]+')" opacity="'+op+'"/>');
   // one distinct colour per zone, strong enough to read on the dark background, labelled on the right
-  band(0.5, t.on, 'on', 0.24); band(t.on, t.off, 'neutral', 0.13); band(t.off, t.stress, 'off', 0.26); band(t.stress, -1, 'stress', 0.55);
+  band(0.5, t.on, 'on', 0.24); band(t.on, t.off, 'neutral', 0.38); band(t.off, t.stress, 'off', 0.26); band(t.stress, -1, 'stress', 0.55);
   const zoneLbl = (a, b, k, txt) => parts.push('<text x="'+(padL+plotW-6)+'" y="'+((yAt(a)+yAt(b))/2+3.5).toFixed(1)+'" text-anchor="end" font-family="IBM Plex Mono" font-size="9.5" font-weight="600" fill="rgb('+RG_RGB[k]+')" opacity="0.95">'+txt+'</text>');
   zoneLbl(0.5, t.on, 'on', 'RISK ON'); zoneLbl(t.on, t.off, 'neutral', 'NEUTRAL'); zoneLbl(t.off, t.stress, 'off', 'RISK OFF'); zoneLbl(t.stress, -1, 'stress', 'STRESS');
   for(const v of [0.5, t.on, 0, t.off, t.stress, -0.7, -1]){
