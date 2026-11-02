@@ -9,7 +9,7 @@
     "Key events this week: the Fed on Wednesday 28 Oct, and Microsoft, Alphabet and Amazon results on Wednesday and Thursday."
   ],
   "last_week": null,
-  "context": "Oil supply is the main driver. Houthi strikes on Saudi energy sites and attacks on tankers pushed Brent up about 31% in three months. Headline CPI rose to 3.7% and the Fed hiked in September for the first time in over three years. Separately, Meta's capex turned its free cash flow negative and CDS on the big AI spenders jumped.",
+  "context": "Oil supply is the main driver. Houthi strikes on Saudi energy sites and attacks on tankers have Brent about +31% in three months. Headline CPI rose to 3.7% and the Fed hiked in September for the first time in over three years. Separately, Meta's capex turned its free cash flow negative and CDS on the big AI spenders jumped.",
   "axis_notes": {
     "growth": "Only the S&P 500, copper and bitcoin still point up. Small caps, Hong Kong, EM, cyclicals, FX and all three credit spreads point down.",
     "inflation": "Brent, US 2Y and 10Y, breakevens and Bund, Gilt and JGB yields are all rising. Agricultural commodities went flat on Friday."
@@ -25,7 +25,7 @@
   "bull": [
     {"title": "Core inflation is contained.", "text": "Core CPI is 2.6%. The rise is mostly energy, which fades if oil stops climbing. The New York Fed's Williams sees \"no need for urgency.\""},
     {"title": "Earnings are strong.", "text": "Q3 S&P EPS growth is tracking +29.5% with 83% beating. The forward P/E of 18.7 is below both its 5- and 10-year averages."},
-    {"title": "Yields may have peaked.", "text": "The 10Y fell from 5.35% to 4.99% and the rates pillar flipped positive. BofA's survey puts the level that would pull money from stocks into bonds at 5.9%."},
+    {"title": "Yields may have peaked.", "text": "The 10Y yield went from 5.35% to 4.99% (-36bp) and the rates pillar flipped positive. BofA's survey puts the level that would pull money from stocks into bonds at 5.9%."},
     {"title": "Breadth is improving.", "text": "Stocks above their 20-day average went from 20% to 53% last week. Equal-weight beat cap-weight."},
     {"title": "Risk-off readings have been followed by gains.", "text": "After risk-off weeks on the Barometer, the S&P has averaged +5.8% over the next 13 weeks (78% positive), versus +1.7% after risk-on weeks. This is in-sample with overlapping weeks, so treat it as a tendency."}
   ],

@@ -84,6 +84,12 @@ stop. Avoid AI-sounding phrasing:
   "This is not a recession setup.", "X is the key.", "This week matters".
 - No "a different problem/case from", "is now a ... story", "on top of that", colon-then-reveal
   sentences ("Last week made the case for it: ...") or rhetorical questions.
+- Numbers: write every percentage or basis-point **change** with its sign, so the page can
+  colour it (positive blue, negative red): "Alphabet closed -12.6% on Thursday", "Brent is
+  +10.9% in a month", "the 10Y yield is -31bp", "Q3 GDP grew +3.4%". Don't pair a direction
+  verb with a sign that repeats it ("fell -12.6%"); use a neutral verb (closed, was, is) or none.
+  Levels and shares carry no sign: inflation at 3.1%, 82% of companies beat, 85% odds, a 4.93%
+  yield.
 - Titles of bear/bull points and catalysts are plain statements of fact or condition
   ("Credit spreads are widening.", "Oil falls."), not slogans.
 

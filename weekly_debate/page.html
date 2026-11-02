@@ -79,6 +79,8 @@ tr:last-child td{border-bottom:none;}
 td.num, th.num{text-align:right; font-family:var(--font-mono); font-variant-numeric:tabular-nums; white-space:nowrap;}
 td.k{font-weight:600; white-space:nowrap;}
 td.pos{color:var(--pos);}
+.chg-up{color:var(--pos); font-weight:600; white-space:nowrap;}
+.chg-down{color:var(--neg); font-weight:600; white-space:nowrap;}
 td.neg{color:var(--neg);}
 td.dim{color:var(--ink-muted);}
 
@@ -200,7 +202,9 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const WEEKDAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 function esc(s){ return (s===null||s===undefined) ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function day(iso, withDow){ const d = new Date(iso + 'T12:00:00Z'); return (withDow ? WEEKDAYS[d.getUTCDay()] + ' ' : '') + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] + (withDow ? ' ' + d.getUTCFullYear() : ''); }
-function minus(s){ return esc(s).replace(/(^|[\s(])-(?=\d)/g, '$1&minus;'); }
+// signed % / bp changes in the text: positive blue, negative red; unsigned levels stay plain
+function minus(s){ return esc(s).replace(/(^|[\s(])-(?=\d)/g, '$1&minus;')
+  .replace(/(^|[\s(])(\+|&minus;)(\d[\d.,]*(?:%|bp))/g, (m, pre, sg, num) => pre + '<span class="' + (sg === '+' ? 'chg-up' : 'chg-down') + '">' + sg + num + '</span>'); }
 
 function fmtLevel(m){
   const v = m.level;

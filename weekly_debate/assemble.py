@@ -116,8 +116,12 @@ def email_html(doc, editions=()):
         '<td style="padding:4px 8px;border-bottom:1px solid #E3E6EE;text-align:right;%s">%s</td></tr>'
         % (e(m["name"]), fmt_level(m), col(m["m1"]), fmt_chg(m["m1"], m["kind"]), col(m["vs_high"]), fmt_chg(m["vs_high"], m["kind"]))
         for m in doc["markets"])
-    li = lambda items: "".join("<li>%s</li>" % e(x) for x in items)
-    pts = lambda items: "".join("<li><b>%s</b> %s</li>" % (e(x["title"]), e(x["text"])) for x in items)
+    # narrative text: signed % / bp changes coloured like the page (positive blue, negative red)
+    t = lambda s: re.sub(r"(^|[\s(])([+-])(\d[\d.,]*(?:%|bp))",
+                         lambda m: '%s<span style="color:%s;font-weight:600">%s%s</span>' % (
+                             m.group(1), pos if m.group(2) == "+" else neg, "+" if m.group(2) == "+" else "&minus;", m.group(3)), e(s))
+    li = lambda items: "".join("<li>%s</li>" % t(x) for x in items)
+    pts = lambda items: "".join("<li><b>%s</b> %s</li>" % (t(x["title"]), t(x["text"])) for x in items)
     h2 = 'style="font-family:Georgia,serif;font-size:18px;margin:18px 0 6px"'
     r = doc["regime"]
     ax = doc["axes"]
@@ -127,7 +131,7 @@ def email_html(doc, editions=()):
     past = [x for x in editions if x["id"] != doc["id"]][:8]
     past_html = ('<h2 %s>Past editions</h2><ul style="margin:0;padding-left:20px">%s</ul>' % (h2, "".join(
         '<li><a href="%s#e%s">%s</a> &middot; %s</li>' % (PAGE_URL, e(x["id"]), e(x["id"]), e(x.get("headline", ""))) for x in past))) if past else ""
-    last_week = ('<h2 %s>Last week\'s call</h2><p style="margin:0">%s</p>' % (h2, e(doc["last_week"]))) if doc.get("last_week") else ""
+    last_week = ('<h2 %s>Last week\'s call</h2><p style="margin:0">%s</p>' % (h2, t(doc["last_week"]))) if doc.get("last_week") else ""
     return """<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1D2330;max-width:720px">
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6F7A90">Macro Compass weekly debate &middot; readings as of {asof}</p>
 <h1 style="margin:0 0 6px;font-family:Georgia,serif;font-size:24px">{headline}</h1>
@@ -154,10 +158,10 @@ def email_html(doc, editions=()):
         # macro pressure replaced the barometer in the summary from the 2 Nov 2026 edition
         ri=("<b>Macro pressure:</b> " + macro_txt(doc["gauge"])) if macro_txt(doc.get("gauge")) else
            ("<b>Risk Barometer:</b> " + (("%+.2f" % doc["barometer"]["index"][-1]) if doc["barometer"]["index"][-1] is not None else "n/a")),
-        h2=h2, bottom=li(doc["bottom_line"]), last_week=last_week, context=e(doc["context"]), rows=rows,
-        bear=pts(doc["bear"]), bull=pts(doc["bull"]), sent=e(doc["sentiment"]["text"]),
-        posn="".join("<li><b>%s:</b> %s</li>" % (e(x["what"]), e(x["why"])) for x in doc["positioning"]),
-        trig=pts(doc["triggers"]), callout=e(doc["callout"]))
+        h2=h2, bottom=li(doc["bottom_line"]), last_week=last_week, context=t(doc["context"]), rows=rows,
+        bear=pts(doc["bear"]), bull=pts(doc["bull"]), sent=t(doc["sentiment"]["text"]),
+        posn="".join("<li><b>%s:</b> %s</li>" % (e(x["what"]), t(x["why"])) for x in doc["positioning"]),
+        trig=pts(doc["triggers"]), callout=t(doc["callout"]))
 
 
 def main():

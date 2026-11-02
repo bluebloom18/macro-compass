@@ -21,7 +21,8 @@ See `narrative_example.json` for a complete example.
 | `callout` | string | What to watch on the Macro Compass dashboard. |
 | `sources` | `[{title, url}]` | Every source behind a number or claim. http(s) only. |
 
-Write negatives with a plain hyphen (`-8.9`); the page turns them into minus signs.
+Write negatives with a plain hyphen (`-8.9`); the page turns them into minus signs. A signed % or bp change in any text field (`+10.9%`, `-12.6%`, `-31bp`) is coloured blue or red on
+the page and in the email; unsigned numbers are treated as levels and stay plain.
 
 ## Optional: `special_report`
 
