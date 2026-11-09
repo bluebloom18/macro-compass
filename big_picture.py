@@ -542,11 +542,30 @@ def main():
         cot_asof = max(r["date"] for r in cot if not r.get("error"))
     except Exception as e:
         errors["cot"] = str(e)[:160]
-        cot, cot_asof = [], None
+        cot, cot_asof, cot_raw = [], None, None
+    import bigpic_extras as ex
+
+    def part(label, fn):
+        print("Big Picture: %s" % label)
+        t0 = time.time()
+        try:
+            out = fn()
+            print("  done in %.0fs" % (time.time() - t0))
+            return out
+        except Exception as e:
+            errors[label] = str(e)[:160]
+            print("  FAILED: %s" % e, file=sys.stderr)
+            return None
+    smi = part("smart money proxy", ex.smart_money)
+    idxb = part("index breadth", lambda: ex.breadth(
+        {k: list(zip(series[k]["dates"], series[k]["closes"])) for k in ("spx", "ndx") if k in series}))
+    bt_reg = part("regime backtest", lambda: ex.regime_backtest(series))
+    bt_cot = part("CoT backtest", lambda: ex.cot_backtest(COT, cot_raw)) if cot_raw else None
     doc = dict(
         asof=asof, built=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"), regimes=REGIMES,
         summary=summary, markets=rows, persistence=pers, history=history(series),
         breadth=breadth(series), cot=dict(asof=cot_asof, rows=cot), errors=errors,
+        smi=smi, idx_breadth=idxb, backtest=dict(regimes=bt_reg, cot=bt_cot),
     )
     with open(OUT, "w") as f:
         json.dump(doc, f, separators=(",", ":"))

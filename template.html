@@ -269,6 +269,11 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 #bpBreadth{width:100%; display:block; touch-action:pan-y; cursor:crosshair;}
 .cot-idx{border-radius:4px;}
 .cot-spark{display:block;}
+.bp-line{width:100%; display:block; touch-action:pan-y; cursor:crosshair;}
+.bp-notes{color:var(--ink-faint); font-size:12px; margin:14px 0 0; padding-left:20px; max-width:100ch;}
+.bp-notes li{margin-bottom:6px;}
+sup{font-size:9px; color:var(--accent); margin-left:2px;}
+details summary{list-style-position:inside;}
 </style>
 
 <div class="wrap">
@@ -648,6 +653,36 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       <div style="overflow-x:auto;"><table class="bt-table" id="bpFwd"></table></div>
       <p class="bt-note">The regimes describe risk, not direction. Since 2001, average 20-session returns have been no better after risk-on readings than after risk-off ones; markets tend to rebound after selloffs. What changes is the range of outcomes: volatility and the worst 5% of returns are much larger in the risk-off regimes.</p>
     </div>
+
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow" id="bpBtTitle">Backtest &middot; the regimes as a trading rule<sup>3</sup></div></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="bpBt"></table></div>
+      <p class="bt-note" id="bpBtNote"></p>
+      <details style="margin-top:10px;"><summary class="eyebrow" style="cursor:pointer;">Every market</summary>
+        <div style="overflow-x:auto; margin-top:8px;"><table class="bt-table" id="bpBtPer"></table></div>
+      </details>
+    </div>
+
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow">Smart money flow proxy &middot; Dow Jones<sup>1</sup></div><span class="range-label" id="smiRange"></span></div>
+      <div class="nf-tiles" id="smiTiles"></div>
+      <div class="chart-wrap"><svg id="smiDow" class="bp-line" role="img" aria-label="Dow Jones Industrial Average, daily close"></svg><div class="chart-tooltip" id="smiDowTip" hidden></div></div>
+      <div class="chart-wrap" style="margin-top:6px;"><svg id="smiLine" class="bp-line" role="img" aria-label="Smart money flow proxy, net of its average daily move"></svg><div class="chart-tooltip" id="smiLineTip" hidden></div></div>
+      <div style="overflow-x:auto; margin-top:12px;"><table class="bt-table" id="smiBt"></table></div>
+      <p class="bt-note" id="smiNote"></p>
+    </div>
+
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow">Breadth proxy &middot; members above their moving averages<sup>2</sup></div>
+        <div class="seg" id="ibPresets" role="group" aria-label="Time range">
+          <button type="button" data-months="all">All</button><button type="button" data-months="60">5Y</button><button type="button" data-months="24">2Y</button><button type="button" data-months="12">1Y</button>
+        </div></div>
+      <div class="nf-tiles" id="ibTiles"></div>
+      <div class="nf-legend"><span><i style="background:var(--r0)"></i>S&amp;P 500 above 200-day</span><span><i style="background:#E3B868"></i>Nasdaq-100 above 200-day</span></div>
+      <div class="chart-wrap"><svg id="ibChart" class="bp-line" role="img" aria-label="Share of S&amp;P 500 and Nasdaq-100 members above their 200-day average, weekly"></svg><div class="chart-tooltip" id="ibTip" hidden></div></div>
+      <div style="overflow-x:auto; margin-top:12px;"><table class="bt-table" id="ibBt"></table></div>
+      <p class="bt-note" id="ibNote"></p>
+    </div>
   </section>
 
   <section id="bigPictureCot">
@@ -663,7 +698,19 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
       <div class="table-scroll"><table class="bp-table" id="cotTable"></table></div>
       <p class="bt-note">Large speculators (non-commercial traders) in the CFTC legacy futures-only report. Net = long minus short contracts. Index: where today's net position sits between its low (0) and high (100) of the last 1, 3 and 5 years of weekly reports. Signal uses the 3-year index: 80 or above bullish, 20 or below bearish. Trend: the 3-year index over the last 26 weeks. Positions are as of Tuesday and published the following Friday. Extreme readings show crowding; they have often come near turning points, so read them as positioning, not as a forecast.</p>
     </div>
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow">Backtest &middot; futures after each reading<sup>4</sup></div>
+        <div class="seg" id="cotBtH" role="group" aria-label="Horizon"><button type="button" data-v="w4">4 weeks</button><button type="button" data-v="w13" aria-pressed="true">13 weeks</button></div></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="cotBt"></table></div>
+      <p class="bt-note" id="cotBtNote"></p>
+    </div>
     <p class="bt-note">Layout modelled on WallStreetCourier's Big Picture page. Health scores, regimes and positioning indices here are our own, built from daily closes (Yahoo Finance) and the CFTC public reporting API; their ~40-indicator scores and Smart Money Flow Index are proprietary and not reproduced. Health per horizon averages 5&ndash;7 price-only inputs: price vs moving averages, moving-average slopes, returns, the fit and up-day share of the trend, RSI and position in the trading range. Trend inputs are scaled by each market's own volatility so that all 29 markets score on one scale. No constituent breadth data is used. CSI 300 uses the ASHR ETF and Emerging Markets the EEM ETF.</p>
+    <ol class="bp-notes" id="bpNotes">
+      <li>Smart money flow proxy: our own construction, not WallStreetCourier's index. The classic Smart Money Index subtracts the first 30 minutes' move and adds the last hour's. Yahoo keeps hourly bars for only two years, so we use the Dow's move from the previous close to 10:30 (including the overnight gap) and its move over the last 90 minutes. The line shown under the Dow is net of its average daily move, because the morning leg includes the overnight gain, which is positive on average and makes the raw line drift down. Daily values are now archived in the repository, so the history will grow past two years.</li>
+      <li>Breadth proxy: share of today's S&amp;P 500 members (Wikipedia list) and Nasdaq-100 members (Nasdaq's list) above their 50- and 200-day averages, from Yahoo daily closes. Past readings use today's members, so stocks that left the index are missing (survivorship bias); a stock counts only once it has 50 or 200 days of history.</li>
+      <li>Regime backtest: each market held when the rule is on and in 3-month T-bills when off. The position is set at one close and earns the next day's return; 5bp per switch. Index levels exclude dividends for both the rule and buy &amp; hold. Medians across the 29 markets from each market's first scored day (2001 for most). The health formula and regime zones were set before this test and not tuned to it, but it is still one in-sample parameter set.</li>
+      <li>CoT backtest: front-month continuous futures from Yahoo, which include jumps at each contract roll. US dollar index uses the spot index and VIX futures the spot VIX; spring wheat and 3M SOFR have no price series and are left out. Entry at the close of the first trading day after Friday's publication. Edge is the average forward move against the contract's own average move, in standard deviations, so contracts with different volatility can be pooled. Speculator positions in Treasury futures largely reflect hedge funds' basis trades (short futures against long bonds), not a view on rates, so read the rates row with care.</li>
+    </ol>
   </section>
 
   <footer>
@@ -2069,6 +2116,10 @@ function renderBigPic(doc){
   drawBpBreadth();
   renderBpFwd();
   renderCot();
+  renderBpBacktest();
+  renderSmi();
+  renderIdxBreadth();
+  renderCotBt();
 }
 
 function wireBigPic(){
@@ -2087,7 +2138,9 @@ function wireBigPic(){
   document.getElementById('bpNext').addEventListener('click', () => { if(BP.t<BP.doc.history.dates.length-1){ BP.t++; sl.value=BP.t; drawBpMap(); } });
   document.getElementById('bpRegroup').addEventListener('click', () => { BP.sort = null; renderBpTable(); });
   document.querySelectorAll('#bpPresets button').forEach(b => b.addEventListener('click', () => { BP.months = b.dataset.months; drawBpBreadth(); }));
-  window.addEventListener('resize', () => drawBpBreadth());
+  window.addEventListener('resize', () => { drawBpBreadth(); renderSmi(); renderIdxBreadth(); });
+  document.querySelectorAll('#ibPresets button').forEach(b => b.addEventListener('click', () => { BP.ibMonths = b.dataset.months; renderIdxBreadth(); }));
+  document.querySelectorAll('#cotBtH button').forEach(b => b.addEventListener('click', () => { BP.cotH = b.dataset.v; renderCotBt(); }));
 }
 
 function bpPoint(key, t){
@@ -2323,6 +2376,131 @@ function renderCot(){
     });
   });
   document.getElementById('cotTable').innerHTML = h + '</tbody>';
+}
+
+// ---------- Big Picture: line chart helper (one axis, hover crosshair) ----------
+function bpLine(svgId, tipId, dates, series, o){
+  const svg = document.getElementById(svgId); if(!svg) return;
+  o = o || {};
+  const n = dates.length; let lo = 0;
+  if(o.months && o.months!=='all'){ lo = n-1; while(lo>0 && monthsBetween(dates[lo-1], dates[n-1]) <= +o.months) lo--; }
+  const W = Math.max(280, svg.parentElement.clientWidth), H = o.h || 180, L = 44, R = W-10, T = 8, B = H-22;
+  svg.setAttribute('viewBox','0 0 '+W+' '+H); svg.setAttribute('height', H);
+  let mn = o.min, mx = o.max;
+  if(mn===undefined || mx===undefined){
+    const vals = []; series.forEach(s => { for(let i=lo;i<n;i++) if(s.v[i]!=null) vals.push(s.v[i]); });
+    const a = Math.min(...vals), b = Math.max(...vals), pad = (b-a)*0.06 || 1;
+    if(mn===undefined) mn = a-pad; if(mx===undefined) mx = b+pad;
+  }
+  const X = i => L + (R-L)*(i-lo)/Math.max(1,n-1-lo), Y = v => B - (B-T)*(v-mn)/(mx-mn);
+  const fmt = o.fmt || (v => Math.abs(mx-mn) > 1000 ? Math.round(v).toLocaleString('en-US') : v.toFixed(Math.abs(mx-mn) > 20 ? 0 : 1));
+  let h = '';
+  const ticks = o.ticks || [0,0.25,0.5,0.75,1].map(f => mn + f*(mx-mn));
+  ticks.forEach(v => { h += '<line x1="'+L+'" x2="'+R+'" y1="'+Y(v).toFixed(1)+'" y2="'+Y(v).toFixed(1)+'" stroke="var(--border)" stroke-opacity="'+(o.mid===v?0.9:0.4)+'"/><text class="axis-label" x="'+(L-6)+'" y="'+(Y(v)+3).toFixed(1)+'" text-anchor="end">'+fmt(v)+(o.suffix||'')+'</text>'; });
+  const span = monthsBetween(dates[lo], dates[n-1]);
+  let last = dates[lo].slice(0, span>36 ? 4 : 7);
+  for(let i=lo+1;i<n;i++){
+    const key = dates[i].slice(0, span>36 ? 4 : 7);
+    if(key===last) continue; last = key;
+    if(span>36){ if(+key % (span>96?2:1)) continue; h += '<text class="axis-label" x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">'+key+'</text>'; }
+    else if(+dates[i].slice(5,7) % (span>12?3:2) === 1){ h += '<text class="axis-label" x="'+X(i).toFixed(1)+'" y="'+(H-6)+'" text-anchor="middle">'+fmtMonth(dates[i])+'</text>'; }
+  }
+  series.forEach(s => {
+    let d = ''; for(let i=lo;i<n;i++){ if(s.v[i]==null){ continue; } d += (d?'L':'M')+X(i).toFixed(1)+','+Y(s.v[i]).toFixed(1); }
+    h += '<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="'+(s.w||2)+'"/>';
+  });
+  h += '<line class="xh" x1="0" x2="0" y1="'+T+'" y2="'+B+'" stroke="var(--ink-faint)" visibility="hidden"/>';
+  svg.innerHTML = h;
+  const tip = document.getElementById(tipId);
+  svg.onmousemove = e => {
+    const box = svg.getBoundingClientRect(), x = (e.clientX-box.left)*W/box.width;
+    const i = Math.max(lo, Math.min(n-1, Math.round(lo + (x-L)/(R-L)*(n-1-lo))));
+    const ln = svg.querySelector('.xh'); ln.setAttribute('x1',X(i)); ln.setAttribute('x2',X(i)); ln.setAttribute('visibility','visible');
+    tip.innerHTML = bpDay(dates[i]) + series.map(s => '<br><span style="color:'+s.color+'">'+esc(s.label)+'</span> '+(s.v[i]==null?'&mdash;':fmt(s.v[i])+(o.suffix||''))).join('');
+    tip.style.left = (X(i)*box.width/W)+'px'; tip.style.top = '6px'; tip.style.transform = 'translate(-50%,0)'; tip.hidden = false;
+  };
+  svg.onmouseleave = () => { tip.hidden = true; const ln = svg.querySelector('.xh'); if(ln) ln.setAttribute('visibility','hidden'); };
+}
+
+function bpStatRow(label, s, extra){
+  const f = v => v==null ? '&mdash;' : v.toFixed(1)+'%';
+  if(!s) return '<tr><td class="reg">'+label+'</td><td colspan="4">&mdash;</td></tr>';
+  return '<tr'+(extra||'')+'><td class="reg">'+label+'</td><td>'+s.n.toLocaleString('en-US')+'</td><td>'+bpSigned(s.mean,2,'%')+'</td><td>'+bpSigned(s.median,2,'%')+'</td><td>'+f(s.hit)+'</td></tr>';
+}
+const BP_STAT_HEAD = '<thead><tr><th>Reading</th><th>Days</th><th>Mean<small>next 20 sessions</small></th><th>Median</th><th>Up</th></tr></thead>';
+
+function renderBpBacktest(){
+  const bt = BP.doc.backtest && BP.doc.backtest.regimes; const el = document.getElementById('bpBt');
+  if(!bt){ el.innerHTML = '<tbody><tr><td>Backtest unavailable this run.</td></tr></tbody>'; return; }
+  const S = bt.summary, N = bt.n;
+  const names = {bh:'Buy &amp; hold', riskon:'Risk on (six regimes)', ltbull:'Long-term bull (long health &ge; 50)', total:'Total health &ge; 50'};
+  const f1 = v => v==null ? '&mdash;' : v.toFixed(1);
+  let h = '<thead><tr><th>Rule</th><th>Return<small>a year, median</small></th><th>Volatility</th><th>Worst drawdown</th><th>Sharpe<small>vs T-bills</small></th><th>Time invested</th><th>Switches<small>a year</small></th><th>Better Sharpe<small>than buy &amp; hold</small></th><th>Smaller drawdown</th></tr></thead><tbody>';
+  ['bh','riskon','ltbull','total'].forEach(k => {
+    const s = S[k];
+    h += '<tr'+(k==='bh'?' class="bh"':'')+'><td class="reg">'+names[k]+'</td><td>'+bpSigned(s.cagr,1,'%')+'</td><td>'+f1(s.vol)+'%</td><td><span class="dn">'+f1(s.mdd)+'%</span></td><td>'+(s.sharpe==null?'&mdash;':s.sharpe.toFixed(2))+'</td><td>'+f1(s.inmkt)+'%</td><td>'+f1(s.sw)+'</td>'
+      + '<td>'+(k==='bh'?'':s.beat_sharpe+' of '+N)+'</td><td>'+(k==='bh'?'':s.smaller_dd+' of '+N)+'</td></tr>';
+  });
+  el.innerHTML = h + '</tbody>';
+  document.getElementById('bpBtNote').textContent = 'Switching on the risk-on/off reading cut drawdowns in '+S.riskon.smaller_dd+' of '+N+' markets but trades about '+Math.round(S.riskon.sw)+' times a year and gave up more return than it saved: it beat buy and hold on Sharpe in only '+S.riskon.beat_sharpe+'. The slower long-term bull rule trades about '+Math.round(S.ltbull.sw)+' times a year, beat buy and hold on Sharpe in '+S.ltbull.beat_sharpe+' of '+N+' markets and cut the worst drawdown in '+S.ltbull.smaller_dd+'. Read the regimes as a risk dial; as a timing rule only the slow long-term reading has held up.';
+  let p = '<thead><tr><th>Market</th><th>From</th><th>Buy &amp; hold<small>return / Sharpe / drawdown</small></th><th>Risk on</th><th>Long-term bull</th><th>Total &ge; 50</th></tr></thead><tbody>';
+  const cell = (s, b) => '<td><span class="'+(s.sharpe>b.sharpe?'up':'')+'">'+s.cagr.toFixed(1)+'% / '+s.sharpe.toFixed(2)+'</span> / <span class="dn">'+s.mdd.toFixed(0)+'%</span></td>';
+  BP.doc.markets.forEach(m => {
+    const r = bt.per[m.key]; if(!r) return;
+    p += '<tr><td class="reg">'+esc(m.name)+'</td><td>'+r.start.slice(0,4)+'</td><td>'+r.bh.cagr.toFixed(1)+'% / '+r.bh.sharpe.toFixed(2)+' / <span class="dn">'+r.bh.mdd.toFixed(0)+'%</span></td>'+cell(r.riskon,r.bh)+cell(r.ltbull,r.bh)+cell(r.total,r.bh)+'</tr>';
+  });
+  document.getElementById('bpBtPer').innerHTML = p + '</tbody>';
+}
+
+function renderSmi(){
+  const s = BP.doc.smi; if(!s) return;
+  const L = s.latest, st = {smi_up:'Rising', smi_down:'Falling', div_bear:'Falling while the Dow rises', div_bull:'Rising while the Dow falls'};
+  document.getElementById('smiRange').textContent = bpDay(s.start)+' to '+bpDay(L.date)+' · '+s.days+' sessions';
+  document.getElementById('smiTiles').innerHTML =
+    '<div class="card nf-tile"><div class="eyebrow">Latest session</div><div class="val" style="font-size:16px">'+bpSigned(L.morning,2,'%')+' &rarr; '+bpSigned(L.afternoon,2,'%')+'</div><div class="sub">to 10:30, then last 90 minutes, '+bpDay(L.date)+'</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Proxy, 20 sessions</div><div class="val">'+bpSigned(L.d20,2)+'</div><div class="sub">change, net of drift</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Dow, 20 sessions</div><div class="val">'+bpSigned(L.dow20,1,'%')+'</div><div class="sub">price change</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Reading</div><div class="val" style="font-size:15px">'+(st[L.state]||'&mdash;')+'</div><div class="sub">20-session direction</div></div>';
+  bpLine('smiDow','smiDowTip', s.dates, [{v:s.close, color:'var(--ink-muted)', label:'Dow Jones', w:1.5}], {h:150});
+  bpLine('smiLine','smiLineTip', s.dates, [{v:s.adj, color:'var(--r0)', label:'Proxy, net of drift'}], {h:150});
+  const b = s.backtest;
+  document.getElementById('smiBt').innerHTML = BP_STAT_HEAD.replace('Days','Sessions') + '<tbody>'
+    + bpStatRow('Proxy rising over 20 sessions', b.smi_up) + bpStatRow('Proxy falling', b.smi_down)
+    + bpStatRow('Falling while the Dow rises (bearish divergence)', b.div_bear) + bpStatRow('Rising while the Dow falls (bullish divergence)', b.div_bull)
+    + bpStatRow('All sessions', b.all, ' class="bh"') + '</tbody>';
+  document.getElementById('smiNote').textContent = 'In these two years the proxy has not helped: the Dow did at least as well after the proxy fell, or diverged bearishly, as after it rose. Two years is one market phase, so this is a weak test either way.';
+}
+
+function renderIdxBreadth(){
+  const b = BP.doc.idx_breadth; if(!b || !b.spx){ return; }
+  const tile = (name, x) => '<div class="card nf-tile"><div class="eyebrow">'+name+'</div><div class="val">'+x.latest.p200.toFixed(0)+'%<span style="font-size:13px;color:var(--ink-faint)"> above 200-day</span></div><div class="sub">'+x.latest.p50.toFixed(0)+'% above 50-day &middot; 200-day '+bpSigned(+(x.latest.p200-x.latest.p200_5).toFixed(1),1,' pts')+' in 5 sessions</div></div>';
+  document.getElementById('ibTiles').innerHTML = tile('S&amp;P 500', b.spx) + (b.ndx ? tile('Nasdaq-100', b.ndx) : '')
+    + '<div class="card nf-tile"><div class="eyebrow">Members priced</div><div class="val">'+b.spx.priced+(b.ndx?' + '+b.ndx.priced:'')+'</div><div class="sub">of '+b.spx.members+(b.ndx?' + '+b.ndx.members:'')+' current members</div></div>';
+  const ser = [{v:b.spx.p200, color:'var(--r0)', label:'S&P 500 above 200-day'}];
+  if(b.ndx) ser.push({v:b.ndx.p200, color:'#E3B868', label:'Nasdaq-100 above 200-day'});
+  bpLine('ibChart','ibTip', b.spx.dates, ser, {min:0, max:100, ticks:[0,25,50,75,100], suffix:'%', mid:50, months:BP.ibMonths||'60', fmt:v=>v.toFixed(0)});
+  document.querySelectorAll('#ibPresets button').forEach(x => x.setAttribute('aria-pressed', x.dataset.months===(BP.ibMonths||'60') ? 'true':'false'));
+  const bt = b.spx.backtest, nb = b.ndx && b.ndx.backtest;
+  let h = '<thead><tr><th>Members above 200-day</th><th>S&amp;P 500<small>mean, next 20 sessions</small></th><th>Up</th><th>Days</th><th>Nasdaq-100<small>mean, next 20 sessions</small></th><th>Up</th><th>Days</th></tr></thead><tbody>';
+  const c = s => s ? '<td>'+bpSigned(s.mean,2,'%')+'</td><td>'+s.hit.toFixed(0)+'%</td><td>'+s.n+'</td>' : '<td>&mdash;</td><td></td><td></td>';
+  Object.keys(bt.buckets).forEach(k => { h += '<tr><td class="reg">'+k+'%</td>'+c(bt.buckets[k])+c(nb && nb.buckets[k])+'</tr>'; });
+  h += '<tr><td class="reg">Index near its high, under half the members above 200-day</td>'+c(bt.divergence)+c(nb && nb.divergence)+'</tr>';
+  h += '<tr class="bh"><td class="reg">All days</td>'+c(bt.all)+c(nb && nb.all)+'</tr>';
+  document.getElementById('ibBt').innerHTML = h + '</tbody>';
+  document.getElementById('ibNote').textContent = 'Since 2014, the weakest breadth readings came near lows and were followed by the strongest 20-session returns, so low breadth has worked as a washout signal more than a warning. Narrow rallies (index near its high with under half the members above their 200-day) are rare: the Nasdaq-100 figure rests on one episode.';
+}
+
+function renderCotBt(){
+  const c = BP.doc.backtest && BP.doc.backtest.cot; const el = document.getElementById('cotBt'); if(!c){ el.innerHTML=''; return; }
+  const h0 = BP.cotH || 'w13';
+  document.querySelectorAll('#cotBtH button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v===h0 ? 'true':'false'));
+  const cell = s => s ? '<td>'+bpSigned(s.edge,2)+'</td><td>'+s.hit.toFixed(0)+'%</td><td>'+s.n.toLocaleString('en-US')+'</td>' : '<td>&mdash;</td><td></td><td></td>';
+  let h = '<thead><tr><th>Group</th><th>Bullish<small>edge, sd</small></th><th>Up</th><th>Reports</th><th>Neutral<small>edge, sd</small></th><th>Up</th><th>Reports</th><th>Bearish<small>edge, sd</small></th><th>Up</th><th>Reports</th></tr></thead><tbody>';
+  Object.keys(c.groups).forEach(g => { const x = c.groups[g][h0]; h += '<tr><td class="reg">'+esc(g)+'</td>'+cell(x.bull)+cell(x.neutral)+cell(x.bear)+'</tr>'; });
+  const p = c.pooled[h0];
+  h += '<tr class="bh"><td class="reg">All '+c.n_tested+' contracts</td>'+cell(p.bull)+cell(p.neutral)+cell(p.bear)+'</tr>';
+  el.innerHTML = h + '</tbody>';
+  document.getElementById('cotBtNote').textContent = 'Pooled, extreme positioning has carried almost no edge (under 0.05 sd). By group it has mostly been contrarian: currencies, equity indices and livestock did better after bearish readings, and Treasury futures did worse after bullish ones. Softs were the exception, following the speculators. Positive edge = the future did better than its own average afterwards.';
 }
 
 function renderAll(seed){
