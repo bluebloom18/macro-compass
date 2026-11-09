@@ -229,3 +229,10 @@ Big Picture page; scores are our own and use only daily closes. See the docstrin
   risk (forward volatility and tails), not direction.
 - **CoT:** CFTC legacy futures-only report (public Socrata API). Large-speculator net position
   indexed 0–100 over 1, 3 and 5 years, for 44 contracts.
+- **US regime checks** (`bigpic_extras.us_checks`): for the S&P 500, Nasdaq-100, Russell 2000 and
+  NYSE Composite, member breadth (% above 200-day), implied volatility (VIX/VXN, RVX from FRED
+  `RVXCLS` because Yahoo has no ^RVX; VIX vs VIX3M) and credit (HYG/IEF vs its 50-day average),
+  each marked as agreeing or disagreeing with the regime, plus washout, narrow-rally and
+  volatility-spike flags with 20-session backtests. Shown beside the regime, not in health:
+  blending these into health was tested from 2015 and worsened the risk-on rule on three of the
+  four indices.

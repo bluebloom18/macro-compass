@@ -585,13 +585,14 @@ def main():
     smi = part("smart money proxy", ex.smart_money)
     idxb = part("index breadth", lambda: ex.breadth(
         {k: list(zip(series[k]["dates"], series[k]["closes"])) for k in ("spx", "ndx") if k in series}))
+    usc = part("US regime checks", lambda: ex.us_checks(series, rows, idxb))
     bt_reg = part("regime backtest", lambda: ex.regime_backtest(series))
     bt_cot = part("CoT backtest", lambda: ex.cot_backtest(COT, cot_raw)) if cot_raw else None
     doc = dict(
         asof=asof, built=dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"), regimes=REGIMES,
         summary=summary, markets=rows, persistence=pers, history=history(series),
         breadth=breadth(series), cot=dict(asof=cot_asof, rows=cot), errors=errors,
-        smi=smi, idx_breadth=idxb, backtest=dict(regimes=bt_reg, cot=bt_cot),
+        smi=smi, idx_breadth=idxb, us_checks=usc, backtest=dict(regimes=bt_reg, cot=bt_cot),
     )
     with open(OUT, "w") as f:
         json.dump(doc, f, separators=(",", ":"))

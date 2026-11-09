@@ -428,3 +428,113 @@ def cot_backtest(cot_meta, cot_raw):
         pooled=summarise([sh for _, sh in tested]),
         groups={g: summarise(v) for g, v in groups.items()},
     )
+
+
+# ---------- US regime checks: breadth, volatility and credit beside the regime ----------
+
+US_VOL = {"spx": ("VIX", "^VIX"), "ndx": ("VXN", "^VXN"), "rut": ("RVX", "fred:RVXCLS"), "nya": ("VIX", "^VIX")}
+
+
+def _vol_series(src):
+    if src.startswith("fred:"):
+        from fetch import fetch_fred
+        return [(r["date"], r["close"]) for r in fetch_fred(src[5:]) if r.get("close") is not None]
+    return daily_closes(src)
+
+
+def _asof(rows, dates, maxgap=5):
+    """Align [(date, value)] to `dates`, carrying the last value for up to `maxgap` calendar days."""
+    dd = [d for d, _ in rows]
+    vv = [v for _, v in rows]
+    out = []
+    for d in dates:
+        j = bisect.bisect_right(dd, d) - 1
+        ok = j >= 0 and (dt.date.fromisoformat(d) - dt.date.fromisoformat(dd[j])).days <= maxgap
+        out.append(vv[j] if ok else None)
+    return out
+
+
+def _pct_rank(xs, i, n=252):
+    w = [x for x in xs[max(0, i - n + 1):i + 1] if x is not None]
+    if xs[i] is None or len(w) < 0.8 * n:
+        return None
+    return 100.0 * sum(1 for x in w if x < xs[i]) / len(w)
+
+
+def us_checks(series, rows, idxb, start="2008-01-01", horizon=20):
+    """Breadth, implied volatility and credit for the four US indices, shown beside the regime.
+    Not part of the health score: blending them in was tested (Nov 2026) and lowered risk-on
+    Sharpe on three of the four indices. Extreme readings are backtested on their own."""
+    vix = daily_closes("^VIX")
+    vix3m = daily_closes("^VIX3M")
+    hyg, ief = daily_closes("HYG"), daily_closes("IEF")
+    byk = {r["key"]: r for r in rows if not r.get("error")}
+    out, errors, cache = {}, {}, {}
+    for key, (vname, vsrc) in US_VOL.items():
+        s, r = series.get(key), byk.get(key)
+        if not s or not r:
+            continue
+        dates, cl = s["dates"], s["closes"]
+        try:
+            if vsrc not in cache:
+                cache[vsrc] = _vol_series(vsrc)
+            vrows = cache[vsrc]
+        except Exception as e:   # FRED down: fall back to VIX and say so
+            errors[key] = "%s: %s" % (vname, str(e)[:120])
+            vname, vrows = "VIX", vix
+        v = _asof(vrows, dates)
+        vx, v3 = _asof(vix, dates), _asof(vix3m, dates)
+        h, f = _asof(hyg, dates), _asof(ief, dates)
+        cr = [None if None in (a, b) else a / b for a, b in zip(h, f)]
+        n = len(dates)
+        pct = [_pct_rank(v, i) for i in range(n)]
+        ts = [None if None in (vx[i], v3[i]) else vx[i] / v3[i] for i in range(n)]
+        # live readings
+        i = n - 1
+        while i > 0 and (v[i] is None or cr[i] is None):
+            i -= 1
+        c50 = sum(cr[i - 49:i + 1]) / 50
+        b = (idxb or {}).get(key)
+        side_on = r["side"] == "on"
+        vol_state = ("stressed" if (pct[i] is not None and pct[i] >= 80) or (ts[i] or 0) >= 1
+                     else "calm" if (pct[i] is not None and pct[i] < 70) and (ts[i] or 0) < 1 else "neutral")
+        checks = dict(
+            vol=None if vol_state == "neutral" else (vol_state == "calm") == side_on,
+            credit=(cr[i] > c50) == side_on,
+        )
+        lat = None
+        if b:
+            lat = b["latest"]
+            checks["breadth"] = (lat["p200"] >= 50) == side_on
+        hi60 = max(cl[-61:])
+        flags = dict(
+            washout=bool(lat and lat["p200"] <= 20),
+            narrow=bool(lat and cl[-1] >= 0.98 * hi60 and lat["p200"] < 50),
+            volspike=bool((pct[i] is not None and pct[i] >= 90) or (ts[i] or 0) >= 1),
+        )
+        # backtest the volatility spike flag; breadth flags come from idx_breadth's own backtest
+        spike, alld = [], []
+        for k in range(n - horizon):
+            if dates[k] < start or pct[k] is None:
+                continue
+            fr = cl[k + horizon] / cl[k] - 1
+            alld.append(fr)
+            if pct[k] >= 90 or (ts[k] or 0) >= 1:
+                spike.append(fr)
+        bt = dict(volspike=bucket_stats(spike), all=bucket_stats(alld), start=start, horizon=horizon)
+        if b:
+            bt["washout"] = b["backtest"]["buckets"]["0-20"]
+            bt["narrow"] = b["backtest"]["divergence"]
+            bt["all_breadth"] = b["backtest"]["all"]
+        out[key] = dict(
+            name=r["name"], regime=r["regime"], side=r["side"], date=dates[i],
+            breadth=None if not lat else dict(p50=lat["p50"], p200=lat["p200"], p200_5=lat["p200_5"]),
+            vol=dict(name=vname, level=round(v[i], 2), chg5=round(v[i] - v[i - 5], 2) if v[i - 5] else None,
+                     pct=None if pct[i] is None else round(pct[i]), ts=None if ts[i] is None else round(ts[i], 3),
+                     state=vol_state),
+            credit=dict(vs50=round(100 * (cr[i] / c50 - 1), 2), chg20=round(100 * (cr[i] / cr[i - 20] - 1), 2),
+                        up=cr[i] > c50),
+            checks=checks, agree=sum(1 for x in checks.values() if x), views=sum(1 for x in checks.values() if x is not None),
+            flags=flags, backtest=bt,
+        )
+    return dict(rows=out, errors=errors)

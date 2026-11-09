@@ -273,6 +273,15 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 .cot-idx{border-radius:4px;}
 .cot-spark{display:block;}
 .bp-line{width:100%; display:block; touch-action:pan-y; cursor:crosshair;}
+.uc-ok{color:var(--ink-muted);}
+.uc-no{color:#E3B868; font-weight:600;}
+.uc-na{color:var(--ink-faint);}
+.uc-flag{display:inline-block; margin:0 4px 2px 0; padding:1px 7px; border-radius:999px; border:1px solid #E3B868; color:#E3B868; font-size:11px; font-family:var(--font-body); cursor:help;}
+.bt-table td small{display:block; color:var(--ink-faint); font-size:10.5px;}
+#ucTable td{white-space:normal; vertical-align:top;}
+#ucTable td small{white-space:normal; max-width:24ch; margin-left:auto;}
+#ucTable td.reg small{margin-left:0;}
+#ucTable th:nth-child(2), #ucTable td:nth-child(2), #ucTable th:last-child{text-align:left;}
 .bp-notes{color:var(--ink-faint); font-size:12px; margin:14px 0 0; padding-left:20px; max-width:100ch;}
 .bp-notes li{margin-bottom:6px;}
 sup{font-size:9px; color:var(--accent); margin-left:2px;}
@@ -633,6 +642,14 @@ details summary{list-style-position:inside;}
       <p class="bt-note">Arrow: regime vs five sessions ago, bold when it changed (&uarr; toward reward, &darr; toward risk). NEW: switched between risk on and risk off in the latest session. Regimes change only after three sessions in a row point to the new one. In regime: sessions since the confirmed regime started and the index return since then. Stability: how often a market in this regime has still been in it one and five sessions later, pooled across all 29 markets since 2001. Health is 0&ndash;100, 50 = no trend.</p>
     </div>
 
+    <div class="card bt-card" style="margin-top:14px;" id="ucCard">
+      <div class="bt-controls"><div class="eyebrow">US indices &middot; breadth, volatility and credit beside the regime<sup>5</sup></div><span class="range-label" id="ucDate"></span></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="ucTable"></table></div>
+      <p class="bt-note" id="ucNote"></p>
+      <div style="overflow-x:auto; margin-top:12px;"><table class="bt-table" id="ucBt"></table></div>
+      <p class="bt-note" id="ucBtNote"></p>
+    </div>
+
     <div class="card history-card" style="margin-top:14px;">
       <div class="history-controls">
         <div class="seg" id="bpPresets" role="group" aria-label="Time range">
@@ -713,6 +730,7 @@ details summary{list-style-position:inside;}
       <li>Breadth proxy: share of today's S&amp;P 500 members (Wikipedia list) and Nasdaq-100 members (Nasdaq's list) above their 50- and 200-day averages, from Yahoo daily closes. Past readings use today's members, so stocks that left the index are missing (survivorship bias); a stock counts only once it has 50 or 200 days of history.</li>
       <li>Regime backtest: each market held when the rule is on and in 3-month T-bills when off. The position is set at one close and earns the next day's return; 5bp per switch. Index levels exclude dividends for both the rule and buy &amp; hold. Medians across the 29 markets from each market's first scored day (2001 for most). The health formula and regime zones were set before this test and not tuned to it, but it is still one in-sample parameter set.</li>
       <li>CoT backtest: front-month continuous futures from Yahoo, which include jumps at each contract roll. US dollar index uses the spot index and VIX futures the spot VIX; spring wheat and 3M SOFR have no price series and are left out. Entry at the close of the first trading day after Friday's publication. Edge is the average forward move against the contract's own average move, in standard deviations, so contracts with different volatility can be pooled. Speculator positions in Treasury futures largely reflect hedge funds' basis trades (short futures against long bonds), not a view on rates, so read the rates row with care.</li>
+      <li>US regime checks: shown beside the regime, not mixed into it. Adding the same breadth, volatility and credit inputs to the health scores was tested from 2015 and made the risk-on rule worse on three of the four indices (S&amp;P 500 Sharpe 0.74 to 0.50), with more switches and no earlier signals; only the Nasdaq-100 improved. Breadth agrees with risk on when at least half the members are above their 200-day average. Volatility (VIX for the S&amp;P 500 and NYSE, VXN for the Nasdaq-100, RVX from FRED for the Russell 2000, a day behind) is calm below the 70th percentile of the past year with VIX under 3-month VIX, and stressed at the 80th percentile or with VIX above 3-month VIX; in between it gives no view. Credit is the HYG high-yield ETF against the IEF Treasury ETF, rising when above its 50-day average. Flags: washout, at most 20% of members above 200-day; narrow rally, index within 2% of its 60-day high with under half the members above 200-day; volatility spike, the 90th percentile of the past year or VIX above 3-month VIX. Flag returns pool overlapping days, so the day counts overstate the number of independent episodes.</li>
     </ol>
   </section>
 
@@ -2116,6 +2134,7 @@ function renderBigPic(doc){
   document.getElementById('bpLegend').innerHTML = doc.regimes.map((r,i)=>'<span><i style="background:'+BP_HEX[i]+'"></i>'+esc(r)+(i===2?' <span style="color:var(--ink-faint)">&middot; risk on above, risk off below &rarr;</span>':'')+'</span>').join('');
   drawBpMap();
   renderBpTable();
+  renderUsChecks();
   drawBpBreadth();
   renderBpFwd();
   renderCot();
@@ -2284,6 +2303,40 @@ function renderBpTable(){
     if(BP.sort===k) BP.asc = !BP.asc; else { BP.sort = k; BP.asc = k==='name'; }
     renderBpTable();
   }));
+}
+
+function renderUsChecks(){
+  const u = BP.doc.us_checks, card = document.getElementById('ucCard');
+  if(!u || !u.rows || !Object.keys(u.rows).length){ card.hidden = true; return; }
+  card.hidden = false;
+  const R = u.rows, keys = ['spx','ndx','rut','nya'].filter(k => R[k]);
+  const ck = (v, txt) => v===undefined ? '<span class="uc-na">no data</span>' : v===null ? '<span class="uc-na">'+txt+' &middot; no view</span>' : v ? '<span class="uc-ok">'+txt+' &middot; agrees</span>' : '<span class="uc-no">'+txt+' &middot; disagrees</span>';
+  const FL = {washout:'Breadth washout', narrow:'Narrow rally', volspike:'Volatility spike'};
+  const flagTip = (r, f) => { const b = r.backtest[f], a = f==='volspike' ? r.backtest.all : r.backtest.all_breadth;
+    return b ? 'Since '+(f==='volspike'?r.backtest.start.slice(0,4):'2014')+', next '+r.backtest.horizon+' sessions after this flag: mean '+(b.mean>0?'+':'')+b.mean.toFixed(1)+'%, up '+b.hit.toFixed(0)+'% of '+b.n+' days (all days: '+(a.mean>0?'+':'')+a.mean.toFixed(1)+'%, up '+a.hit.toFixed(0)+'%)' : ''; };
+  let h = '<thead><tr><th>Index</th><th>Regime</th><th>Breadth<small>members above 200-day / 50-day</small></th><th>Volatility<small>level, 1-year percentile</small></th><th>Credit<small>HY vs Treasuries, 20 sessions</small></th><th>Agree</th><th>Flags</th></tr></thead><tbody>';
+  keys.forEach(k => { const r = R[k], b = r.breadth, v = r.vol, c = r.credit;
+    const flags = Object.keys(FL).filter(f => r.flags[f]).map(f => '<span class="uc-flag" title="'+esc(flagTip(r,f))+'">'+FL[f]+'</span>').join('') || '<span class="uc-na">none</span>';
+    h += '<tr><td class="reg">'+esc(r.name)+'</td>'
+      + '<td class="reg"><span class="sw" style="display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;background:'+BP_HEX[r.regime]+'"></span>'+esc(BP.doc.regimes[r.regime])+'<small>'+(r.side==='on'?'risk on':'risk off')+'</small></td>'
+      + '<td>'+(b ? b.p200.toFixed(0)+'% / '+b.p50.toFixed(0)+'%<small>'+ck(r.checks.breadth,bpSigned(+(b.p200-b.p200_5).toFixed(1),1,' pts')+' in 5 days')+'</small>' : '<span class="uc-na">no member list</span>')+'</td>'
+      + '<td>'+esc(v.name)+' '+v.level.toFixed(1)+(v.pct==null?'':' &middot; '+v.pct+'th')+'<small>'+ck(r.checks.vol, v.state+(v.ts!=null&&v.ts>=1?', VIX &gt; 3-month':''))+'</small></td>'
+      + '<td>'+bpSigned(c.chg20,1,'%')+'<small>'+ck(r.checks.credit, c.up?'above 50-day avg':'below 50-day avg')+'</small></td>'
+      + '<td>'+r.agree+' of '+r.views+'</td>'
+      + '<td class="reg" style="white-space:normal">'+flags+'</td></tr>';
+  });
+  document.getElementById('ucTable').innerHTML = h + '</tbody>';
+  document.getElementById('ucDate').textContent = 'as of ' + bpDay(R[keys[0]].date);
+  const dis = keys.filter(k => Object.values(R[k].checks).some(x => x===false)).map(k => R[k].name);
+  document.getElementById('ucNote').textContent = (dis.length ? 'Disagreeing with the regime: ' + dis.join(', ') + '. ' : 'All checks with a view agree with the regime. ')
+    + 'A disagreement is a reason to look closer, not a signal on its own. Hover a flag for its backtest.' + (u.errors && Object.keys(u.errors).length ? ' Data issue: ' + Object.values(u.errors).join('; ') : '');
+  // flag backtest table
+  let t = '<thead><tr><th>Flag, next 20 sessions</th>' + keys.map(k => '<th>'+esc(R[k].name)+'<small>mean / up / days</small></th>').join('') + '</tr></thead><tbody>';
+  const cell = s => s ? '<td>'+bpSigned(s.mean,1,'%')+' / '+s.hit.toFixed(0)+'% / '+s.n.toLocaleString('en-US')+'</td>' : '<td>&mdash;</td>';
+  ['washout','narrow','volspike'].forEach(f => { t += '<tr><td class="reg">'+FL[f]+'</td>' + keys.map(k => cell(R[k].backtest[f])).join('') + '</tr>'; });
+  t += '<tr class="bh"><td class="reg">All days</td>' + keys.map(k => cell(R[k].backtest.all)).join('') + '</tr>';
+  document.getElementById('ucBt').innerHTML = t + '</tbody>';
+  document.getElementById('ucBtNote').textContent = 'Breadth flags since 2014 (S&P 500 and Nasdaq-100 only), volatility flags since 2008; "All days" covers the volatility period. Washouts have been followed by above-average returns, and volatility spikes slightly so: both read as contrarian. The Nasdaq-100 narrow-rally figure rests on one episode.';
 }
 
 function drawBpBreadth(){
