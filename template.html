@@ -41,17 +41,20 @@ header .title-block p{margin:6px 0 0; color:var(--ink-muted); max-width:46ch; fo
 /* ---------- layout blocks ---------- */
 section{margin-bottom:40px;}
 .section-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
-.section-head h2{font-size:19px;}
+.section-head h2{font-size:19px; border-left:4px solid var(--accent); padding-left:10px; line-height:1.2;}
 .section-head .hint{color:var(--ink-faint); font-size:12.5px;}
 
 .card{background:var(--surface); border:1px solid var(--border); border-radius:14px;}
 
 /* ---------- study dividers ---------- */
-.part{display:flex; align-items:flex-start; gap:14px; margin:8px 0 22px; padding-top:22px; border-top:2px solid var(--border); scroll-margin-top:16px;}
-.wrap > .part:first-of-type{border-top:0; padding-top:0;}
-.part .num{font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--accent-ink); background:var(--accent); border-radius:6px; padding:3px 7px; margin-top:5px;}
-.part h2{font-size:28px; letter-spacing:-.01em;}
-.part p{margin:4px 0 0; color:var(--ink-muted); font-size:13.5px;}
+.part{display:flex; align-items:center; gap:16px; margin:44px 0 24px; padding:16px 20px; border-radius:14px;
+  background:linear-gradient(90deg, #4E43A0 0%, #3A3F78 55%, var(--surface) 100%);
+  border:1px solid #6A5FC4; box-shadow:0 4px 18px rgba(0,0,0,.25); scroll-margin-top:16px;}
+.wrap > .part:first-of-type{margin-top:8px;}
+.part .num{font-family:var(--font-mono); font-size:15px; font-weight:700; color:var(--accent-ink); background:var(--accent); border-radius:8px; padding:6px 10px; flex:none;}
+.part h2{font-size:28px; letter-spacing:-.01em; color:#fff;}
+.part p{margin:4px 0 0; color:#D9D4FA; font-size:13.5px;}
+@media (max-width:600px){.part{padding:12px 14px; gap:12px;} .part h2{font-size:22px;}}
 .study-nav{display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:12px; font-family:var(--font-mono); font-size:12px;}
 .study-nav a{color:var(--ink-muted); text-decoration:none; border-bottom:1px dotted var(--border);}
 .study-nav a:hover{color:var(--accent);}
@@ -2167,7 +2170,9 @@ function drawBpMap(){
   ];
   const zl = [[75,94],[88,40],[30,94],[66,6],[12,62],[25,6]];
   let h = '';
-  zones.forEach((z,i) => { h += '<polygon points="'+P(z)+'" fill="'+BP_HEX[i]+'" fill-opacity="'+(i===0||i===5?0.10:0.07)+'"/>'; });
+  // shading: Very High Reward lightest, Very High Risk darkest, the two mixed quadrants neutral grey
+  const ZONE_FILL = [['#9CC3F5',0.30], ['#A6AFC4',0.06], ['#A6AFC4',0.06], ['#A6AFC4',0.06], ['#A6AFC4',0.06], ['#4A1418',0.70]];
+  zones.forEach((z,i) => { h += '<polygon points="'+P(z)+'" fill="'+ZONE_FILL[i][0]+'" fill-opacity="'+ZONE_FILL[i][1]+'"/>'; });
   h += '<line x1="'+X(0)+'" y1="'+Y(100)+'" x2="'+X(100)+'" y2="'+Y(0)+'" stroke="var(--border)" stroke-dasharray="4 4"/>';
   h += '<line x1="'+X(50)+'" y1="'+Y(0)+'" x2="'+X(50)+'" y2="'+Y(100)+'" stroke="var(--border)"/>';
   h += '<line x1="'+X(0)+'" y1="'+Y(50)+'" x2="'+X(100)+'" y2="'+Y(50)+'" stroke="var(--border)"/>';
