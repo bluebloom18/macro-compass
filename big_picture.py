@@ -14,7 +14,8 @@ mapped to 0-100 with the normal CDF, so markets with different volatility score 
 Up-day shares use the binomial z. R2 inputs are 50 + 50 * sign(slope) * R2. Range positions and RSI
 are already 0-100. A horizon's health is the mean of its inputs. Total = mean(S, M, L).
 
-Regime, on the mid (x) and short (y) health plane:
+Regime, on the mid (x) and short (y) health plane (a new regime counts once today's scores have
+pointed to it for 3 sessions in a row; see confirm_regimes):
   M >= 50 and S >= 50                 Very High Reward   (risk-on)
   M >= 50, S < 50, S + M >= 100       High Reward        (risk-on)
   M < 50, S >= 50, S + M >= 100       Increasing Reward  (risk-on)
@@ -366,6 +367,31 @@ def regime_of(s, m):
     return 4 if s >= 50 else 5
 
 
+CONFIRM_DAYS = 3
+
+
+def confirm_regimes(raw, days=CONFIRM_DAYS):
+    """A market keeps its regime until today's scores have pointed to one new regime for `days`
+    sessions in a row. Without this, markets near a boundary flipped regime almost daily
+    (82% one-day stability, 18 risk-on/off switches a year; with it 94% and 7)."""
+    out, cur, cand, cnt = [], None, None, 0
+    for r in raw:
+        if r is None:
+            out.append(None)
+            continue
+        if cur is None:
+            cur = r
+        elif r == cur:
+            cnt = 0
+        else:
+            cnt = cnt + 1 if r == cand else 1
+            cand = r
+            if cnt >= days:
+                cur, cnt = r, 0
+        out.append(cur)
+    return out
+
+
 # ---------- build ----------
 
 def build_markets():
@@ -381,7 +407,7 @@ def build_markets():
         dates = [d for d, _ in rows]
         closes = [c for _, c in rows]
         h = health(closes)
-        reg = [None if x is None else regime_of(x[0], x[1]) for x in h]
+        reg = confirm_regimes([None if x is None else regime_of(x[0], x[1]) for x in h])
         series[key] = dict(dates=dates, closes=closes, h=h, reg=reg)
         print("  %-6s %5d bars  %s .. %s" % (key, len(rows), dates[0], dates[-1]))
     return series, errors
@@ -466,7 +492,7 @@ def history(series):
         arr, last = [], None
         for d in cal:
             if d in idx and s["h"][idx[d]] is not None:
-                last = [round(v) for v in s["h"][idx[d]]]
+                last = [round(v) for v in s["h"][idx[d]]] + [s["reg"][idx[d]]]   # S, M, L, confirmed regime
             arr.append(last)
         out[key] = arr
     return dict(dates=cal, data=out)

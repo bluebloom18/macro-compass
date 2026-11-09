@@ -621,7 +621,7 @@ details summary{list-style-position:inside;}
         <div class="chart-tooltip" id="bpTip" hidden></div>
       </div>
       <div class="bp-legend" id="bpLegend"></div>
-      <p class="bt-note">Across: mid-term health (about 3 months). Up: short-term health (about 1 month). Bubble size: long-term health (about 1 year). Hover a market for its path over the last 10 sessions. The slider steps back through the last year.</p>
+      <p class="bt-note">Across: mid-term health (about 3 months). Up: short-term health (about 1 month). Bubble size: long-term health (about 1 year). Colour shows the confirmed regime: a market changes regime only after its scores have pointed to the new one for three sessions in a row, so a bubble can sit in a zone it has not yet been confirmed in. Hover a market for its path over the last 10 sessions. The slider steps back through the last year.</p>
     </div>
 
     <div class="card bt-card" style="margin-top:14px;">
@@ -630,7 +630,7 @@ details summary{list-style-position:inside;}
         <button type="button" class="seg" id="bpRegroup" style="padding:4px 10px; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-muted); cursor:pointer;">Group by region</button>
       </div>
       <div class="table-scroll"><table class="bp-table" id="bpTable"></table></div>
-      <p class="bt-note">Arrow: regime vs five sessions ago, bold when it changed (&uarr; toward reward, &darr; toward risk). NEW: switched between risk on and risk off in the latest session. In regime: sessions since the regime started and the index return since then. Stability: how often a market in this regime has still been in it one and five sessions later, pooled across all 29 markets since 2001. Health is 0&ndash;100, 50 = no trend.</p>
+      <p class="bt-note">Arrow: regime vs five sessions ago, bold when it changed (&uarr; toward reward, &darr; toward risk). NEW: switched between risk on and risk off in the latest session. Regimes change only after three sessions in a row point to the new one. In regime: sessions since the confirmed regime started and the index return since then. Stability: how often a market in this regime has still been in it one and five sessions later, pooled across all 29 markets since 2001. Health is 0&ndash;100, 50 = no trend.</p>
     </div>
 
     <div class="card history-card" style="margin-top:14px;">
@@ -2188,7 +2188,7 @@ function drawBpMap(){
   const items = [];
   doc.markets.forEach(m => {
     const p = bpPoint(m.key, t); if(!p) return;
-    const reg = bpRegime(p[0], p[1]);
+    const reg = p[3]!=null ? p[3] : bpRegime(p[0], p[1]);   // confirmed regime; position = today's scores
     const side = reg<=2 ? 'on' : 'off';
     const pass = bpPass(m) && (BP.side==='all' || BP.side===side);
     items.push({m, p, reg, pass});
@@ -2225,9 +2225,10 @@ function drawBpMap(){
     const pts = [];
     for(let i=Math.max(0,t-10); i<=t; i++){ const q = bpPoint(k, i); if(q) pts.push(X(q[1]).toFixed(1)+','+Y(q[0]).toFixed(1)); }
     tr.innerHTML = '<polyline class="trail" points="'+pts.join(' ')+'"/>';
-    const m = doc.markets.find(x => x.key===k), p = bpPoint(k, t), reg = bpRegime(p[0], p[1]);
+    const m = doc.markets.find(x => x.key===k), p = bpPoint(k, t), reg = p[3]!=null ? p[3] : bpRegime(p[0], p[1]);
+    const raw = bpRegime(p[0], p[1]);
     const box = svg.getBoundingClientRect(), sc = box.width/760;
-    tip.innerHTML = '<b>'+esc(m.name)+'</b><br><span style="color:'+BP_HEX[reg]+'">'+esc(doc.regimes[reg])+'</span><br>Short '+p[0]+' · Mid '+p[1]+' · Long '+p[2];
+    tip.innerHTML = '<b>'+esc(m.name)+'</b><br><span style="color:'+BP_HEX[reg]+'">'+esc(doc.regimes[reg])+'</span>'+(raw!==reg?'<br><span style="color:var(--ink-faint)">today\'s scores point to '+esc(doc.regimes[raw])+', not yet confirmed</span>':'')+'<br>Short '+p[0]+' · Mid '+p[1]+' · Long '+p[2];
     tip.style.left = (X(p[1])*sc)+'px'; tip.style.top = (Y(p[0])*sc - 14)+'px'; tip.hidden = false;
   };
   svg.querySelectorAll('.bub').forEach(g => {
