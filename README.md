@@ -213,3 +213,19 @@ past weeks stay browsable: each edition has its own link (`…/2oL3DoQuEie7vWd5W
 and Yahoo/FRED, the routine researches the week and writes `narrative.json` (`SCHEMA.md`),
 `assemble.py` validates and merges them and renders the email, and the edition is written to the
 page database and emailed.
+
+## Big Picture (study 04)
+
+`big_picture.py` writes `bigpic_doc.json` (db `regime/bigpic`). Layout modelled on WallStreetCourier's
+Big Picture page; scores are our own and use only daily closes. See the docstring for the method.
+
+- **Markets:** 29: MSCI World, 16 country indices, EM (EEM) and 12 US sector ETFs including GDX.
+  CSI 300 uses the ASHR ETF because Yahoo has no CSI 300 history.
+- **Health:** short (about 1 month), mid (about 3 months) and long (about 1 year), each 0–100 with
+  50 = no trend. Each averages 5–7 trend, trend-quality and momentum inputs, scaled by the market's
+  own volatility.
+- **Regimes:** six, on the mid × short plane, with long-term bull meaning long health ≥ 50.
+  Stability and 20-session outcomes are pooled across markets since 2001. The regimes separate
+  risk (forward volatility and tails), not direction.
+- **CoT:** CFTC legacy futures-only report (public Socrata API). Large-speculator net position
+  indexed 0–100 over 1, 3 and 5 years, for 44 contracts.
