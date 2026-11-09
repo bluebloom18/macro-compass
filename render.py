@@ -32,6 +32,14 @@ except FileNotFoundError:
     rk = "null"  # run risk_barometer.py first to populate the risk barometer section
 out = out.replace("__RISK_JSON__", rk)
 
+try:
+    with open("bigpic_doc.json") as f:
+        bp = f.read()
+    json.loads(bp)
+except FileNotFoundError:
+    bp = "null"  # run big_picture.py first to populate the Big Picture section
+out = out.replace("__BIGPIC_JSON__", bp)
+
 with open("macro_compass.html", "w") as f:
     f.write(out)
 

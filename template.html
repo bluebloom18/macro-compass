@@ -226,6 +226,49 @@ section{margin-bottom:40px;}
 .methodology li{margin-bottom:6px;}
 .methodology code{font-family:var(--font-mono); font-size:12px; background:var(--surface-2); padding:1px 5px; border-radius:4px; color:var(--ink);}
 footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); color:var(--ink-faint); font-size:12px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+
+/* ---------- big picture ---------- */
+:root{ --r0:#5B9BEA; --r1:#86B6F0; --r2:#B5D3F6; --r3:#F3B9AE; --r4:#E8846F; --r5:#D0594B; --up:#86B6F0; --dn:#EE9A8F; }
+.up{color:var(--up);} .dn{color:var(--dn);}
+.bp-controls{display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center; margin-bottom:12px;}
+.bp-step{display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:12px; color:var(--ink-muted);}
+.bp-step button{font-family:var(--font-mono); font-size:13px; color:var(--ink); background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:2px 9px; cursor:pointer;}
+.bp-step button:disabled{opacity:.35; cursor:default;}
+.bp-step input[type=range]{width:160px; accent-color:var(--accent);}
+#bpMap{width:100%; height:auto; display:block;}
+#bpMap .zone-label{font-family:var(--font-mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; fill:var(--ink-faint);}
+#bpMap .bub{cursor:pointer;}
+#bpMap .bub circle{stroke:var(--surface); stroke-width:2;}
+#bpMap .bub text{font-family:var(--font-body); font-size:10.5px; fill:var(--ink-muted); pointer-events:none;}
+#bpMap .bub.dim{opacity:.18;}
+#bpMap .trail{fill:none; stroke:var(--ink-faint); stroke-width:1.5; stroke-dasharray:3 3; pointer-events:none;}
+.bp-legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12px; color:var(--ink-muted); margin-top:8px;}
+.bp-legend span{display:inline-flex; align-items:center; gap:6px;}
+.bp-legend i{display:inline-block; width:10px; height:10px; border-radius:50%;}
+.bp-table{width:100%; border-collapse:collapse; font-size:13px;}
+.bp-table th{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); font-weight:500; padding:8px 8px; border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; background:var(--surface); cursor:pointer; user-select:none;}
+.bp-table th:hover{color:var(--ink);}
+.bp-table th[data-k="name"], .bp-table td.nm, .bp-table th[data-k="regime"], .bp-table td.rg{text-align:left;}
+.bp-table th[aria-sort]::after{content:' ↓'; color:var(--accent);}
+.bp-table th[aria-sort="ascending"]::after{content:' ↑';}
+.bp-table td{padding:6px 8px; border-bottom:1px solid var(--border); text-align:right; font-family:var(--font-mono); font-size:12.5px; white-space:nowrap; font-variant-numeric:tabular-nums;}
+.bp-table td.nm{font-family:var(--font-body); font-size:13px;}
+.bp-table td.nm small{display:block; font-family:var(--font-mono); font-size:10.5px; color:var(--ink-faint);}
+.bp-table td.rg{font-family:var(--font-body); font-size:13px;}
+.bp-table td.rg .arw{font-family:var(--font-mono); margin-left:6px; color:var(--ink-faint);}
+.bp-table td.rg .arw.chg{color:var(--ink); font-weight:700;}
+.bp-table td.hc{border-radius:4px;}
+.bp-table td.tot{font-weight:600;}
+.bp-table tr.grp td{background:var(--surface-2); font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); padding:6px 8px; text-align:left;}
+.bp-table tr.hl td{background:rgba(176,162,245,.12);}
+.side{display:inline-block; padding:2px 8px; border-radius:100px; font-family:var(--font-body); font-size:11.5px; font-weight:600;}
+.side.on{background:rgba(91,155,234,.18); color:var(--r1);}
+.side.off{background:rgba(208,89,75,.18); color:var(--dn);}
+.newb{display:inline-block; margin-left:5px; padding:1px 5px; border-radius:4px; font-family:var(--font-mono); font-size:9.5px; font-weight:700; background:var(--accent); color:var(--accent-ink);}
+.sw{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; vertical-align:baseline;}
+#bpBreadth{width:100%; display:block; touch-action:pan-y; cursor:crosshair;}
+.cot-idx{border-radius:4px;}
+.cot-spark{display:block;}
 </style>
 
 <div class="wrap">
@@ -233,8 +276,8 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
     <div class="title-block">
       <div class="eyebrow">Cross-asset macro &middot; updated daily</div>
       <h1>Macro Compass</h1>
-      <p>Three studies on open data &mdash; a 30-signal macro regime, Chicago Fed financial conditions, and a market risk gauge with an 8-pillar barometer. Yahoo Finance and FRED, no vendor key required.</p>
-      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a></nav>
+      <p>Four studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, and a big-picture view of 29 equity markets and futures positioning. Yahoo Finance, FRED and the CFTC, no vendor key required.</p>
+      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a><a href="#study-bigpic">04 Big picture</a></nav>
     </div>
     <div class="status-chip"><span class="status-dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
   </header>
@@ -533,8 +576,98 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
     <p class="bt-note">A broader, slower read than the gauge above: it adds macro pillars (economic surprise, liquidity, rates, FX, gold), and scoring against a rolling 3-year window makes it more jumpy &mdash; it flagged about half of the big stress weeks since 2013, against nine in ten for the gauge. Each input is scored against its own last 3 years (z-score, capped at &plusmn;1, signed so positive = risk-on); a pillar averages its inputs and the Risk Index averages the 8 pillars, with &plusmn;0.33 as the colour lines. Proxies: the Fed's Weekly Economic Index stands in for the Citi surprise index, S&amp;P 500 vs its 10-week average for trend-follower positioning, and HYG/LQD/EMB vs IEF for credit spreads. It reads stress as it happens rather than forecasting it: the S&amp;P has on average done better after risk-off weeks, because stress tends to peak near market lows.</p>
   </section>
 
+  <div class="part" id="study-bigpic">
+    <span class="num">04</span>
+    <div><h2>Big picture</h2><p>Market health and regime across 29 equity markets and US sectors, plus speculator positioning in 44 futures markets &middot; daily, CoT weekly</p></div>
+  </div>
+
+  <section id="bigPicture">
+    <div class="section-head">
+      <h2>Regime weather map</h2>
+      <div class="hint" id="bpHint">&mdash;</div>
+    </div>
+    <div class="nf-tiles" id="bpTiles"></div>
+    <div class="card bt-card">
+      <div class="bp-controls">
+        <div class="seg" id="bpRegion" role="group" aria-label="Region">
+          <button type="button" data-v="all" aria-pressed="true">All</button>
+          <button type="button" data-v="Global|North America">Global &amp; N. America</button>
+          <button type="button" data-v="Europe">Europe</button>
+          <button type="button" data-v="Asia Pacific|Emerging">Asia &amp; EM</button>
+          <button type="button" data-v="US sectors">US sectors</button>
+        </div>
+        <div class="seg" id="bpSide" role="group" aria-label="Risk side">
+          <button type="button" data-v="all" aria-pressed="true">Both</button>
+          <button type="button" data-v="on">Risk on</button>
+          <button type="button" data-v="off">Risk off</button>
+        </div>
+        <div class="bp-step">
+          <button type="button" id="bpPrev" aria-label="Previous session">&lsaquo;</button>
+          <input type="range" id="bpSlider" min="0" max="0" value="0" aria-label="Date">
+          <button type="button" id="bpNext" aria-label="Next session">&rsaquo;</button>
+          <span id="bpDate">&mdash;</span>
+        </div>
+      </div>
+      <div class="chart-wrap" style="overflow-x:auto;">
+        <svg id="bpMap" style="min-width:560px" viewBox="0 0 760 540" role="img" aria-label="Markets placed by mid-term health (across) and short-term health (up); bubble size is long-term health"></svg>
+        <div class="chart-tooltip" id="bpTip" hidden></div>
+      </div>
+      <div class="bp-legend" id="bpLegend"></div>
+      <p class="bt-note">Across: mid-term health (about 3 months). Up: short-term health (about 1 month). Bubble size: long-term health (about 1 year). Hover a market for its path over the last 10 sessions. The slider steps back through the last year.</p>
+    </div>
+
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls">
+        <div class="eyebrow" id="bpTableTitle">Regime table &middot; latest session</div>
+        <button type="button" class="seg" id="bpRegroup" style="padding:4px 10px; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-muted); cursor:pointer;">Group by region</button>
+      </div>
+      <div class="table-scroll"><table class="bp-table" id="bpTable"></table></div>
+      <p class="bt-note">Arrow: regime vs five sessions ago, bold when it changed (&uarr; toward reward, &darr; toward risk). NEW: switched between risk on and risk off in the latest session. In regime: sessions since the regime started and the index return since then. Stability: how often a market in this regime has still been in it one and five sessions later, pooled across all 29 markets since 2001. Health is 0&ndash;100, 50 = no trend.</p>
+    </div>
+
+    <div class="card history-card" style="margin-top:14px;">
+      <div class="history-controls">
+        <div class="seg" id="bpPresets" role="group" aria-label="Time range">
+          <button type="button" data-months="all">All</button>
+          <button type="button" data-months="120">10Y</button>
+          <button type="button" data-months="60">5Y</button>
+          <button type="button" data-months="24">2Y</button>
+          <button type="button" data-months="12">1Y</button>
+        </div>
+        <div class="nf-legend" style="margin:0"><span><i style="background:var(--r0)"></i>Markets risk on</span><span><i style="background:var(--ink-faint)"></i>Markets in long-term bull</span></div>
+      </div>
+      <div class="chart-wrap">
+        <svg id="bpBreadth" role="img" aria-label="Share of the 29 markets risk on and in a long-term bull, weekly"></svg>
+        <div class="chart-tooltip" id="bpBreadthTip" hidden></div>
+      </div>
+      <p class="bt-note" style="margin-bottom:10px"><span id="bpBreadthNote"></span> Share of the markets scored that week (fewer before 2016, when XLRE and XLC started).</p>
+    </div>
+
+    <div class="card bt-card" style="margin-top:14px;">
+      <div class="bt-controls"><div class="eyebrow">What each regime has meant &middot; next 20 sessions, all markets pooled</div></div>
+      <div style="overflow-x:auto;"><table class="bt-table" id="bpFwd"></table></div>
+      <p class="bt-note">The regimes describe risk, not direction. Since 2001, average 20-session returns have been no better after risk-on readings than after risk-off ones; markets tend to rebound after selloffs. What changes is the range of outcomes: volatility and the worst 5% of returns are much larger in the risk-off regimes.</p>
+    </div>
+  </section>
+
+  <section id="bigPictureCot">
+    <div class="section-head">
+      <h2>Commitments of Traders positioning</h2>
+      <div class="hint" id="cotHint">&mdash;</div>
+    </div>
+    <div class="nf-tiles" id="cotTiles"></div>
+    <div class="card bt-card">
+      <div class="bp-controls">
+        <div class="seg" id="cotGroup" role="group" aria-label="Market group"></div>
+      </div>
+      <div class="table-scroll"><table class="bp-table" id="cotTable"></table></div>
+      <p class="bt-note">Large speculators (non-commercial traders) in the CFTC legacy futures-only report. Net = long minus short contracts. Index: where today's net position sits between its low (0) and high (100) of the last 1, 3 and 5 years of weekly reports. Signal uses the 3-year index: 80 or above bullish, 20 or below bearish. Trend: the 3-year index over the last 26 weeks. Positions are as of Tuesday and published the following Friday. Extreme readings show crowding; they have often come near turning points, so read them as positioning, not as a forecast.</p>
+    </div>
+    <p class="bt-note">Layout modelled on WallStreetCourier's Big Picture page. Health scores, regimes and positioning indices here are our own, built from daily closes (Yahoo Finance) and the CFTC public reporting API; their ~40-indicator scores and Smart Money Flow Index are proprietary and not reproduced. Health per horizon averages 5&ndash;7 price-only inputs: price vs moving averages, moving-average slopes, returns, the fit and up-day share of the trend, RSI and position in the trading range. Trend inputs are scaled by each market's own volatility so that all 29 markets score on one scale. No constituent breadth data is used. CSI 300 uses the ASHR ETF and Emerging Markets the EEM ETF.</p>
+  </section>
+
   <footer>
-    <span>Data: Yahoo Finance &middot; FRED (St. Louis Fed)</span>
+    <span>Data: Yahoo Finance &middot; FRED (St. Louis Fed) &middot; CFTC</span>
     <span>Source code: <a href="https://github.com/bluebloom18/macro-compass" target="_blank" rel="noopener" style="color:inherit">github.com/bluebloom18/macro-compass</a></span>
     <span id="footerUpdated">&mdash;</span>
   </footer>
@@ -545,6 +678,7 @@ const SEED = __SEED_JSON__;
 let BACKTEST = __BACKTEST_JSON__;
 let NFCI = __NFCI_JSON__;
 let RISK = __RISK_JSON__;
+let BIGPIC = __BIGPIC_JSON__;
 const SEED_GAUGE = RISK && RISK.gauge;   // shown until the live regime/risk doc carries a gauge
 const REGIME_META = {
   1:{name:'Goldilocks', color:'var(--gold)', hex:'#BD8A32', desc:'growth accelerating, inflation cooling'},
@@ -1883,6 +2017,314 @@ function wireNfEquity(){
   let rz; new ResizeObserver(()=>{ cancelAnimationFrame(rz); rz = requestAnimationFrame(drawNfEquity); }).observe(svg.parentElement);
 }
 
+
+// ================= Big Picture (study 04) =================
+const BP_COL = ['var(--r0)','var(--r1)','var(--r2)','var(--r3)','var(--r4)','var(--r5)'];
+const BP_HEX = ['#5B9BEA','#86B6F0','#B5D3F6','#F3B9AE','#E8846F','#D0594B'];
+const BP_SHORT = {world:'World',spx:'S&P 500',ndx:'Nasdaq',nya:'NYSE',tsx:'TSX',rut:'R2000',dax:'DAX',cac:'CAC',mib:'MIB',ibex:'IBEX',sxxp:'Stoxx',ftse:'FTSE',asx:'ASX',nky:'Nikkei',csi:'CSI 300',hsi:'HSI',em:'EM',xlb:'XLB',xlre:'XLRE',xlu:'XLU',xle:'XLE',xlp:'XLP',xli:'XLI',xlv:'XLV',xlk:'XLK',xlf:'XLF',xly:'XLY',xlc:'XLC',gdx:'GDX'};
+const BP = {doc:null, region:'all', side:'all', t:0, hover:null, sort:null, asc:false, wired:false, cotGroup:'all', months:'60'};
+
+function bpRegime(s, m){
+  if(m>=50 && s>=50) return 0;
+  if(s+m>=100) return m>=50 ? 1 : 2;
+  if(m>=50) return 3;
+  return s>=50 ? 4 : 5;
+}
+function bpSigned(v, dp, suf){
+  if(v===null||v===undefined) return '&mdash;';
+  const cls = v>0 ? 'up' : (v<0 ? 'dn' : '');
+  return '<span class="'+cls+'">'+(v>0?'+':'')+v.toFixed(dp)+(suf||'')+'</span>';
+}
+function bpHealthBg(v){
+  if(v===null||v===undefined) return 'transparent';
+  const a = Math.min(Math.abs(v-50)/50, 1)*0.42;
+  return v>=50 ? 'rgba(91,155,234,'+a.toFixed(3)+')' : 'rgba(208,89,75,'+a.toFixed(3)+')';
+}
+function bpPass(m){
+  if(BP.region!=='all' && !BP.region.split('|').includes(m.region)) return false;
+  return true;
+}
+function bpDay(d){ return +d.slice(8,10)+' '+MONTHS[+d.slice(5,7)-1]+' '+d.slice(0,4); }
+
+function renderBigPic(doc){
+  if(!doc || !doc.markets) return;
+  const first = !BP.doc;
+  BP.doc = doc;
+  const H = doc.history;
+  if(first || BP.t >= H.dates.length-2) BP.t = H.dates.length-1;   // follow the latest session
+  if(!BP.wired) wireBigPic();
+  const sl = document.getElementById('bpSlider');
+  sl.max = H.dates.length-1; sl.value = BP.t;
+  const s = doc.summary;
+  document.getElementById('bpHint').textContent = 'latest session ' + bpDay(doc.asof) + ' · ' + s.n + ' markets';
+  const pct = (a,b) => b ? Math.round(100*a/b)+'%' : '';
+  document.getElementById('bpTiles').innerHTML =
+    '<div class="card nf-tile"><div class="eyebrow">Markets risk on</div><div class="val" style="color:var(--r1)">'+s.on+' <span style="font-size:14px;color:var(--ink-faint)">of '+s.n+'</span></div><div class="sub">'+pct(s.on,s.n)+' of markets</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Markets risk off</div><div class="val" style="color:var(--dn)">'+s.off+'</div><div class="sub">'+pct(s.off,s.n)+' of markets</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Switched side</div><div class="val">'+s.new+'</div><div class="sub">risk on &harr; off in the latest session; '+s.switched+' changed regime</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Long-term bull</div><div class="val">'+s.bull+'</div><div class="sub">'+pct(s.bull,s.n)+' with long-term health of 50 or more</div></div>';
+  document.getElementById('bpLegend').innerHTML = doc.regimes.map((r,i)=>'<span><i style="background:'+BP_HEX[i]+'"></i>'+esc(r)+(i===2?' <span style="color:var(--ink-faint)">&middot; risk on above, risk off below &rarr;</span>':'')+'</span>').join('');
+  drawBpMap();
+  renderBpTable();
+  drawBpBreadth();
+  renderBpFwd();
+  renderCot();
+}
+
+function wireBigPic(){
+  BP.wired = true;
+  const segWire = (id, key, fn) => {
+    document.querySelectorAll('#'+id+' button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('#'+id+' button').forEach(x => x.setAttribute('aria-pressed', x===b ? 'true' : 'false'));
+      BP[key] = b.dataset.v; fn();
+    }));
+  };
+  segWire('bpRegion', 'region', () => { drawBpMap(); renderBpTable(); });
+  segWire('bpSide', 'side', () => { drawBpMap(); renderBpTable(); });
+  const sl = document.getElementById('bpSlider');
+  sl.addEventListener('input', () => { BP.t = +sl.value; drawBpMap(); });
+  document.getElementById('bpPrev').addEventListener('click', () => { if(BP.t>0){ BP.t--; sl.value=BP.t; drawBpMap(); } });
+  document.getElementById('bpNext').addEventListener('click', () => { if(BP.t<BP.doc.history.dates.length-1){ BP.t++; sl.value=BP.t; drawBpMap(); } });
+  document.getElementById('bpRegroup').addEventListener('click', () => { BP.sort = null; renderBpTable(); });
+  document.querySelectorAll('#bpPresets button').forEach(b => b.addEventListener('click', () => { BP.months = b.dataset.months; drawBpBreadth(); }));
+  window.addEventListener('resize', () => drawBpBreadth());
+}
+
+function bpPoint(key, t){
+  const a = BP.doc.history.data[key];
+  return a ? a[t] : null;
+}
+
+function drawBpMap(){
+  const doc = BP.doc, H = doc.history, svg = document.getElementById('bpMap');
+  const t = BP.t, latest = t === H.dates.length-1;
+  document.getElementById('bpDate').textContent = bpDay(H.dates[t]) + (latest ? ' · latest' : '');
+  document.getElementById('bpPrev').disabled = t<=0;
+  document.getElementById('bpNext').disabled = latest;
+  const L = 46, R = 744, T = 14, B = 500;
+  const X = v => L + (R-L)*v/100, Y = v => B - (B-T)*v/100;
+  const P = pts => pts.map(p => X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)).join(' ');
+  const zones = [
+    [[50,50],[100,50],[100,100],[50,100]],  // VHR
+    [[50,50],[100,50],[100,0]],             // HR
+    [[50,50],[50,100],[0,100]],             // IncReward
+    [[50,50],[50,0],[100,0]],               // IncRisk
+    [[50,50],[0,50],[0,100]],               // HighRisk
+    [[50,50],[0,50],[0,0],[50,0]],          // VHRisk
+  ];
+  const zl = [[75,94],[88,40],[30,94],[66,6],[12,62],[25,6]];
+  let h = '';
+  zones.forEach((z,i) => { h += '<polygon points="'+P(z)+'" fill="'+BP_HEX[i]+'" fill-opacity="'+(i===0||i===5?0.10:0.07)+'"/>'; });
+  h += '<line x1="'+X(0)+'" y1="'+Y(100)+'" x2="'+X(100)+'" y2="'+Y(0)+'" stroke="var(--border)" stroke-dasharray="4 4"/>';
+  h += '<line x1="'+X(50)+'" y1="'+Y(0)+'" x2="'+X(50)+'" y2="'+Y(100)+'" stroke="var(--border)"/>';
+  h += '<line x1="'+X(0)+'" y1="'+Y(50)+'" x2="'+X(100)+'" y2="'+Y(50)+'" stroke="var(--border)"/>';
+  h += '<rect x="'+L+'" y="'+T+'" width="'+(R-L)+'" height="'+(B-T)+'" fill="none" stroke="var(--border)"/>';
+  doc.regimes.forEach((r,i) => { h += '<text class="zone-label" x="'+X(zl[i][0])+'" y="'+Y(zl[i][1])+'" text-anchor="middle">'+esc(r)+'</text>'; });
+  [0,25,50,75,100].forEach(v => {
+    h += '<text class="axis-label" x="'+X(v)+'" y="'+(B+16)+'" text-anchor="middle">'+v+'</text>';
+    h += '<text class="axis-label" x="'+(L-8)+'" y="'+(Y(v)+3)+'" text-anchor="end">'+v+'</text>';
+  });
+  h += '<text class="axis-label" x="'+X(50)+'" y="'+(B+34)+'" text-anchor="middle">MID-TERM HEALTH &rarr;</text>';
+  h += '<text class="axis-label" transform="translate(12,'+Y(50)+') rotate(-90)" text-anchor="middle">SHORT-TERM HEALTH &rarr;</text>';
+  // bubbles, largest first so small ones stay on top
+  const items = [];
+  doc.markets.forEach(m => {
+    const p = bpPoint(m.key, t); if(!p) return;
+    const reg = bpRegime(p[0], p[1]);
+    const side = reg<=2 ? 'on' : 'off';
+    const pass = bpPass(m) && (BP.side==='all' || BP.side===side);
+    items.push({m, p, reg, pass});
+  });
+  items.sort((a,b) => b.p[2]-a.p[2]);
+  h += '<g id="bpTrail"></g>';
+  // label placement: try right, left, above, below; skip spots that hit a placed label or bubble
+  const placed = [], discs = items.map(({p}) => ({x:X(p[1]), y:Y(p[0]), r:5 + 12*Math.max(0, Math.min(100, p[2]))/100}));
+  const hits = (b) => placed.some(q => b.x1<q.x2 && b.x2>q.x1 && b.y1<q.y2 && b.y2>q.y1)
+    || discs.some(d => d.x+d.r>b.x1 && d.x-d.r<b.x2 && d.y+d.r>b.y1 && d.y-d.r<b.y2);
+  const labelPos = {};
+  items.slice().sort((a,b) => (b.pass-a.pass)).forEach(({m,p}) => {
+    const x = X(p[1]), y = Y(p[0]), r = 5 + 12*Math.max(0, Math.min(100, p[2]))/100;
+    const txt = BP_SHORT[m.key]||m.name, w = txt.length*6.2, hgt = 11;
+    const cands = [[x+r+3, y+3.5, 'start'], [x-r-3, y+3.5, 'end'], [x, y-r-4, 'middle'], [x, y+r+11, 'middle'],
+                   [x+r+3, y-8, 'start'], [x+r+3, y+15, 'start'], [x-r-3, y-8, 'end'], [x-r-3, y+15, 'end']];
+    const box = c => { const x1 = c[2]==='start' ? c[0] : c[2]==='end' ? c[0]-w : c[0]-w/2; return {x1, x2:x1+w, y1:c[1]-9, y2:c[1]-9+hgt}; };
+    let pick = cands.find(c => !hits(box(c))) || cands[0];
+    placed.push(box(pick)); labelPos[m.key] = pick;
+  });
+  items.forEach(({m,p,reg,pass}) => {
+    const r = 5 + 12*Math.max(0, Math.min(100, p[2]))/100;
+    const lp = labelPos[m.key];
+    h += '<g class="bub'+(pass?'':' dim')+'" data-pass="'+(pass?1:0)+'" data-k="'+m.key+'"><circle cx="'+X(p[1]).toFixed(1)+'" cy="'+Y(p[0]).toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+BP_HEX[reg]+'"/>'
+       + '<text x="'+lp[0].toFixed(1)+'" y="'+lp[1].toFixed(1)+'" text-anchor="'+lp[2]+'">'+esc(BP_SHORT[m.key]||m.name)+'</text>'
+       + '<circle cx="'+X(p[1]).toFixed(1)+'" cy="'+Y(p[0]).toFixed(1)+'" r="'+Math.max(r,11)+'" fill="transparent" stroke="none"/></g>';
+  });
+  svg.innerHTML = h;
+  const tip = document.getElementById('bpTip');
+  const highlight = k => {
+    svg.querySelectorAll('.bub').forEach(g => g.classList.toggle('dim', k ? g.dataset.k!==k : g.dataset.pass!=='1'));
+    const tr = svg.querySelector('#bpTrail');
+    if(!k){ tr.innerHTML = ''; tip.hidden = true; return; }
+    const pts = [];
+    for(let i=Math.max(0,t-10); i<=t; i++){ const q = bpPoint(k, i); if(q) pts.push(X(q[1]).toFixed(1)+','+Y(q[0]).toFixed(1)); }
+    tr.innerHTML = '<polyline class="trail" points="'+pts.join(' ')+'"/>';
+    const m = doc.markets.find(x => x.key===k), p = bpPoint(k, t), reg = bpRegime(p[0], p[1]);
+    const box = svg.getBoundingClientRect(), sc = box.width/760;
+    tip.innerHTML = '<b>'+esc(m.name)+'</b><br><span style="color:'+BP_HEX[reg]+'">'+esc(doc.regimes[reg])+'</span><br>Short '+p[0]+' · Mid '+p[1]+' · Long '+p[2];
+    tip.style.left = (X(p[1])*sc)+'px'; tip.style.top = (Y(p[0])*sc - 14)+'px'; tip.hidden = false;
+  };
+  svg.querySelectorAll('.bub').forEach(g => {
+    g.addEventListener('mouseenter', () => { BP.hover = g.dataset.k; highlight(BP.hover); });
+    g.addEventListener('mouseleave', () => { BP.hover = null; highlight(null); });
+  });
+  if(BP.hover) highlight(BP.hover);
+}
+
+const BP_COLS = [
+  {k:'name', l:'Market'}, {k:'regime', l:'Regime'}, {k:'side', l:'Side'},
+  {k:'days', l:'In regime'}, {k:'env', l:'Since start'}, {k:'stab1', l:'Stab. 1D'}, {k:'stab5', l:'Stab. 5D'},
+  {k:'ltbull', l:'LT bull'}, {k:'S', l:'Short'}, {k:'M', l:'Mid'}, {k:'L', l:'Long'}, {k:'T', l:'Total'},
+];
+
+function renderBpTable(){
+  const doc = BP.doc, tb = document.getElementById('bpTable');
+  let rows = doc.markets.filter(m => !m.error && bpPass(m) && (BP.side==='all' || m.side===BP.side));
+  const head = '<thead><tr>' + BP_COLS.map(c => '<th data-k="'+c.k+'"'+(BP.sort===c.k?' aria-sort="'+(BP.asc?'ascending':'descending')+'"':'')+'>'+c.l+'</th>').join('') + '</tr></thead>';
+  const val = (m,k) => k==='side' ? (m.side==='on'?1:0) : k==='ltbull' ? (m.ltbull?1:0) : k==='regime' ? -m.regime : m[k];
+  const line = m => {
+    const d5 = m.regime5 - m.regime;   // >0 = moved toward reward
+    const arw = d5>0 ? '&uarr;' : d5<0 ? '&darr;' : (m.dT5>10 ? '&uarr;' : m.dT5<-10 ? '&darr;' : '&rarr;');
+    return '<tr data-k="'+m.key+'"><td class="nm">'+esc(m.name)+'<small>'+esc(m.symbol)+(m.note?' · '+esc(m.note):'')+'</small></td>'
+      + '<td class="rg"><span class="sw" style="background:'+BP_HEX[m.regime]+'"></span>'+esc(doc.regimes[m.regime])+'<span class="arw'+(d5?' chg':'')+'" title="vs five sessions ago; total health '+(m.dT5>0?'+':'')+m.dT5+'">'+arw+'</span></td>'
+      + '<td><span class="side '+m.side+'">'+(m.side==='on'?'Risk on':'Risk off')+'</span>'+(m.new?'<span class="newb">NEW</span>':'')+'</td>'
+      + '<td>'+m.days+'d</td><td>'+bpSigned(m.env,1,'%')+'</td>'
+      + '<td>'+(m.stab1==null?'&mdash;':m.stab1.toFixed(0)+'%')+'</td><td>'+(m.stab5==null?'&mdash;':m.stab5.toFixed(0)+'%')+'</td>'
+      + '<td>'+(m.ltbull?'<span class="up">Yes</span>':'<span style="color:var(--ink-faint)">No</span>')+'</td>'
+      + ['S','M','L','T'].map(k => '<td class="hc'+(k==='T'?' tot':'')+'" style="background:'+bpHealthBg(m[k])+'">'+m[k].toFixed(0)+'</td>').join('')
+      + '</tr>';
+  };
+  let body = '';
+  if(BP.sort){
+    rows = rows.slice().sort((a,b) => { const x = val(a,BP.sort), y = val(b,BP.sort);
+      const c = typeof x==='string' ? x.localeCompare(y) : x-y; return BP.asc ? c : -c; });
+    body = rows.map(line).join('');
+  } else {
+    const regions = [];
+    rows.forEach(m => { if(!regions.includes(m.region)) regions.push(m.region); });
+    regions.forEach(rg => {
+      const rr = rows.filter(m => m.region===rg);
+      const on = rr.filter(m => m.side==='on').length;
+      body += '<tr class="grp"><td colspan="'+BP_COLS.length+'">'+esc(rg)+' &middot; '+on+' of '+rr.length+' risk on</td></tr>' + rr.map(line).join('');
+    });
+  }
+  const errs = doc.markets.filter(m => m.error).map(m => esc(m.name));
+  if(errs.length) body += '<tr class="grp"><td colspan="'+BP_COLS.length+'">No data this run: '+errs.join(', ')+'</td></tr>';
+  tb.innerHTML = head + '<tbody>' + (body || '<tr><td colspan="'+BP_COLS.length+'" class="nm">No markets match the filters.</td></tr>') + '</tbody>';
+  document.getElementById('bpRegroup').hidden = !BP.sort;
+  tb.querySelectorAll('th').forEach(th => th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    if(BP.sort===k) BP.asc = !BP.asc; else { BP.sort = k; BP.asc = k==='name'; }
+    renderBpTable();
+  }));
+}
+
+function drawBpBreadth(){
+  const doc = BP.doc; if(!doc) return;
+  const B = doc.breadth, svg = document.getElementById('bpBreadth');
+  document.querySelectorAll('#bpPresets button').forEach(b => b.setAttribute('aria-pressed', b.dataset.months===BP.months ? 'true' : 'false'));
+  let lo = 0; const n = B.dates.length, end = B.dates[n-1];
+  if(BP.months!=='all'){ lo = n-1; while(lo>0 && monthsBetween(B.dates[lo-1], end) <= +BP.months) lo--; }
+  const W = Math.max(280, svg.parentElement.clientWidth), Hh = 220, L = 34, R = W-10, T = 10, Bt = Hh-24;
+  svg.setAttribute('viewBox', '0 0 '+W+' '+Hh); svg.setAttribute('height', Hh);
+  const X = i => L + (R-L)*(i-lo)/Math.max(1, n-1-lo), Y = v => Bt - (Bt-T)*v/100;
+  let h = '';
+  [0,25,50,75,100].forEach(v => { h += '<line x1="'+L+'" x2="'+R+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="var(--border)" stroke-opacity="'+(v===50?0.9:0.4)+'"/><text class="axis-label" x="'+(L-6)+'" y="'+(Y(v)+3)+'" text-anchor="end">'+v+'%</text>'; });
+  // year ticks
+  const span = monthsBetween(B.dates[lo], end), every = span>96 ? 4 : span>36 ? 1 : 0;
+  let lastY = null;
+  for(let i=lo;i<n;i++){
+    const yr = B.dates[i].slice(0,4), mo = +B.dates[i].slice(5,7);
+    if(i===lo) { lastY = every ? yr : B.dates[i].slice(0,7); continue; }   // no tick on the clipped first period
+    if(every){ if(yr!==lastY && (+yr % every===0)){ h += '<text class="axis-label" x="'+X(i)+'" y="'+(Hh-6)+'" text-anchor="middle">'+yr+'</text>'; } lastY = yr; }
+    else { const key = B.dates[i].slice(0,7); if(key!==lastY && mo%3===1){ h += '<text class="axis-label" x="'+X(i)+'" y="'+(Hh-6)+'" text-anchor="middle">'+fmtMonth(B.dates[i])+'</text>'; } lastY = key; }
+  }
+  const smooth = span > 36 ? 4 : 1;   // 4-week average beyond three years, raw weekly otherwise
+  const avg = (arr, i) => { let s=0, c=0; for(let k=Math.max(0,i-smooth+1); k<=i; k++){ if(arr[k]!=null){ s+=arr[k]; c++; } } return c ? s/c : null; };
+  const path = arr => { let d=''; for(let i=lo;i<n;i++){ const v = avg(arr,i); if(v==null) continue; d += (d?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1); } return d; };
+  document.getElementById('bpBreadthNote').textContent = smooth>1 ? 'Lines are 4-week averages; hover shows the week.' : 'Weekly readings.';
+  h += '<path d="'+path(B.bull)+'" fill="none" stroke="var(--ink-faint)" stroke-width="1.5"/>';
+  h += '<path d="'+path(B.on)+'" fill="none" stroke="var(--r0)" stroke-width="2"/>';
+  h += '<line id="bpBx" x1="0" x2="0" y1="'+T+'" y2="'+Bt+'" stroke="var(--ink-faint)" visibility="hidden"/>';
+  svg.innerHTML = h;
+  const tip = document.getElementById('bpBreadthTip');
+  svg.onmousemove = e => {
+    const box = svg.getBoundingClientRect(), x = (e.clientX-box.left)*W/box.width;
+    const i = Math.max(lo, Math.min(n-1, Math.round(lo + (x-L)/(R-L)*(n-1-lo))));
+    const ln = document.getElementById('bpBx'); ln.setAttribute('x1', X(i)); ln.setAttribute('x2', X(i)); ln.setAttribute('visibility','visible');
+    tip.innerHTML = bpDay(B.dates[i])+'<br><span style="color:var(--r1)">Risk on '+B.on[i]+'%</span><br>Long-term bull '+B.bull[i]+'%<br><span style="color:var(--ink-faint)">'+B.n[i]+' markets scored</span>';
+    tip.style.left = (X(i)*box.width/W)+'px'; tip.style.top = '10px'; tip.style.transform = 'translate(-50%,0)'; tip.hidden = false;
+  };
+  svg.onmouseleave = () => { tip.hidden = true; const ln = document.getElementById('bpBx'); if(ln) ln.setAttribute('visibility','hidden'); };
+}
+
+function renderBpFwd(){
+  const doc = BP.doc, p = doc.persistence, el = document.getElementById('bpFwd');
+  const f = v => v==null ? '&mdash;' : v.toFixed(1);
+  let h = '<thead><tr><th>Regime</th><th>Share of days</th><th>Same regime<small>1 session later</small></th><th>Same regime<small>5 sessions later</small></th><th>Mean return<small>20 sessions</small></th><th>Median</th><th>Up</th><th>Worst 5%<small>5th percentile</small></th><th>Volatility<small>annualised</small></th></tr></thead><tbody>';
+  doc.regimes.forEach((r,i) => {
+    const s = p.fwd[i] || {};
+    h += '<tr><td class="reg"><span class="reg-swatch" style="background:'+BP_HEX[i]+'"></span>'+esc(r)+'</td><td>'+f(p.share[i])+'%</td><td>'+f(p.stay1[i])+'%</td><td>'+f(p.stay5[i])+'%</td>'
+       + '<td>'+bpSigned(s.mean,2,'%')+'</td><td>'+bpSigned(s.median,2,'%')+'</td><td>'+f(s.hit)+'%</td><td>'+bpSigned(s.p5,1,'%')+'</td><td>'+f(s.vol)+'%</td></tr>';
+  });
+  const a = p.fwd_all || {};
+  h += '<tr class="bh"><td class="reg">All days</td><td>100%</td><td></td><td></td><td>'+bpSigned(a.mean,2,'%')+'</td><td>'+bpSigned(a.median,2,'%')+'</td><td>'+f(a.hit)+'%</td><td>'+bpSigned(a.p5,1,'%')+'</td><td>'+f(a.vol)+'%</td></tr>';
+  el.innerHTML = h + '</tbody>';
+}
+
+function cotSignal(v){ return v>=80 ? 'bull' : v<=20 ? 'bear' : 'neutral'; }
+function cotBg(v){
+  if(v==null) return 'transparent';
+  if(v>=80) return 'rgba(91,155,234,'+(0.18+0.3*(v-80)/20).toFixed(3)+')';
+  if(v<=20) return 'rgba(208,89,75,'+(0.18+0.3*(20-v)/20).toFixed(3)+')';
+  return 'transparent';
+}
+function cotSpark(arr){
+  const w = 84, h = 22, n = arr.length; if(n<2) return '';
+  const X = i => 1 + (w-2)*i/(n-1), Y = v => h-2 - (h-4)*v/100;
+  const d = arr.map((v,i) => (i?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1)).join('');
+  const last = arr[n-1], col = last>=80 ? 'var(--r0)' : last<=20 ? 'var(--r5)' : 'var(--ink-muted)';
+  return '<svg class="cot-spark" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><rect x="0" y="'+Y(80)+'" width="'+w+'" height="'+(Y(20)-Y(80))+'" fill="var(--surface-2)"/><path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5"/><circle cx="'+X(n-1)+'" cy="'+Y(last)+'" r="2.5" fill="'+col+'"/></svg>';
+}
+function renderCot(){
+  const c = BP.doc.cot; if(!c || !c.rows || !c.rows.length){ document.getElementById('cotHint').textContent = 'CFTC data unavailable this run'; return; }
+  const ok = c.rows.filter(r => !r.error);
+  const cnt = {bull:0, neutral:0, bear:0}; ok.forEach(r => cnt[cotSignal(r.i3)]++);
+  document.getElementById('cotHint').textContent = ok.length + ' markets · positions as of Tue ' + bpDay(c.asof);
+  document.getElementById('cotTiles').innerHTML =
+    '<div class="card nf-tile"><div class="eyebrow">Markets tracked</div><div class="val">'+ok.length+'</div><div class="sub">8 groups, CFTC legacy report</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Bullish positioning</div><div class="val" style="color:var(--r1)">'+cnt.bull+'</div><div class="sub">3-year index 80 or above</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Neutral</div><div class="val">'+cnt.neutral+'</div><div class="sub">between 20 and 80</div></div>'
+  + '<div class="card nf-tile"><div class="eyebrow">Bearish positioning</div><div class="val" style="color:var(--dn)">'+cnt.bear+'</div><div class="sub">3-year index 20 or below</div></div>';
+  const groups = []; c.rows.forEach(r => { if(!groups.includes(r.group)) groups.push(r.group); });
+  const gs = document.getElementById('cotGroup');
+  gs.innerHTML = ['all'].concat(groups).map(g => '<button type="button" data-v="'+esc(g)+'" aria-pressed="'+(BP.cotGroup===g)+'">'+(g==='all'?'All':esc(g))+'</button>').join('');
+  gs.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { BP.cotGroup = b.dataset.v; renderCot(); }));
+  const fmtInt = v => (v>0?'+':'')+v.toLocaleString('en-US');
+  let h = '<thead><tr><th data-k="name">Market</th><th>Net position</th><th>Weekly change</th><th>Net % of OI</th><th>1Y index</th><th>3Y index</th><th>5Y index</th><th>Trend, 26w</th><th data-k="regime">Signal</th></tr></thead><tbody>';
+  groups.filter(g => BP.cotGroup==='all' || BP.cotGroup===g).forEach(g => {
+    h += '<tr class="grp"><td colspan="9">'+esc(g)+'</td></tr>';
+    c.rows.filter(r => r.group===g).forEach(r => {
+      if(r.error){ h += '<tr><td class="nm">'+esc(r.name)+'<small>'+esc(r.code)+'</small></td><td colspan="8" style="text-align:left;color:var(--ink-faint)">no data</td></tr>'; return; }
+      const sg = cotSignal(r.i3);
+      h += '<tr><td class="nm">'+esc(r.name)+'<small>'+esc(r.code)+(r.years<5?' · '+r.years+'y of history':'')+'</small></td>'
+        + '<td>'+fmtInt(r.net)+'</td><td>'+bpSigned(r.chg,0)+'</td><td>'+(r.pct_oi==null?'&mdash;':r.pct_oi.toFixed(1)+'%')+'</td>'
+        + [r.i1,r.i3,r.i5].map(v => '<td class="cot-idx" style="background:'+cotBg(v)+'">'+v.toFixed(0)+'</td>').join('')
+        + '<td>'+cotSpark(r.spark)+'</td>'
+        + '<td class="rg">'+(sg==='bull'?'<span class="side on">Bullish</span>':sg==='bear'?'<span class="side off">Bearish</span>':'<span style="color:var(--ink-faint)">Neutral</span>')+'</td></tr>';
+    });
+  });
+  document.getElementById('cotTable').innerHTML = h + '</tbody>';
+}
+
 function renderAll(seed){
   renderLatest(seed.latest);
   renderQuadrant(seed.latest, seed.recent);
@@ -1890,6 +2332,7 @@ function renderAll(seed){
   renderBacktest(BACKTEST);
   renderNfci(NFCI);
   renderRisk(RISK);
+  renderBigPic(BIGPIC);
 }
 
 renderAll(SEED);
@@ -1918,6 +2361,11 @@ document.getElementById('statusText').textContent = 'seed data · ' + SEED.lates
       if(!snap.exists) return;
       const data = snap.data();
       if(data && data.dates && data.pillars){ RISK = data; renderRisk(RISK); }
+    });
+    db.doc('regime/bigpic').onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const data = snap.data();
+      if(data && data.markets && data.history){ BIGPIC = data; renderBigPic(BIGPIC); }
     });
     db.doc('regime/backtest').onSnapshot(snap=>{
       if(!snap.exists) return;
