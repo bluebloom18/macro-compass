@@ -166,6 +166,11 @@ td.dim{color:var(--ink-muted);}
 .archive-list .reg{color:var(--ink-faint); font-size:12.5px;}
 .archive-list .hl{color:var(--ink-muted);}
 @media (max-width:560px){.archive-list li{grid-template-columns:1fr; gap:2px;}}
+/* big picture */
+.bp-sw{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:7px; vertical-align:-1px;}
+.bp-flag{display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:100px; border:1px solid var(--amber); color:var(--amber); margin:0 4px 2px 0; white-space:nowrap;}
+.bp-no{color:var(--amber); font-weight:600;}
+td.wrap{white-space:normal;}
 /* sources */
 .sources{font-size:13px; color:var(--ink-muted); columns:2 280px; column-gap:28px; margin:0; padding-left:18px;}
 .sources li{margin-bottom:6px; break-inside:avoid;}
@@ -190,7 +195,7 @@ footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; c
 
   <section id="archive" hidden></section>
 
-  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, macro pressure). Market context from the sources listed in each edition. Not investment advice.</footer>
+  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, macro pressure, Big Picture). Market context from the sources listed in each edition. Not investment advice.</footer>
 </div>
 
 <script>
@@ -269,6 +274,50 @@ function gaugeCell(v, t){ return scoreCell(v, t.on); }
 // macro pressure: weak below m.weak; a warning only while the gauge itself is still calm
 function macroState(m, g, i){ const v = m.index[i], gi = g.index[i]; return v === null ? '' : v >= m.weak ? 'no warning' : (gi !== null && gi >= g.tiers.off) ? 'pressure building' : 'weak, gauge already risk-off'; }
 
+const BP_COL = ['#5B9BEA','#86B6F0','#B5D3F6','#F3B9AE','#E8846F','#D0594B'];
+const BP_FLAG = {washout:'Breadth washout', narrow:'Narrow rally', volspike:'Volatility spike'};
+const BP_CHECK = {breadth:'breadth', vol:'volatility', credit:'credit'};
+function renderBigPic(b, note){
+  const s = b.summary, br = b.breadth, n0 = br.on[0];
+  const pct = v => Math.round(v) + '%';
+  let h = '<section><h2>Big Picture</h2>' + (note ? '<p class="lede">' + minus(note) + '</p>' : '')
+    + '<div class="chips" style="margin-top:0"><span class="chip">Markets risk on <b>' + s.on + ' of ' + s.n + '</b> (' + pct(br.on[br.on.length-1]) + ', ' + pct(n0) + ' on ' + day(br.dates[0]) + ')</span>'
+    + '<span class="chip">Long-term bull <b>' + s.bull + ' of ' + s.n + '</b></span>'
+    + '<span class="chip">Switched side in the latest session <b>' + s.new + '</b></span></div>';
+  h += '<div class="table-scroll"><table><thead><tr><th>Regime</th><th>Markets</th></tr></thead><tbody>'
+    + b.by_regime.map(r => '<tr><td class="k"><span class="bp-sw" style="background:' + BP_COL[r.regime] + '"></span>' + esc(r.name) + (r.regime <= 2 ? '' : '') + '</td><td class="wrap">' + (r.markets.length ? esc(r.markets.join(', ')) : '<span class="dim" style="color:var(--ink-faint)">none</span>') + '</td></tr>').join('')
+    + '</tbody></table></div>'
+    + '<p class="note">The first three regimes are risk on, the last three risk off. Regimes change only after three sessions in a row point to the new one.</p>';
+  if(b.moves_5d && b.moves_5d.length){
+    h += '<h3 style="font-size:17px; margin-top:6px;">Regime changes, last five sessions</h3><div class="table-scroll"><table><thead><tr><th>Market</th><th>From</th><th>To</th><th>Side</th></tr></thead><tbody>'
+      + b.moves_5d.map(m => '<tr><td class="k">' + esc(m.name) + '</td><td>' + esc(m.before) + '</td><td>' + esc(m.after) + '</td><td>' + (m.side === 'on' ? 'risk on' : 'risk off') + (m.side_changed ? ' <b>(switched)</b>' : '') + '</td></tr>').join('')
+      + '</tbody></table></div>';
+  }
+  if(b.us_checks && b.us_checks.length){
+    h += '<h3 style="font-size:17px; margin-top:6px;">US indices: breadth, volatility and credit beside the regime</h3><div class="table-scroll"><table><thead><tr><th>Index</th><th>Regime</th><th class="num">Above 200-day</th><th>Volatility</th><th class="num">HY vs Treasuries, 20d</th><th class="num">Agree</th><th>Flags</th></tr></thead><tbody>'
+      + b.us_checks.map(u => '<tr><td class="k">' + esc(u.name) + '</td><td>' + esc(u.regime) + ' <span style="color:var(--ink-faint)">(' + (u.side === 'on' ? 'risk on' : 'risk off') + ')</span></td>'
+        + '<td class="num' + (u.disagree.includes('breadth') ? ' bp-no' : '') + '">' + (u.breadth === null ? '&mdash;' : Math.round(u.breadth) + '%') + '</td>'
+        + '<td' + (u.disagree.includes('vol') ? ' class="bp-no"' : '') + '>' + esc(u.vol) + ', ' + esc(u.vol_state) + '</td>'
+        + '<td class="num' + (u.disagree.includes('credit') ? ' bp-no' : '') + '">' + minus((u.credit20 > 0 ? '+' : '') + u.credit20.toFixed(1) + '%') + '</td>'
+        + '<td class="num">' + u.agree + ' of ' + u.views + '</td>'
+        + '<td class="wrap">' + (u.flags.length ? u.flags.map(f => '<span class="bp-flag">' + BP_FLAG[f] + '</span>').join('') : '<span style="color:var(--ink-faint)">none</span>') + '</td></tr>').join('')
+      + '</tbody></table></div><p class="note">Amber marks a check that disagrees with the regime. These checks sit beside the regime, not inside it: adding them to the scores made the regimes worse in testing. Washouts and volatility spikes have been followed by above-average 20-session returns, so they read as contrarian.</p>';
+  }
+  const cotX = b.cot ? b.cot.extremes.filter(c => c.pattern !== 'none') : [];
+  if(cotX.length){
+    const PAT = (c) => c.pattern === 'none' ? 'no clear pattern' : (c.pattern === 'contrarian' ? (c.crowd === 'long' ? 'did worse than usual' : 'did better than usual') : (c.crowd === 'long' ? 'did better than usual' : 'did worse than usual')) + ' (' + (c.edge > 0 ? '+' : '&minus;') + Math.abs(c.edge).toFixed(2) + ' sd)';
+    h += '<h3 style="font-size:17px; margin-top:6px;">Futures positioning extremes (CFTC, ' + day(b.cot.asof) + ')</h3><div class="table-scroll"><table><thead><tr><th>Contract</th><th>Group</th><th class="num">3-year index</th><th>Speculators</th><th>Group, next 13 weeks after this extreme</th></tr></thead><tbody>'
+      + cotX.map(c => '<tr><td class="k">' + esc(c.name) + '</td><td>' + esc(c.group) + '</td><td class="num">' + Math.round(c.i3) + '</td><td>crowded ' + c.crowd + '</td><td class="wrap">' + PAT(c) + '</td></tr>').join('')
+      + '</tbody></table></div><p class="note">Index 0&ndash;100: where speculators&rsquo; net position sits in its 3-year range; 80 or above is crowded long, 20 or below crowded short. Listed only where the group has a past pattern on that side (' + (b.cot.extremes.length - cotX.length) + ' other extremes left out). The last column is how that group&rsquo;s futures did over the next 13 weeks after the same kind of extreme since 2014, against their own average move. Pooled across all contracts, extremes have had almost no edge.</p>';
+  }
+  if(b.smi){
+    const ST = {smi_up:'rising with the Dow', smi_down:'falling with the Dow', div_bear:'falling while the Dow rises (bearish divergence)', div_bull:'rising while the Dow falls (bullish divergence)'};
+    h += '<p class="note">Smart money flow proxy (Dow, last 20 sessions): ' + (ST[b.smi.state] || esc(b.smi.state)) + '. It has shown no edge over its two years of history.</p>';
+  }
+  h += '<p class="note">Big Picture readings as of ' + day(b.asof, true) + ', from Macro Compass study 04: our own scores for ' + s.n + ' markets, built from daily closes, CFTC reports and index member data. Method and backtests are on the dashboard.</p></section>';
+  return h;
+}
+
 function render(d){
   const r = d.regime || {}, rm = REGIME[r.code];
   document.getElementById('eyebrow').textContent = 'Macro Compass weekly debate · readings as of ' + day(d.asof, true) + ' · written ' + day(d.written, true);
@@ -323,6 +372,8 @@ function render(d){
     + d.barometer.pillars.map(p => '<tr><td class="k">' + esc(p.name) + '</td>' + p.scores.map(v => scoreCell(v, t)).join('') + '</tr>').join('')
     + '<tr class="total"><td class="k">Risk Index</td>' + d.barometer.index.map(v => scoreCell(v, t)).join('') + '</tr>'
     + '</tbody></table></div>') + '<p class="note">' + minus(d.barometer_note) + '</p></section>');
+
+  if(d.bigpic) html.push(renderBigPic(d.bigpic, d.bigpic_note));
 
   const side = (cls, title, items) => '<div class="side ' + cls + '"><h3>' + title + '</h3><ol>'
     + items.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div>';

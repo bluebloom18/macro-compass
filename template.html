@@ -293,7 +293,7 @@ details summary{list-style-position:inside;}
     <div class="title-block">
       <div class="eyebrow">Cross-asset macro &middot; updated daily</div>
       <h1>Macro Compass</h1>
-      <p>Four studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, and a big-picture view of 29 equity markets and futures positioning. Yahoo Finance, FRED and the CFTC, no vendor key required.</p>
+      <p>Four studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, and a big-picture view of 30 equity markets and futures positioning. Yahoo Finance, FRED and the CFTC, no vendor key required.</p>
       <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a><a href="#study-bigpic">04 Big picture</a></nav>
     </div>
     <div class="status-chip"><span class="status-dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
@@ -595,7 +595,7 @@ details summary{list-style-position:inside;}
 
   <div class="part" id="study-bigpic">
     <span class="num">04</span>
-    <div><h2>Big picture</h2><p>Market health and regime across 29 equity markets and US sectors, plus speculator positioning in 44 futures markets &middot; daily, CoT weekly</p></div>
+    <div><h2>Big picture</h2><p>Market health and regime across 30 equity markets and US sectors, plus speculator positioning in 44 futures markets &middot; daily, CoT weekly</p></div>
   </div>
 
   <section id="bigPicture">
@@ -639,7 +639,7 @@ details summary{list-style-position:inside;}
         <button type="button" class="seg" id="bpRegroup" style="padding:4px 10px; font-family:var(--font-mono); font-size:11.5px; color:var(--ink-muted); cursor:pointer;">Group by region</button>
       </div>
       <div class="table-scroll"><table class="bp-table" id="bpTable"></table></div>
-      <p class="bt-note">Arrow: regime vs five sessions ago, bold when it changed (&uarr; toward reward, &darr; toward risk). NEW: switched between risk on and risk off in the latest session. Regimes change only after three sessions in a row point to the new one. In regime: sessions since the confirmed regime started and the index return since then. Stability: how often a market in this regime has still been in it one and five sessions later, pooled across all 29 markets since 2001. Health is 0&ndash;100, 50 = no trend.</p>
+      <p class="bt-note">Arrow: regime vs five sessions ago, bold when it changed (&uarr; toward reward, &darr; toward risk). NEW: switched between risk on and risk off in the latest session. Regimes change only after three sessions in a row point to the new one. In regime: sessions since the confirmed regime started and the index return since then. Stability: how often a market in this regime has still been in it one and five sessions later, pooled across all 30 markets since 2001. Health is 0&ndash;100, 50 = no trend.</p>
     </div>
 
     <div class="card bt-card" style="margin-top:14px;" id="ucCard">
@@ -662,7 +662,7 @@ details summary{list-style-position:inside;}
         <div class="nf-legend" style="margin:0"><span><i style="background:var(--r0)"></i>Markets risk on</span><span><i style="background:var(--ink-faint)"></i>Markets in long-term bull</span></div>
       </div>
       <div class="chart-wrap">
-        <svg id="bpBreadth" role="img" aria-label="Share of the 29 markets risk on and in a long-term bull, weekly"></svg>
+        <svg id="bpBreadth" role="img" aria-label="Share of the 30 markets risk on and in a long-term bull, weekly"></svg>
         <div class="chart-tooltip" id="bpBreadthTip" hidden></div>
       </div>
       <p class="bt-note" style="margin-bottom:10px"><span id="bpBreadthNote"></span> Share of the markets scored that week (fewer before 2016, when XLRE and XLC started).</p>
@@ -724,11 +724,11 @@ details summary{list-style-position:inside;}
       <div style="overflow-x:auto;"><table class="bt-table" id="cotBt"></table></div>
       <p class="bt-note" id="cotBtNote"></p>
     </div>
-    <p class="bt-note">Layout modelled on WallStreetCourier's Big Picture page. Health scores, regimes and positioning indices here are our own, built from daily closes (Yahoo Finance) and the CFTC public reporting API; their ~40-indicator scores and Smart Money Flow Index are proprietary and not reproduced. Health per horizon averages 5&ndash;7 price-only inputs: price vs moving averages, moving-average slopes, returns, the fit and up-day share of the trend, RSI and position in the trading range. Trend inputs are scaled by each market's own volatility so that all 29 markets score on one scale. No constituent breadth data is used. CSI 300 uses the ASHR ETF and Emerging Markets the EEM ETF.</p>
+    <p class="bt-note">Layout modelled on WallStreetCourier's Big Picture page. Health scores, regimes and positioning indices here are our own, built from daily closes (Yahoo Finance) and the CFTC public reporting API; their ~40-indicator scores and Smart Money Flow Index are proprietary and not reproduced. Health per horizon averages 5&ndash;7 price-only inputs: price vs moving averages, moving-average slopes, returns, the fit and up-day share of the trend, RSI and position in the trading range. Trend inputs are scaled by each market's own volatility so that all 30 markets score on one scale. No constituent breadth data is used. CSI 300 uses the ASHR ETF and Emerging Markets the EEM ETF.</p>
     <ol class="bp-notes" id="bpNotes">
       <li>Smart money flow proxy: our own construction, not WallStreetCourier's index. The classic Smart Money Index subtracts the first 30 minutes' move and adds the last hour's. Yahoo keeps hourly bars for only two years, so we use the Dow's move from the previous close to 10:30 (including the overnight gap) and its move over the last 90 minutes. The line shown under the Dow is net of its average daily move, because the morning leg includes the overnight gain, which is positive on average and makes the raw line drift down. Daily values are now archived in the repository, so the history will grow past two years.</li>
       <li>Breadth proxy: share of today's S&amp;P 500 members (Wikipedia list) and Nasdaq-100 members (Nasdaq's list) above their 50- and 200-day averages, from Yahoo daily closes. Past readings use today's members, so stocks that left the index are missing (survivorship bias); a stock counts only once it has 50 or 200 days of history.</li>
-      <li>Regime backtest: each market held when the rule is on and in 3-month T-bills when off. The position is set at one close and earns the next day's return; 5bp per switch. Index levels exclude dividends for both the rule and buy &amp; hold. Medians across the 29 markets from each market's first scored day (2001 for most). The health formula and regime zones were set before this test and not tuned to it, but it is still one in-sample parameter set.</li>
+      <li>Regime backtest: each market held when the rule is on and in 3-month T-bills when off. The position is set at one close and earns the next day's return; 5bp per switch. Index levels exclude dividends for both the rule and buy &amp; hold. Medians across the 30 markets from each market's first scored day (2001 for most). The health formula and regime zones were set before this test and not tuned to it, but it is still one in-sample parameter set.</li>
       <li>CoT backtest: front-month continuous futures from Yahoo, which include jumps at each contract roll. US dollar index uses the spot index and VIX futures the spot VIX; spring wheat and 3M SOFR have no price series and are left out. Entry at the close of the first trading day after Friday's publication. Edge is the average forward move against the contract's own average move, in standard deviations, so contracts with different volatility can be pooled. Speculator positions in Treasury futures largely reflect hedge funds' basis trades (short futures against long bonds), not a view on rates, so read the rates row with care.</li>
       <li>US regime checks: shown beside the regime, not mixed into it. Adding the same breadth, volatility and credit inputs to the health scores was tested from 2015 and made the risk-on rule worse on three of the four indices (S&amp;P 500 Sharpe 0.74 to 0.50), with more switches and no earlier signals; only the Nasdaq-100 improved. Breadth agrees with risk on when at least half the members are above their 200-day average. Volatility (VIX for the S&amp;P 500 and NYSE, VXN for the Nasdaq-100, RVX from FRED for the Russell 2000, a day behind) is calm below the 70th percentile of the past year with VIX under 3-month VIX, and stressed at the 80th percentile or with VIX above 3-month VIX; in between it gives no view. Credit is the HYG high-yield ETF against the IEF Treasury ETF, rising when above its 50-day average. Flags: washout, at most 20% of members above 200-day; narrow rally, index within 2% of its 60-day high with under half the members above 200-day; volatility spike, the 90th percentile of the past year or VIX above 3-month VIX. Flag returns pool overlapping days, so the day counts overstate the number of independent episodes.</li>
     </ol>

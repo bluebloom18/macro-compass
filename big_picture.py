@@ -1,4 +1,4 @@
-"""Big Picture: market-health regimes across 29 equity markets, plus CFTC positioning in 44 futures.
+"""Big Picture: market-health regimes across 30 equity markets, plus CFTC positioning in 44 futures.
 
 Layout follows WallStreetCourier's "Big Picture" page (weather map, regime table, CoT table). The
 scores are our own, from daily closes only; their indicator set is proprietary and not copied.
@@ -53,18 +53,19 @@ MARKETS = [
     ("spx", "S&P 500", "North America", "^GSPC", None),
     ("ndx", "Nasdaq 100", "North America", "^NDX", None),
     ("nya", "NYSE Composite", "North America", "^NYA", None),
-    ("tsx", "S&P/TSX Composite", "North America", "^GSPTSE", None),
     ("rut", "Russell 2000", "North America", "^RUT", None),
     ("dax", "DAX", "Europe", "^GDAXI", None),
     ("cac", "CAC 40", "Europe", "^FCHI", None),
-    ("mib", "FTSE MIB", "Europe", "FTSEMIB.MI", None),
-    ("ibex", "IBEX 35", "Europe", "^IBEX", None),
     ("sxxp", "STOXX 600", "Europe", "^STOXX", None),
     ("ftse", "FTSE 100", "Europe", "^FTSE", None),
     ("asx", "S&P/ASX 200", "Asia Pacific", "^AXJO", None),
     ("nky", "Nikkei 225", "Asia Pacific", "^N225", None),
     ("csi", "CSI 300", "Emerging", "ASHR", "ASHR ETF (CSI 300, USD): Yahoo has no CSI 300 history"),
     ("hsi", "Hang Seng", "Emerging", "^HSI", None),
+    ("kospi", "KOSPI", "Emerging", "^KS11", "Korea"),
+    ("twii", "Taiwan Weighted", "Emerging", "^TWII", "Taiwan"),
+    ("nifty", "Nifty 50", "Emerging", "^NSEI", "India"),
+    ("sti", "Straits Times", "Emerging", "^STI", "Singapore"),
     ("em", "Emerging Markets", "Emerging", "EEM", "EEM ETF (MSCI EM)"),
     ("xlb", "Materials", "US sectors", "XLB", None),
     ("xlre", "Real Estate", "US sectors", "XLRE", None),
@@ -131,6 +132,7 @@ COT = [
     ("Softs", "040701", "OJ", "Orange juice"),
 ]
 
+ASOF = os.environ.get("BIGPIC_ASOF")
 HIST_DAYS = 260      # daily history kept for the weather-map date stepper
 VOL_WIN = 60
 WARMUP = 252 + 20    # bars before a market is scored
@@ -158,6 +160,8 @@ def fetch_closes(symbol, period1=946684800):
                     continue
                 out[dt.datetime.fromtimestamp(t, tz).strftime("%Y-%m-%d")] = c
             rows = sorted(out.items())
+            if ASOF:   # BIGPIC_ASOF=YYYY-MM-DD rebuilds as of a past close (drops later and part-day bars)
+                rows = [r for r in rows if r[0] <= ASOF]
             if len(rows) < 300:
                 raise ValueError("only %d bars" % len(rows))
             return rows

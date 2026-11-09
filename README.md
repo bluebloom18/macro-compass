@@ -219,7 +219,8 @@ page database and emailed.
 `big_picture.py` writes `bigpic_doc.json` (db `regime/bigpic`). Layout modelled on WallStreetCourier's
 Big Picture page; scores are our own and use only daily closes. See the docstring for the method.
 
-- **Markets:** 29: MSCI World, 16 country indices, EM (EEM) and 12 US sector ETFs including GDX.
+- **Markets:** 30: MSCI World, 16 country indices (including KOSPI, Taiwan, Nifty 50 and the
+  Straits Times under Emerging), EM (EEM) and 12 US sector ETFs including GDX.
   CSI 300 uses the ASHR ETF because Yahoo has no CSI 300 history.
 - **Health:** short (about 1 month), mid (about 3 months) and long (about 1 year), each 0–100 with
   50 = no trend. Each averages 5–7 trend, trend-quality and momentum inputs, scaled by the market's

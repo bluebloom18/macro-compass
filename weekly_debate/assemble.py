@@ -59,6 +59,9 @@ def validate(n):
     sr = n.get("special_report")
     if sr is not None and not (isinstance(sr, dict) and sr.get("title") and isinstance(sr.get("blocks"), list)):
         errs.append("special_report must have a title and a blocks list")
+    bn = n.get("bigpic_note")
+    if bn is not None and not (isinstance(bn, str) and bn):
+        errs.append("bigpic_note must be a non-empty string")
     lw = n.get("last_week")
     if lw is not None and not isinstance(lw, str):
         errs.append("last_week must be a string or null")
@@ -131,6 +134,18 @@ def email_html(doc, editions=()):
     past = [x for x in editions if x["id"] != doc["id"]][:8]
     past_html = ('<h2 %s>Past editions</h2><ul style="margin:0;padding-left:20px">%s</ul>' % (h2, "".join(
         '<li><a href="%s#e%s">%s</a> &middot; %s</li>' % (PAGE_URL, e(x["id"]), e(x["id"]), e(x.get("headline", ""))) for x in past))) if past else ""
+    bp = doc.get("bigpic")
+    bigpic_html = ""
+    if bp:
+        sm, br = bp["summary"], bp["breadth"]
+        us = "; ".join("%s %s (%d of %d checks agree%s)" % (
+            u["name"], "risk on" if u["side"] == "on" else "risk off", u["agree"], u["views"],
+            ", " + " and ".join(f.replace("volspike", "volatility spike").replace("washout", "breadth washout").replace("narrow", "narrow rally") for f in u["flags"]) if u["flags"] else "")
+            for u in (bp.get("us_checks") or []))
+        bigpic_html = ('<h2 %s>Big Picture</h2><p style="margin:0 0 6px"><b>%d of %d markets risk on</b> (%d%% on %s, %d%% now), %d in a long-term bull.%s</p>%s' % (
+            h2, sm["on"], sm["n"], round(br["on"][0]), e(br["dates"][0]), round(br["on"][-1]), sm["bull"],
+            (" US indices: " + e(us) + ".") if us else "",
+            ('<p style="margin:0">%s</p>' % t(doc["bigpic_note"])) if doc.get("bigpic_note") else ""))
     last_week = ('<h2 %s>Last week\'s call</h2><p style="margin:0">%s</p>' % (h2, t(doc["last_week"]))) if doc.get("last_week") else ""
     return """<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1D2330;max-width:720px">
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6F7A90">Macro Compass weekly debate &middot; readings as of {asof}</p>
@@ -142,6 +157,7 @@ def email_html(doc, editions=()):
 <h2 {h2}>Markets and indicators</h2><p style="margin:0 0 10px">{context}</p>
 <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;width:100%;max-width:560px">
 <tr><th style="text-align:left;padding:4px 8px;color:#6F7A90">Market</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">Level</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">1 month</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">vs 52w high</th></tr>{rows}</table>
+{bigpic_html}
 <h2 {h2}>Bear case</h2><ol style="margin:0;padding-left:20px">{bear}</ol>
 <h2 {h2}>Bull case</h2><ol style="margin:0;padding-left:20px">{bull}</ol>
 <h2 {h2}>Sentiment</h2><p style="margin:0">{sent}</p>
@@ -152,7 +168,7 @@ def email_html(doc, editions=()):
 {past_html}
 <p style="margin:18px 0 0;font-size:12px;color:#6F7A90">Indicator readings from Macro Compass. Sources are linked on the page. Not investment advice.</p>
 </div>""".format(
-        special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
+        bigpic_html=bigpic_html, special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
         gu=len(ax["growth"]["up"]), gd=len(ax["growth"]["down"]), iu=len(ax["inflation"]["up"]), idn=len(ax["inflation"]["down"]),
         rg=gauge_txt(doc.get("gauge")),
         # macro pressure replaced the barometer in the summary from the 2 Nov 2026 edition

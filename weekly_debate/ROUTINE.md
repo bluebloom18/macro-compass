@@ -24,9 +24,15 @@ send tool (query `gmail send_message`). If ArtifactData is missing, stop and rep
    `risk.asof` are within the last 4 days and `latest.complete` is true. If not, run
    `python3 build.py && python3 finalize.py && python3 risk_barometer.py --refresh` instead and
    use their output, and say so in the report.
+   Also `get` doc id `bigpic` (same url and collection) and copy `/tmp/mc_db/regime/bigpic.json`
+   to `bigpic_doc.json` in the repo root. Check its `asof` is within the last 4 days. If it is
+   missing or stale, run `python3 big_picture.py` (about 2 minutes) and say so in the report. If
+   that fails too, carry on without it: the page leaves the Big Picture section out.
 2. Run `python3 weekly_debate/debate_data.py`. It writes `weekly_debate/debate_data.json`: the
-   market table, regime vote counts per axis, the five-session vote changes and the last five
-   Risk Gauge weeks with macro pressure. Those numbers are fixed; the narrative must agree with them.
+   market table, regime vote counts per axis, the five-session vote changes, the last five
+   Risk Gauge weeks with macro pressure, and the Big Picture summary (`bigpic`: markets by
+   regime, regime changes over five sessions, the share of the 30 markets risk on, US regime checks,
+   CoT extremes and the smart money proxy). Those numbers are fixed; the narrative must agree with them.
 
 ## 3. Last week's edition
 
@@ -103,6 +109,17 @@ stop. Avoid AI-sounding phrasing:
   changes from last week, say why in the `why` text.
 - `special_report`: leave it out unless these instructions or the user's request for this run ask
   for one (see SCHEMA.md). Never copy last week's special report forward.
+- `bigpic_note`: 2 to 4 sentences on the Big Picture readings in `debate_data.json` `bigpic`.
+  Say how many of the 30 markets are risk on and how that share has moved over the five weeks
+  shown, which markets or sectors lead and lag, where the US regime checks disagree with the
+  regime, and any CoT extreme whose group has a past pattern on that side (`contrarian`: the
+  futures moved against the crowd over the next 13 weeks; `follows`: with it). Leave
+  out groups whose pattern is `none` unless they matter to the week's story. Describe CoT
+  extremes, washouts and volatility spikes as contrarian context, never as a forecast, and don't
+  cite the smart money proxy as evidence (it has shown no edge). Leave `bigpic_note` out if
+  `bigpic` is null. Use these readings in the bear and bull points, positioning and callout
+  where they add something; they are our own scores, so cite them as Macro Compass, not as a
+  web source.
 - `callout`: what to watch on the Macro Compass dashboard for the turn (which regime it would
   most likely move to first, and which signals would have to flip).
 
@@ -135,11 +152,12 @@ the report.
 ## 9. Finish
 
 Commit nothing. `narrative.json`, `debate_data.json`, `edition_doc.json`, `index_doc.json`,
-`email.html`, `latest_doc.json` and `risk_doc.json` are gitignored scratch files. If a stop hook
+`email.html`, `latest_doc.json`, `risk_doc.json` and `bigpic_doc.json` are gitignored scratch files. If a stop hook
 asks you to commit untracked files, delete the scratch files instead.
 
-Report: the edition id and headline, the regime, Risk Gauge and macro pressure used, whether the database
-readings were fresh or rebuilt, the number of sources, whether the database write and the email
+Report: the edition id and headline, the regime, Risk Gauge and macro pressure used, the Big
+Picture share of markets risk on, whether the database readings (including `bigpic`) were fresh
+or rebuilt, the number of sources, whether the database write and the email
 succeeded, and anything you could not verify.
 
 Do not change any pipeline code, the page, or this file.

@@ -75,6 +75,60 @@ def axis_counts(per_signal):
     return ax
 
 
+def cot_pattern(groups, g, crowd, h="w13"):
+    """How this CoT group has done after extremes on the side that is crowded now (13-week edge, in
+    sd of the contract's own moves): contrarian = moved against the crowd, follows = moved with it."""
+    x = (groups or {}).get(g, {}).get(h, {}).get("bull" if crowd == "long" else "bear")
+    if not x:
+        return "none", None
+    e = x["edge"] if crowd == "long" else -x["edge"]   # >0 = moved with the crowd
+    return ("follows" if e >= 0.1 else "contrarian" if e <= -0.1 else "none"), x["edge"]
+
+
+def bigpic_summary(path):
+    """Compact Big Picture (study 04) readings for the debate page: our own regime scores for 29
+    markets, US regime checks, smart money proxy and CoT extremes. None if the doc is missing."""
+    if not os.path.exists(path):
+        return None
+    d = json.load(open(path))
+    names = d["regimes"]
+    ok = [m for m in d["markets"] if not m.get("error")]
+    by_regime = [dict(regime=i, name=names[i], markets=[m["name"] for m in ok if m["regime"] == i]) for i in range(6)]
+    moves = [dict(name=m["name"], before=names[m["regime5"]], after=names[m["regime"]],
+                  side=m["side"], side_changed=(m["regime5"] <= 2) != (m["regime"] <= 2))
+             for m in ok if m["regime5"] != m["regime"]]
+    b = d["breadth"]
+    us = None
+    if d.get("us_checks"):
+        us = []
+        for k, r in d["us_checks"]["rows"].items():
+            us.append(dict(name=r["name"], regime=names[r["regime"]], side=r["side"],
+                           breadth=None if not r["breadth"] else r["breadth"]["p200"],
+                           vol="%s %.1f (%sth pct)" % (r["vol"]["name"], r["vol"]["level"], r["vol"]["pct"]),
+                           vol_state=r["vol"]["state"], credit20=r["credit"]["chg20"],
+                           agree=r["agree"], views=r["views"],
+                           disagree=[c for c, v in r["checks"].items() if v is False],
+                           flags=[f for f, v in r["flags"].items() if v]))
+    smi = None
+    if d.get("smi") and d["smi"].get("latest"):
+        L = d["smi"]["latest"]
+        smi = dict(date=L["date"], state=L["state"], d20=L["d20"], dow20=L["dow20"])
+    cot = None
+    if d.get("cot") and d["cot"].get("rows"):
+        groups = (d.get("backtest") or {}).get("cot", {}).get("groups") if d.get("backtest") else None
+        ext = []
+        for r in d["cot"]["rows"]:
+            if r.get("error") or r.get("i3") is None or 20 < r["i3"] < 80:
+                continue
+            crowd = "long" if r["i3"] >= 80 else "short"
+            pat, edge = cot_pattern(groups, r["group"], crowd)
+            ext.append(dict(group=r["group"], name=r["name"], i3=r["i3"], chg=r["chg"], crowd=crowd, pattern=pat, edge=edge))
+        cot = dict(asof=d["cot"]["asof"], extremes=sorted(ext, key=lambda x: (x["group"], x["name"])))
+    return dict(asof=d["asof"], summary=d["summary"], by_regime=by_regime, moves_5d=moves,
+                breadth=dict(dates=b["dates"][-6:], on=b["on"][-6:], bull=b["bull"][-6:]),
+                us_checks=us, smi=smi, cot=cot)
+
+
 def main():
     latest = json.load(open(os.path.join(ROOT, "latest_doc.json")))
     risk = json.load(open(os.path.join(ROOT, "risk_doc.json")))
@@ -114,6 +168,7 @@ def main():
         gauge=gauge,
         barometer=barometer,
         markets=markets,
+        bigpic=bigpic_summary(os.path.join(ROOT, "bigpic_doc.json")),
     )
     path = os.path.join(HERE, "debate_data.json")
     with open(path, "w") as f:
@@ -126,6 +181,11 @@ def main():
         print("risk gauge:", gauge["dates"][-1], gauge["index"][-1])
         if gauge["macro"]:
             print("macro pressure:", gauge["macro"]["index"][-1])
+    if out["bigpic"]:
+        bp = out["bigpic"]
+        print("big picture:", bp["asof"], "%d of %d risk on, %d long-term bull" % (bp["summary"]["on"], bp["summary"]["n"], bp["summary"]["bull"]))
+    else:
+        print("big picture: bigpic_doc.json missing, section left out")
     print("risk index:", barometer["dates"][-1], barometer["index"][-1])
     for m in markets:
         print("  %-24s %s %10.2f  1m %6s  vs hi %6s" % (m["name"], m["date"], m["level"], m["m1"], m["vs_high"]))
