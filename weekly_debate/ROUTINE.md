@@ -28,11 +28,17 @@ send tool (query `gmail send_message`). If ArtifactData is missing, stop and rep
    to `bigpic_doc.json` in the repo root. Check its `asof` is within the last 4 days. If it is
    missing or stale, run `python3 big_picture.py` (about 2 minutes) and say so in the report. If
    that fails too, carry on without it: the page leaves the Big Picture section out.
+   Also `get` doc id `cycle` and copy `/tmp/mc_db/regime/cycle.json` to `cycle_doc.json` in the
+   repo root. Check its `asof` is within the last 4 days. If it is missing or stale, run
+   `python3 market_cycle.py` (about a minute; add `--no-earn` if the Yahoo pull fails) and say so
+   in the report. Don't commit `data/eps_breadth.csv` changes from that run. If it fails, carry on
+   without it: the page leaves the Market cycle section out.
 2. Run `python3 weekly_debate/debate_data.py`. It writes `weekly_debate/debate_data.json`: the
    market table, regime vote counts per axis, the five-session vote changes, the last five
    Risk Gauge weeks with macro pressure, and the Big Picture summary (`bigpic`: markets by
    regime, regime changes over five sessions, the share of the 30 markets risk on, US regime checks,
-   CoT extremes and the smart money proxy). Those numbers are fixed; the narrative must agree with them.
+   CoT extremes and the smart money proxy), and the Market cycle summary (`cycle`: composite,
+   phase, legs, the two warning checks, the last six months and the S&P 500 record by phase). Those numbers are fixed; the narrative must agree with them.
 
 ## 3. Last week's edition
 
@@ -120,6 +126,14 @@ stop. Avoid AI-sounding phrasing:
   `bigpic` is null. Use these readings in the bear and bull points, positioning and callout
   where they add something; they are our own scores, so cite them as Macro Compass, not as a
   web source.
+- `cycle_note`: 2 to 3 sentences on the Market cycle readings in `debate_data.json` `cycle`.
+  Give the phase and composite and how it has moved over the months shown, which legs drive it
+  (OECD leading indicator, yield curve, credit, and earnings revision breadth once it is in the
+  composite), and whether either warning check is tripped. The phase record is slow-moving
+  context for the 6-12 month view, not a timing signal: quote the S&P 500 12-month average for the
+  current phase only beside its hit rate, and don't present it as a forecast. Where the cycle
+  phase and the regime or Risk Gauge disagree, say so; that tension is useful in the bear and bull
+  cases. Leave `cycle_note` out if `cycle` is null. Cite it as Macro Compass.
 - `callout`: what to watch on the Macro Compass dashboard for the turn (which regime it would
   most likely move to first, and which signals would have to flip).
 
@@ -152,11 +166,12 @@ the report.
 ## 9. Finish
 
 Commit nothing. `narrative.json`, `debate_data.json`, `edition_doc.json`, `index_doc.json`,
-`email.html`, `latest_doc.json`, `risk_doc.json` and `bigpic_doc.json` are gitignored scratch files. If a stop hook
+`email.html`, `latest_doc.json`, `risk_doc.json`, `bigpic_doc.json` and `cycle_doc.json` are gitignored scratch files. If a stop hook
 asks you to commit untracked files, delete the scratch files instead.
 
 Report: the edition id and headline, the regime, Risk Gauge and macro pressure used, the Big
-Picture share of markets risk on, whether the database readings (including `bigpic`) were fresh
+Picture share of markets risk on, the market cycle phase and composite, whether the database
+readings (including `bigpic` and `cycle`) were fresh
 or rebuilt, the number of sources, whether the database write and the email
 succeeded, and anything you could not verify.
 

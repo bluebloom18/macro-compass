@@ -1,7 +1,7 @@
 # narrative.json schema
 
 The week's written content. `assemble.py` validates it, merges it with `debate_data.json`
-(markets, axes, vote changes, barometer, regime, asof, bigpic) and writes the edition document.
+(markets, axes, vote changes, barometer, regime, asof, bigpic, cycle) and writes the edition document.
 See `narrative_example.json` for a complete example.
 
 | Field | Type | Notes |
@@ -15,6 +15,7 @@ See `narrative_example.json` for a complete example.
 | `axis_notes` | `{growth, inflation}` | One sentence each under the vote bars: which signals point which way. |
 | `barometer_note` | string | What changed in the Risk Gauge and macro pressure this week, and why. The gauge is the coincident stress read; macro pressure (the barometer's economic surprise, liquidity, rates and FX pillars) is the early warning, flagged when it is below its weak line while the gauge is still calm. The page no longer shows the 8-pillar barometer, so don't cite its other pillars. |
 | `bigpic_note` | string, optional | 2-4 sentences on the Big Picture readings (`bigpic` in debate_data.json). Omit when `bigpic` is null. Shown at the top of the page's Big Picture section and in the email. |
+| `cycle_note` | string, optional | 2-3 sentences on the Market cycle readings (`cycle` in debate_data.json): phase, composite and its trend, the legs driving it, the warning checks. Omit when `cycle` is null. Shown at the top of the page's Market cycle section and in the email. |
 | `bear`, `bull` | 4-6 `{title, text}` | `title` is the claim, `text` the evidence. |
 | `sentiment` | object | `text` (the answer), `retail_label`, `retail` [`{k, v}`], `pro_label`, `pro` [`{k, v}`], `note` (optional). |
 | `positioning` | `[{what, why}]` | Judgment call. |

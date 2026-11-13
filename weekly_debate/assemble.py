@@ -62,6 +62,9 @@ def validate(n):
     bn = n.get("bigpic_note")
     if bn is not None and not (isinstance(bn, str) and bn):
         errs.append("bigpic_note must be a non-empty string")
+    cn = n.get("cycle_note")
+    if cn is not None and not (isinstance(cn, str) and cn):
+        errs.append("cycle_note must be a non-empty string")
     lw = n.get("last_week")
     if lw is not None and not isinstance(lw, str):
         errs.append("last_week must be a string or null")
@@ -146,6 +149,20 @@ def email_html(doc, editions=()):
             h2, sm["on"], sm["n"], round(br["on"][0]), e(br["dates"][0]), round(br["on"][-1]), sm["bull"],
             (" US indices: " + e(us) + ".") if us else "",
             ('<p style="margin:0">%s</p>' % t(doc["bigpic_note"])) if doc.get("bigpic_note") else ""))
+    cy = doc.get("cycle")
+    cycle_html = ""
+    if cy:
+        sg = lambda v: "n/a" if v is None else ("%+.2f" % v).replace("-", "&minus;")
+        legs = "OECD leading indicator %s, yield curve %s, credit %s" % (sg(cy["legs"]["cli"]), sg(cy["legs"]["curve"]), sg(cy["legs"]["credit"]))
+        eb = cy.get("earn_breadth")
+        earn_txt = "" if eb is None else "; earnings revision breadth net %s%s" % (sg(eb), "" if cy["earn_in_composite"] else " (not yet in the composite)")
+        bt = (cy.get("backtest") or {}).get(cy["phase"])
+        bt_txt = "" if not bt else " Since 1991 the S&amp;P 500 has averaged %+.1f%% over the next 12 months from this phase (up %d%% of the time)." % (bt["avg"], bt["hit"])
+        trips = [c["label"] for c in cy["checks"] if c["trip"]]
+        chk = ("Checks tripped: " + e("; ".join(trips)) + ".") if trips else "Neither warning check is tripped."
+        cycle_html = ('<h2 %s>Market cycle</h2><p style="margin:0 0 6px"><b>%s</b>, composite %s (%s three months ago). Legs in sd: %s%s. %s%s</p>%s' % (
+            h2, e(cy["phase"]), sg(cy["composite"]), sg(cy.get("composite_3m_ago")), legs, earn_txt, chk, bt_txt,
+            ('<p style="margin:0">%s</p>' % t(doc["cycle_note"])) if doc.get("cycle_note") else ""))
     last_week = ('<h2 %s>Last week\'s call</h2><p style="margin:0">%s</p>' % (h2, t(doc["last_week"]))) if doc.get("last_week") else ""
     return """<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1D2330;max-width:720px">
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6F7A90">Macro Compass weekly debate &middot; readings as of {asof}</p>
@@ -158,6 +175,7 @@ def email_html(doc, editions=()):
 <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;width:100%;max-width:560px">
 <tr><th style="text-align:left;padding:4px 8px;color:#6F7A90">Market</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">Level</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">1 month</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">vs 52w high</th></tr>{rows}</table>
 {bigpic_html}
+{cycle_html}
 <h2 {h2}>Bear case</h2><ol style="margin:0;padding-left:20px">{bear}</ol>
 <h2 {h2}>Bull case</h2><ol style="margin:0;padding-left:20px">{bull}</ol>
 <h2 {h2}>Sentiment</h2><p style="margin:0">{sent}</p>
@@ -168,7 +186,7 @@ def email_html(doc, editions=()):
 {past_html}
 <p style="margin:18px 0 0;font-size:12px;color:#6F7A90">Indicator readings from Macro Compass. Sources are linked on the page. Not investment advice.</p>
 </div>""".format(
-        bigpic_html=bigpic_html, special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
+        bigpic_html=bigpic_html, cycle_html=cycle_html, special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
         gu=len(ax["growth"]["up"]), gd=len(ax["growth"]["down"]), iu=len(ax["inflation"]["up"]), idn=len(ax["inflation"]["down"]),
         rg=gauge_txt(doc.get("gauge")),
         # macro pressure replaced the barometer in the summary from the 2 Nov 2026 edition

@@ -129,6 +129,34 @@ def bigpic_summary(path):
                 us_checks=us, smi=smi, cot=cot)
 
 
+def cycle_summary(path):
+    """Compact Market cycle (study 05) readings for the debate page: the composite of leading
+    indicators (OECD CLI, yield curve, credit, earnings revision breadth), its phase, the two
+    checks and the S&P 500 record by phase. None if the doc is missing."""
+    if not os.path.exists(path):
+        return None
+    d = json.load(open(path))
+    L, raw, earn = d["legs"], d.get("raw") or {}, d.get("earn") or {}
+    fund = (d.get("funding") or {}).get("series") or []
+    bt = d.get("backtest") or {}
+    return dict(
+        asof=d["asof"], month=d["month"], composite=d["composite"], composite_3m_ago=d.get("composite_3m_ago"),
+        phase=d["phase"],
+        legs=dict(cli=L["cli"]["z"], curve=L["curve"]["z"], credit=L["credit"]["z"],
+                  baa=(L.get("baa") or {}).get("z"), hy=(L.get("hy") or {}).get("z"),
+                  earn=(L.get("earn") or {}).get("z")),
+        earn_in_composite=bool(earn.get("in_composite")), earn_breadth=earn.get("latest"),
+        earn_months=earn.get("months"), earn_universe=earn.get("universe"),
+        raw=dict(cli=raw.get("cli"), cli_month=raw.get("cli_month"), curve=raw.get("curve"),
+                 curve_12m_ago=raw.get("curve_12m_ago"),
+                 hy_us=(raw.get("hy_us") or {}).get("level"), hy_us_chg_3m=(raw.get("hy_us") or {}).get("chg_3m")),
+        sofr_iorb_bp=fund[-1][1] if fund else None,
+        checks=[dict(label=c["label"], rule=c["rule"], trip=c["trip"]) for c in d.get("checks", [])],
+        history=[dict(m=h["m"], c=h["c"], p=h["p"]) for h in d.get("history", [])[-6:]],
+        backtest={k: dict(avg=v["h12"]["avg"], hit=v["h12"]["hit"], n=v["h12"]["n"]) for k, v in bt.items() if "h12" in v},
+    )
+
+
 def main():
     latest = json.load(open(os.path.join(ROOT, "latest_doc.json")))
     risk = json.load(open(os.path.join(ROOT, "risk_doc.json")))
@@ -169,6 +197,7 @@ def main():
         barometer=barometer,
         markets=markets,
         bigpic=bigpic_summary(os.path.join(ROOT, "bigpic_doc.json")),
+        cycle=cycle_summary(os.path.join(ROOT, "cycle_doc.json")),
     )
     path = os.path.join(HERE, "debate_data.json")
     with open(path, "w") as f:
@@ -186,6 +215,12 @@ def main():
         print("big picture:", bp["asof"], "%d of %d risk on, %d long-term bull" % (bp["summary"]["on"], bp["summary"]["n"], bp["summary"]["bull"]))
     else:
         print("big picture: bigpic_doc.json missing, section left out")
+    if out["cycle"]:
+        cy = out["cycle"]
+        print("market cycle:", cy["asof"], cy["phase"], cy["composite"], "(3m ago %s)" % cy["composite_3m_ago"],
+              "checks tripped:", sum(c["trip"] for c in cy["checks"]))
+    else:
+        print("market cycle: cycle_doc.json missing, section left out")
     print("risk index:", barometer["dates"][-1], barometer["index"][-1])
     for m in markets:
         print("  %-24s %s %10.2f  1m %6s  vs hi %6s" % (m["name"], m["date"], m["level"], m["m1"], m["vs_high"]))

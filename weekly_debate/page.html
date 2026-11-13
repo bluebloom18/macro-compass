@@ -195,7 +195,7 @@ footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; c
 
   <section id="archive" hidden></section>
 
-  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, macro pressure, Big Picture). Market context from the sources listed in each edition. Not investment advice.</footer>
+  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, macro pressure, Big Picture, market cycle). Market context from the sources listed in each edition. Not investment advice.</footer>
 </div>
 
 <script>
@@ -318,6 +318,32 @@ function renderBigPic(b, note){
   return h;
 }
 
+const CY_ORDER = ['Expansion','Slowdown','Contraction','Recovery'];
+function renderCycle(c, note){
+  const sg = v => v === null || v === undefined ? '&mdash;' : (v > 0 ? '+' : v < 0 ? '&minus;' : '') + Math.abs(v).toFixed(2);
+  const mon = m => MONTHS[+m.slice(5) - 1] + ' ' + m.slice(2, 4);
+  let h = '<section><h2>Market cycle</h2>' + (note ? '<p class="lede">' + minus(note) + '</p>' : '')
+    + '<div class="chips" style="margin-top:0"><span class="chip">Phase <b>' + esc(c.phase) + '</b></span>'
+    + '<span class="chip">Composite <b>' + sg(c.composite) + '</b> (' + sg(c.composite_3m_ago) + ' three months ago)</span>'
+    + c.checks.map(k => '<span class="chip"' + (k.trip ? ' style="border-color:var(--amber);color:var(--amber)"' : '') + '>' + esc(k.label) + ' <b>' + (k.trip ? 'yes' : 'no') + '</b></span>').join('') + '</div>';
+  const legs = [['OECD leading indicator', c.legs.cli, c.raw.cli === null ? '' : 'G20 index ' + c.raw.cli.toFixed(2) + ' (' + mon(c.raw.cli_month) + ')'],
+    ['Yield curve, 12m change', c.legs.curve, c.raw.curve === null ? '' : '10y&minus;2y ' + c.raw.curve.toFixed(2) + '% vs ' + c.raw.curve_12m_ago.toFixed(2) + '% a year ago'],
+    ['Credit', c.legs.credit, 'Baa ' + sg(c.legs.baa) + ', high yield ' + sg(c.legs.hy) + (c.raw.hy_us === null ? '' : ' (US HY spread ' + c.raw.hy_us.toFixed(2) + '%, ' + sg(c.raw.hy_us_chg_3m) + 'pp in 3m)')],
+    ['Earnings revision breadth', c.earn_in_composite ? c.legs.earn : null, c.earn_breadth === null ? 'not collected' : 'net ' + sg(c.earn_breadth) + ' across ' + c.earn_universe + ' large caps' + (c.earn_in_composite ? '' : '; joins the composite after 12 months of history (' + c.earn_months + ' so far)')]];
+  h += '<div class="table-scroll"><table><thead><tr><th>Leg</th><th class="num">Score (sd)</th><th>Reading</th></tr></thead><tbody>'
+    + legs.map(l => '<tr><td class="k">' + l[0] + '</td><td class="num">' + sg(l[1]) + '</td><td class="wrap">' + l[2] + '</td></tr>').join('')
+    + '</tbody></table></div>';
+  if(c.history && c.history.length) h += '<p class="note">Composite by month: ' + c.history.map(x => mon(x.m) + ' ' + sg(x.c)).join(', ') + '.</p>';
+  const bt = CY_ORDER.filter(k => c.backtest[k]);
+  if(bt.length){
+    h += '<h3 style="font-size:17px; margin-top:6px;">S&amp;P 500 over the next 12 months, by phase (since 1991)</h3><div class="table-scroll"><table><thead><tr><th>Phase</th><th class="num">Average</th><th class="num">Up</th><th class="num">Months</th></tr></thead><tbody>'
+      + bt.map(k => { const b = c.backtest[k]; return '<tr' + (k === c.phase ? ' class="total"' : '') + '><td class="k">' + k + '</td><td class="num">' + minus((b.avg > 0 ? '+' : '') + b.avg.toFixed(1) + '%') + '</td><td class="num">' + b.hit + '%</td><td class="num">' + b.n + '</td></tr>'; }).join('')
+      + '</tbody></table></div>';
+  }
+  h += '<p class="note">Phase comes from the level of the 3-month average composite and its change over three months. Each leg is scored against its own history; credit is sign-flipped so wider spreads score lower. SOFR less IORB ' + (c.sofr_iorb_bp === null ? 'n/a' : minus(String(c.sofr_iorb_bp)) + 'bp') + '. Readings as of ' + day(c.asof, true) + ', from Macro Compass study 05.</p></section>';
+  return h;
+}
+
 function render(d){
   const r = d.regime || {}, rm = REGIME[r.code];
   document.getElementById('eyebrow').textContent = 'Macro Compass weekly debate · readings as of ' + day(d.asof, true) + ' · written ' + day(d.written, true);
@@ -374,6 +400,7 @@ function render(d){
     + '</tbody></table></div>') + '<p class="note">' + minus(d.barometer_note) + '</p></section>');
 
   if(d.bigpic) html.push(renderBigPic(d.bigpic, d.bigpic_note));
+  if(d.cycle) html.push(renderCycle(d.cycle, d.cycle_note));
 
   const side = (cls, title, items) => '<div class="side ' + cls + '"><h3>' + title + '</h3><ol>'
     + items.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div>';
