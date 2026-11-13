@@ -287,10 +287,11 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 sup{font-size:9px; color:var(--accent); margin-left:2px;}
 details summary{list-style-position:inside;}
 /* ---------- alternating section panels (so each section break is easy to see) ---------- */
-.wrap > section{padding:20px 22px 22px; border-radius:16px; border:1px solid #333D54;}
-.wrap > section:nth-of-type(odd){background:#212839;}
-.wrap > section:nth-of-type(even){background:#2B3448; border-color:#3E4A66;}
-.wrap > section:nth-of-type(even) .card{background:#222A3B;}
+.wrap > section{padding:20px 22px 22px; border-radius:16px; border:1px solid #2E3850; box-shadow:0 6px 22px rgba(0,0,0,.28);}
+.wrap > section:nth-of-type(odd){background:linear-gradient(180deg,#171C27 0%,#1A202C 100%); border-color:#2A3346;}
+.wrap > section:nth-of-type(odd) .card{background:#242C3D;}
+.wrap > section:nth-of-type(even){background:linear-gradient(180deg,#36415C 0%,#2F3950 100%); border-color:#4F5D7E;}
+.wrap > section:nth-of-type(even) .card{background:#252D3F; border-color:#56648A;}
 @media (max-width:600px){.wrap > section{padding:14px 12px 16px;}}
 
 /* ---------- market cycle (study 05) ---------- */
