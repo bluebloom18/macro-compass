@@ -286,13 +286,14 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 .bp-notes li{margin-bottom:6px;}
 sup{font-size:9px; color:var(--accent); margin-left:2px;}
 details summary{list-style-position:inside;}
-/* ---------- alternating section panels (so each section break is easy to see) ---------- */
-.wrap > section{padding:20px 22px 22px; border-radius:16px; border:1px solid #2E3850; box-shadow:0 6px 22px rgba(0,0,0,.28);}
-.wrap > section:nth-of-type(odd){background:#0B0E14; border-color:#2A3346;}
-.wrap > section:nth-of-type(odd) .card{background:#1A202C;}
-.wrap > section:nth-of-type(even){background:linear-gradient(180deg,#1F4378 0%,#1A3864 100%); border-color:#3E6BAE;}
-.wrap > section:nth-of-type(even) .card{background:#14294A; border-color:#3E6BAE;}
-@media (max-width:600px){.wrap > section{padding:14px 12px 16px;}}
+/* ---------- alternating study blocks: each study (divider + its sections) sits in its own panel ---------- */
+body{background:#06080C;}
+.study{border-radius:20px; padding:4px 22px 10px; margin:0 0 34px; border:1px solid; box-shadow:0 8px 28px rgba(0,0,0,.45);}
+.study > .part:first-child{margin-top:18px;}
+.study.a{background:#1E2534; border-color:#34405A;}
+.study.b{background:linear-gradient(180deg,#1D3B6B 0%,#17315A 100%); border-color:#4170B5;}
+.study.b .card{background:#132848; border-color:#3E6BAE;}
+@media (max-width:600px){.study{padding:2px 10px 6px; border-radius:14px;}}
 
 /* ---------- market cycle (study 05) ---------- */
 .mc-phase{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; padding:3px 10px; border-radius:100px; font-size:12px; font-weight:600;}
@@ -808,6 +809,15 @@ details summary{list-style-position:inside;}
 </div>
 
 <script>
+// Group each study's divider and sections into one panel, alternating shades (01, 03, 05 dark; 02, 04 blue).
+(function(){
+  const wrap = document.querySelector('.wrap'); let box = null, n = 0;
+  Array.from(wrap.children).forEach(el=>{
+    if(el.classList.contains('part')){ box = document.createElement('div'); box.className = 'study ' + (n++ % 2 ? 'b' : 'a'); wrap.insertBefore(box, el); }
+    if(el.tagName === 'FOOTER' || el.tagName === 'HEADER'){ if(el.tagName === 'FOOTER') box = null; return; }
+    if(box) box.appendChild(el);
+  });
+})();
 const SEED = __SEED_JSON__;
 let BACKTEST = __BACKTEST_JSON__;
 let NFCI = __NFCI_JSON__;
