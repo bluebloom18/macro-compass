@@ -40,6 +40,14 @@ except FileNotFoundError:
     bp = "null"  # run big_picture.py first to populate the Big Picture section
 out = out.replace("__BIGPIC_JSON__", bp)
 
+try:
+    with open("cycle_doc.json") as f:
+        cy = f.read()
+    json.loads(cy)
+except FileNotFoundError:
+    cy = "null"  # run market_cycle.py first to populate the Market cycle section
+out = out.replace("__CYCLE_JSON__", cy)
+
 with open("macro_compass.html", "w") as f:
     f.write(out)
 

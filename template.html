@@ -286,6 +286,27 @@ footer{margin-top:36px; padding-top:20px; border-top:1px solid var(--border); co
 .bp-notes li{margin-bottom:6px;}
 sup{font-size:9px; color:var(--accent); margin-left:2px;}
 details summary{list-style-position:inside;}
+/* ---------- alternating section panels (so each section break is easy to see) ---------- */
+.wrap > section{padding:20px 22px 22px; border-radius:16px; border:1px solid #333D54;}
+.wrap > section:nth-of-type(odd){background:#212839;}
+.wrap > section:nth-of-type(even){background:#2B3448; border-color:#3E4A66;}
+.wrap > section:nth-of-type(even) .card{background:#222A3B;}
+@media (max-width:600px){.wrap > section{padding:14px 12px 16px;}}
+
+/* ---------- market cycle (study 05) ---------- */
+.mc-phase{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; padding:3px 10px; border-radius:100px; font-size:12px; font-weight:600;}
+.mc-pos{color:#7FA8E8;} .mc-neg{color:#EE9A8F;}
+.mc-chart svg{display:block; width:100%; height:auto;}
+.mc-legend{display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--ink-muted); margin:8px 0 0;}
+.mc-legend span{display:inline-flex; align-items:center; gap:6px;}
+.mc-sw{width:12px; height:12px; border-radius:3px; display:inline-block;}
+.mc-check{display:flex; gap:12px; align-items:flex-start; padding:12px 14px;}
+.mc-check .flag{font-family:var(--font-mono); font-size:12px; font-weight:600; padding:3px 9px; border-radius:100px; flex:none;}
+.mc-check .flag.ok{background:rgba(61,156,121,.18); color:#7FCBAE;}
+.mc-check .flag.trip{background:rgba(208,89,75,.22); color:#EE9A8F;}
+.mc-check .flag.na{background:rgba(166,175,196,.18); color:var(--ink-faint);}
+.mc-grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+@media (max-width:760px){.mc-grid2{grid-template-columns:1fr;}}
 </style>
 
 <div class="wrap">
@@ -293,8 +314,8 @@ details summary{list-style-position:inside;}
     <div class="title-block">
       <div class="eyebrow">Cross-asset macro &middot; updated daily</div>
       <h1>Macro Compass</h1>
-      <p>Four studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, and a big-picture view of 30 equity markets and futures positioning. Yahoo Finance, FRED and the CFTC, no vendor key required.</p>
-      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a><a href="#study-bigpic">04 Big picture</a></nav>
+      <p>Five studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, a big-picture view of 30 equity markets and futures positioning, and a market-cycle nowcast. Yahoo Finance, FRED, the OECD and the CFTC, no vendor key required.</p>
+      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a><a href="#study-bigpic">04 Big picture</a><a href="#study-cycle">05 Market cycle</a></nav>
     </div>
     <div class="status-chip"><span class="status-dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
   </header>
@@ -734,6 +755,50 @@ details summary{list-style-position:inside;}
     </ol>
   </section>
 
+  <div class="part" id="study-cycle">
+    <span class="num">05</span>
+    <div><h2>Market cycle</h2><p>The balance of growth, rates and credit behind equities: leading indicators, the yield curve, credit spreads and analyst earnings revisions &middot; monthly, revisions daily</p></div>
+  </div>
+
+  <section id="cycleComposite">
+    <div class="section-head">
+      <h2>Cycle composite</h2>
+      <div class="hint" id="mcHint">&mdash;</div>
+    </div>
+    <div class="nf-tiles" id="mcTiles"></div>
+    <div class="card bt-card mc-chart">
+      <div class="bt-controls">
+        <div class="eyebrow">Composite and phase, z-score</div>
+        <div class="seg" id="mcRange" role="group" aria-label="Range">
+          <button type="button" data-v="60">5Y</button><button type="button" data-v="120" aria-pressed="true">10Y</button><button type="button" data-v="0">All</button>
+        </div>
+      </div>
+      <div id="mcChart"></div>
+      <div class="mc-legend" id="mcLegend"></div>
+    </div>
+  </section>
+
+  <section id="cycleChecks">
+    <div class="section-head">
+      <h2>Correction or something deeper?</h2>
+      <div class="hint">Two conditions that came before the damaging selloffs</div>
+    </div>
+    <div class="mc-grid2" id="mcChecks"></div>
+    <div class="mc-grid2" style="margin-top:12px;">
+      <div class="card bt-card mc-chart"><div class="eyebrow" style="margin-bottom:6px;">Repo funding: SOFR minus IORB, bp</div><div id="mcFunding"></div></div>
+      <div class="card bt-card mc-chart"><div class="eyebrow" style="margin-bottom:6px;">Earnings revision breadth, collected daily</div><div id="mcEarn"></div></div>
+    </div>
+  </section>
+
+  <section id="cycleBacktest">
+    <div class="section-head">
+      <h2>S&amp;P 500 after each phase</h2>
+      <div class="hint" id="mcBtHint">&mdash;</div>
+    </div>
+    <div class="card bt-card"><div style="overflow-x:auto;"><table class="bt-table" id="mcBt"></table></div></div>
+    <p class="bt-note">A nowcast of the balance between growth and financial risk, not a return forecast. Each leg is a z-score against its own history up to that month (at least five years, no later data), signed so positive means supportive for equities, and the composite is their simple average. Leading indicators: the OECD composite leading indicator for the G20. Yield curve: the 12-month change in the US 10-year minus 2-year spread, so steepening counts as supportive. Credit: the 12-month change in the Moody&rsquo;s Baa minus 10-year spread, averaged with the 6-month change in the US and euro high-yield spreads where FRED has them (it keeps only three years of high-yield history), widening counted as negative. Earnings: net analyst EPS revisions over the last 30 days for this and next fiscal year across about 110 large caps worldwide, from Yahoo; Yahoo keeps no history, so it is collected daily and joins the composite after 12 months (scaled on its &minus;1 to +1 range until there are three years for a z-score). Phase uses the composite&rsquo;s 3-month average: expansion above zero and rising, slowdown above zero and falling, contraction below zero and falling, recovery below zero and rising. Returns are S&amp;P 500 price changes from each month-end since 1991, overlapping.</p>
+  </section>
+
   <footer>
     <span>Data: Yahoo Finance &middot; FRED (St. Louis Fed) &middot; CFTC</span>
     <span>Source code: <a href="https://github.com/bluebloom18/macro-compass" target="_blank" rel="noopener" style="color:inherit">github.com/bluebloom18/macro-compass</a></span>
@@ -747,6 +812,7 @@ let BACKTEST = __BACKTEST_JSON__;
 let NFCI = __NFCI_JSON__;
 let RISK = __RISK_JSON__;
 let BIGPIC = __BIGPIC_JSON__;
+let CYCLE = __CYCLE_JSON__;
 const SEED_GAUGE = RISK && RISK.gauge;   // shown until the live regime/risk doc carries a gauge
 const REGIME_META = {
   1:{name:'Goldilocks', color:'var(--gold)', hex:'#BD8A32', desc:'growth accelerating, inflation cooling'},
@@ -2562,6 +2628,78 @@ function renderCotBt(){
   document.getElementById('cotBtNote').textContent = 'Pooled, extreme positioning has carried almost no edge (under 0.05 sd). By group it has mostly been contrarian: currencies, equity indices and livestock did better after bearish readings, and Treasury futures did worse after bullish ones. Softs were the exception, following the speculators. Positive edge = the future did better than its own average afterwards.';
 }
 
+// ---------- market cycle (study 05) ----------
+const MC = {doc:null, months:120, wired:false};
+const MC_PHASE = {Expansion:'#3D9C79', Slowdown:'#BD8A32', Contraction:'#D0594B', Recovery:'#5080C0'};
+const MC_LEG = {cli:'Leading indicators', curve:'Yield curve', credit:'Credit', earn:'Earnings revisions'};
+function mcNum(v, dp){ if(v===null||v===undefined) return '&mdash;'; const c = v>0?'mc-pos':v<0?'mc-neg':''; return '<span class="'+c+'">'+(v>0?'+':v<0?'&minus;':'')+Math.abs(v).toFixed(dp===undefined?2:dp)+'</span>'; }
+function mcPhase(p){ return p ? '<span class="mc-phase" style="background:'+MC_PHASE[p]+'33;color:'+MC_PHASE[p]+'">'+p+'</span>' : ''; }
+function mcLine(el, pts, opt){
+  // pts: [[label, value]]; opt: {zero, lines:[{y,color,dash}], bands:[{i0,i1,color}], color, fmt, h}
+  const W = 900, H = opt.h || 260, L = 44, R = 12, T = 12, B = 26;
+  const vs = pts.map(p=>p[1]).filter(v=>v!==null);
+  let lo = Math.min(...vs, ...(opt.lines||[]).map(l=>l.y), opt.zero?0:Infinity), hi = Math.max(...vs, ...(opt.lines||[]).map(l=>l.y), opt.zero?0:-Infinity);
+  const pad = (hi-lo)*0.08 || 1; lo -= pad; hi += pad;
+  const x = i => L + (W-L-R) * (pts.length<2 ? 0.5 : i/(pts.length-1)), y = v => T + (H-T-B) * (hi-v)/(hi-lo);
+  let g = '';
+  (opt.bands||[]).forEach(b=>{ g += '<rect x="'+x(b.i0-0.5).toFixed(1)+'" y="'+T+'" width="'+Math.max(1,(x(b.i1+0.5)-x(b.i0-0.5))).toFixed(1)+'" height="'+(H-T-B)+'" fill="'+b.color+'" opacity=".16"/>'; });
+  const ticks = 5; for(let k=0;k<=ticks;k++){ const v = lo + (hi-lo)*k/ticks; g += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'" stroke="#3A4560" stroke-width="1"/><text x="'+(L-6)+'" y="'+(y(v)+4).toFixed(1)+'" fill="#A6AFC4" font-size="11" text-anchor="end" font-family="IBM Plex Mono,monospace">'+(opt.fmt?opt.fmt(v):v.toFixed(1))+'</text>'; }
+  if(opt.zero) g += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(0).toFixed(1)+'" y2="'+y(0).toFixed(1)+'" stroke="#C7CEDC" stroke-width="1.2"/>';
+  (opt.lines||[]).forEach(l=>{ g += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(l.y).toFixed(1)+'" y2="'+y(l.y).toFixed(1)+'" stroke="'+l.color+'" stroke-width="1.2" stroke-dasharray="5 4"/>'; });
+  const step = Math.max(1, Math.round(pts.length/7));
+  pts.forEach((p,i)=>{ if(i%step===0 || i===pts.length-1) g += '<text x="'+x(i).toFixed(1)+'" y="'+(H-8)+'" fill="#A6AFC4" font-size="11" text-anchor="middle" font-family="IBM Plex Mono,monospace">'+esc(p[0])+'</text>'; });
+  let d = '', pen = false;
+  pts.forEach((p,i)=>{ if(p[1]===null){ pen=false; return; } d += (pen?'L':'M')+x(i).toFixed(1)+' '+y(p[1]).toFixed(1); pen = true; });
+  g += '<path d="'+d+'" fill="none" stroke="'+(opt.color||'#B0A2F5')+'" stroke-width="2.2" stroke-linejoin="round"/>';
+  if(opt.dots) pts.forEach((p,i)=>{ if(p[1]!==null) g += '<circle cx="'+x(i).toFixed(1)+'" cy="'+y(p[1]).toFixed(1)+'" r="3" fill="'+(opt.color||'#B0A2F5')+'"/>'; });
+  el.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(opt.label||'chart')+'">'+g+'</svg>';
+}
+function drawCycle(){
+  const h = MC.doc.history, n = h.length, lo = MC.months ? Math.max(0, n-MC.months) : 0, part = h.slice(lo);
+  const lab = m => (MC.months && MC.months<=60) ? MONTHS[+m.slice(5,7)-1]+' '+m.slice(2,4) : m.slice(0,4);
+  const bands = []; part.forEach((r,i)=>{ const c = MC_PHASE[r.p]; if(!c) return; const b = bands[bands.length-1]; if(b && b.color===c && b.i1===i-1) b.i1 = i; else bands.push({i0:i, i1:i, color:c}); });
+  mcLine(document.getElementById('mcChart'), part.map(r=>[lab(r.m), r.c]), {zero:true, bands, label:'Cycle composite', fmt:v=>v.toFixed(1)});
+  document.getElementById('mcLegend').innerHTML = '<span><span class="mc-sw" style="background:#B0A2F5"></span>Composite</span>' + Object.keys(MC_PHASE).map(p=>'<span><span class="mc-sw" style="background:'+MC_PHASE[p]+';opacity:.5"></span>'+p+'</span>').join('');
+}
+function renderCycle(doc){
+  if(!doc || !doc.history) return;
+  MC.doc = doc;
+  const L = doc.legs, r = doc.raw, e = doc.earn;
+  document.getElementById('mcHint').textContent = 'Month ' + fmtMonth(doc.month+'-01') + ' · updated ' + fmtDate(doc.asof) + (doc.warnings && doc.warnings.length ? ' · ' + doc.warnings.join('; ') : '');
+  const tile = (title, val, sub) => '<div class="card nf-tile"><div class="eyebrow">'+title+'</div><div class="val">'+val+'</div><div class="sub">'+sub+'</div></div>';
+  document.getElementById('mcTiles').innerHTML =
+    '<div class="card nf-tile"><div class="eyebrow">Composite</div><div class="val">'+mcNum(doc.composite)+'</div>'+mcPhase(doc.phase)+'<div class="sub">3 months ago '+mcNum(doc.composite_3m_ago)+(e.in_composite?'':' &middot; three legs; earnings joins after 12 months')+'</div></div>'
+    + tile('Leading indicators', mcNum(L.cli.z), 'G20 leading indicator '+r.cli.toFixed(1)+' ('+fmtMonth(r.cli_month+'-01')+'), 100 = trend &middot; 3m ago '+mcNum(L.cli.z_3m))
+    + tile('Yield curve', mcNum(L.curve.z), 'US 10y&minus;2y '+r.curve.toFixed(2)+'% vs '+r.curve_12m_ago.toFixed(2)+'% a year ago &middot; 3m ago '+mcNum(L.curve.z_3m))
+    + tile('Credit', mcNum(L.credit.z), 'Baa leg '+mcNum(L.baa.z)+', high-yield leg '+mcNum(L.hy.z)+' &middot; US HY '+r.hy_us.level.toFixed(2)+'% ('+(r.hy_us.chg_3m>=0?'+':'&minus;')+Math.round(Math.abs(r.hy_us.chg_3m)*100)+'bp in 3m), euro HY '+r.hy_eu.level.toFixed(2)+'%');
+  document.getElementById('mcChecks').innerHTML = doc.checks.map(c=>{
+    const st = c.trip===null||c.trip===undefined ? 'na' : c.trip ? 'trip' : 'ok';
+    let v = '';
+    if(c.key==='earn') v = c.value===null ? 'No reading yet' : 'Net revision breadth '+mcNum(c.value)+' (latest day)';
+    else v = 'Credit '+mcNum(c.value.credit_z)+' &middot; SOFR&minus;IORB '+(c.value.sofr_iorb_bp===null?'&mdash;':c.value.sofr_iorb_bp.toFixed(0)+'bp');
+    return '<div class="card mc-check"><span class="flag '+st+'">'+({ok:'Not met',trip:'Met',na:'No data'})[st]+'</span><div><div style="font-weight:600;">'+esc(c.label)+'</div><div class="sub" style="font-size:12.5px;color:var(--ink-muted);margin-top:3px;">'+v+' &middot; rule: '+esc(c.rule)+'</div></div></div>';
+  }).join('');
+  const f = doc.funding.series || [];
+  mcLine(document.getElementById('mcFunding'), f.map(p=>[p[0].slice(5), p[1]]), {zero:true, h:200, color:'#E2D1AA', label:'SOFR minus IORB', fmt:v=>v.toFixed(0), lines:[{y:5,color:'#BD8A32'},{y:10,color:'#D0594B'}]});
+  const ed = (e.daily||[]).filter(d=>d.rev!==null||d.eps!==null);
+  if(ed.length) mcLine(document.getElementById('mcEarn'), ed.map(d=>[d.d.slice(5), d.rev!==null?d.rev:d.eps]), {zero:true, h:200, color:'#7FA8E8', dots:ed.length<40, label:'Revision breadth', fmt:v=>v.toFixed(2)});
+  else document.getElementById('mcEarn').innerHTML = '<p class="sub" style="color:var(--ink-faint)">Collecting from the next daily refresh.</p>';
+  const bt = doc.backtest, rows = ['Expansion','Slowdown','Contraction','Recovery'];
+  const cell = o => o && o.avg!==null ? '<td>'+mcNum(o.avg,1).replace('</span>','%</span>')+'</td><td>'+o.hit+'%</td>' : '<td>&mdash;</td><td>&mdash;</td>';
+  document.getElementById('mcBtHint').textContent = 'Average price return and share of months higher, since 1991';
+  document.getElementById('mcBt').innerHTML = '<thead><tr><th>Phase</th><th>Months</th><th>3m</th><th>Higher</th><th>6m</th><th>Higher</th><th>12m</th><th>Higher</th></tr></thead><tbody>'
+    + rows.map(p=>'<tr'+(p===doc.phase?' style="background:rgba(176,162,245,.10)"':'')+'><td class="reg">'+mcPhase(p)+(p===doc.phase?' &nbsp;now':'')+'</td><td>'+bt[p].months+'</td>'+cell(bt[p].h3)+cell(bt[p].h6)+cell(bt[p].h12)+'</tr>').join('')
+    + '<tr><td class="reg">All months</td><td>'+bt.All.h12.n+'</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td><td>&mdash;</td>'+cell(bt.All.h12)+'</tr></tbody>';
+  drawCycle();
+  if(!MC.wired){
+    MC.wired = true;
+    document.querySelectorAll('#mcRange button').forEach(b=>b.addEventListener('click', ()=>{
+      document.querySelectorAll('#mcRange button').forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false'));
+      MC.months = +b.dataset.v; drawCycle();
+    }));
+  }
+}
+
 function renderAll(seed){
   renderLatest(seed.latest);
   renderQuadrant(seed.latest, seed.recent);
@@ -2570,6 +2708,7 @@ function renderAll(seed){
   renderNfci(NFCI);
   renderRisk(RISK);
   renderBigPic(BIGPIC);
+  renderCycle(CYCLE);
 }
 
 renderAll(SEED);
@@ -2603,6 +2742,11 @@ document.getElementById('statusText').textContent = 'seed data · ' + SEED.lates
       if(!snap.exists) return;
       const data = snap.data();
       if(data && data.markets && data.history){ BIGPIC = data; renderBigPic(BIGPIC); }
+    });
+    db.doc('regime/cycle').onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const data = snap.data();
+      if(data && data.history && data.legs){ CYCLE = data; renderCycle(CYCLE); }
     });
     db.doc('regime/backtest').onSnapshot(snap=>{
       if(!snap.exists) return;

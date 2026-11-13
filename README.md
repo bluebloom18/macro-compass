@@ -237,3 +237,23 @@ Big Picture page; scores are our own and use only daily closes. See the docstrin
   volatility-spike flags with 20-session backtests. Shown beside the regime, not in health:
   blending these into health was tested from 2015 and worsened the risk-on rule on three of the
   four indices.
+
+## Market cycle (study 05)
+
+`market_cycle.py` writes `cycle_doc.json` (db `regime/cycle`); see its docstring for the method. A
+monthly nowcast of the balance between growth, rates and credit, built as a simple average of
+z-scored legs (each against its own history up to that month, no look-ahead):
+
+- **Leading indicators:** OECD composite leading indicator, G20, amplitude adjusted (OECD SDMX API, no key).
+- **Yield curve:** 12-month change in the US 10y-2y spread (FRED `T10Y2Y`); steepening = supportive.
+- **Credit:** 12-month change in Moody's Baa-10y (`BAA10Y`), averaged with the 6-month change in the US
+  and euro high-yield spreads where FRED has them (it keeps only three years of ICE high-yield data).
+- **Earnings revisions:** net analyst EPS revisions over 30 days, this and next fiscal year, ~110 global
+  large caps, from Yahoo's earnings-trend data. Yahoo keeps no history, so each run appends to
+  `data/eps_breadth.csv` (the first run backfilled two monthly points from the EPS-trend lookbacks). It
+  joins the composite after 12 monthly readings and is z-scored after 36.
+
+Phase (expansion, slowdown, contraction, recovery) comes from the composite's 3-month average and its
+3-month change. Two checks separate a correction from something deeper: earnings breadth below zero, and
+credit below -1 sd while SOFR minus IORB is above 10bp. The S&P 500 table shows returns after each
+phase since 1991. Method adapted from a published broker framework, using free data.
