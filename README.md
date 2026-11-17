@@ -43,7 +43,10 @@ All 30 of the original's signals are present; these are sourced differently:
   (close-only). Until 2026-11-17 they used bond ETF prices (`EXHD.DE`, `IGLT.L`, `236A.T`)
   as inverse proxies; those read flat on many days when yields were clearly trending
   (agreement with the real yield's trend state: UK 77%, Germany 83%), and changed the
-  regime call on ~7% of days. The ETFs remain a fallback, inverted, if an official fetch fails.
+  regime call on ~7% of days.   Fallbacks if an official fetch fails: first CNBC's daily closes (`UK10Y-GB`, `DE10Y-DE`,
+  `JP10Y-JP`; ~2 years of daily history) appended to the committed official history in
+  `data/official_yields.csv` (rewritten on every successful fetch; refresh it by committing after a
+  local run at least once a year), then the bond ETFs, inverted.
 - **Emerging markets** uses the `EEM` ETF in place of the original's `ICE MME1!`
   futures contract.
 

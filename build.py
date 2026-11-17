@@ -1,9 +1,10 @@
+import csv
 import json
 import os
 import sys
 import time
 
-from fetch import fetch_yahoo, fetch_fred, fetch_cboe, fetch_boe, fetch_bbk, fetch_mof, ratio_series
+from fetch import fetch_yahoo, fetch_fred, fetch_cboe, fetch_boe, fetch_bbk, fetch_mof, fetch_cnbc, ratio_series
 from align import forward_fill_onto
 from model import signal_logic, regime_contribution
 from config import SIGNALS, MASTER_CALENDAR_SYMBOL, DEFAULTS
@@ -23,24 +24,76 @@ def cached_fetch(key, fn):
     return data
 
 
+YIELD_SNAPSHOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "official_yields.csv")
+
+
+def _read_snapshot(key):
+    if not os.path.exists(YIELD_SNAPSHOT):
+        return []
+    with open(YIELD_SNAPSHOT) as f:
+        rows = list(csv.DictReader(f))
+    return [{"date": r["date"], "open": float(r[key]), "high": float(r[key]), "low": float(r[key]),
+             "close": float(r[key])} for r in rows if r.get(key)]
+
+
+def _write_snapshot(key, rows):
+    """Keep data/official_yields.csv (date + one column per official yield) so the CNBC fallback has the
+    long official history to extend; CNBC's daily feed only goes back about two years."""
+    table = {}
+    if os.path.exists(YIELD_SNAPSHOT):
+        with open(YIELD_SNAPSHOT) as f:
+            for r in csv.DictReader(f):
+                table[r["date"]] = r
+    for r in rows:
+        table.setdefault(r["date"], {"date": r["date"]})[key] = "%.4f" % r["close"]
+    cols = ["date"] + sorted({k for r in table.values() for k in r if k != "date"})
+    os.makedirs(os.path.dirname(YIELD_SNAPSHOT), exist_ok=True)
+    with open(YIELD_SNAPSHOT, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=cols, lineterminator="\n")
+        w.writeheader()
+        for d in sorted(table):
+            w.writerow(table[d])
+
+
+def fetch_official_yield(key, spec):
+    """Official daily yield (BoE / Bundesbank / Japan MoF). Fallbacks, in order:
+    1. CNBC daily closes, appended to the committed official snapshot (levels within ~1-4bp);
+    2. the bond-ETF price, inverted (1/price, high and low swapped) so its direction reads as a yield."""
+    fn = {"boe": fetch_boe, "bbk": fetch_bbk, "mof": fetch_mof}[spec["kind"]]
+    try:
+        rows = cached_fetch(spec["kind"] + "_" + spec["series"].replace("/", "_"), lambda: fn(spec["series"]))
+        try:
+            _write_snapshot(key, rows)
+        except OSError as e:
+            print("  %s: could not update yield snapshot (%s)" % (key, e))
+        return rows
+    except Exception as e:
+        print("  %s: official yield failed (%s)" % (key, e))
+    if spec.get("cnbc"):
+        try:
+            recent = cached_fetch("cnbc_" + spec["cnbc"], lambda: fetch_cnbc(spec["cnbc"]))
+            snap = _read_snapshot(key)
+            cut = snap[-1]["date"] if snap else ""
+            rows = snap + [r for r in recent if r["date"] > cut]
+            print("  %s: using CNBC %s after official snapshot to %s" % (key, spec["cnbc"], cut or "(none)"))
+            return rows
+        except Exception as e:
+            print("  %s: CNBC fallback failed (%s)" % (key, e))
+    if not spec.get("fallback"):
+        raise RuntimeError("%s: no yield source available" % key)
+    print("  %s: using inverted %s" % (key, spec["fallback"]))
+    px = cached_fetch("yahoo_" + spec["fallback"], lambda: fetch_yahoo(spec["fallback"]))
+    return [{"date": r["date"], "open": 1 / r["open"], "high": 1 / r["low"], "low": 1 / r["high"],
+             "close": 1 / r["close"]} for r in px if r["open"] and r["low"] and r["high"] and r["close"]]
+
+
 def fetch_signal_raw(key, spec):
     if spec["kind"] == "yahoo":
         return cached_fetch("yahoo_" + spec["symbol"].replace("/", "_"), lambda: fetch_yahoo(spec["symbol"]))
     if spec["kind"] == "fred":
         return cached_fetch("fred_" + spec["series"], lambda: fetch_fred(spec["series"]))
     if spec["kind"] in ("boe", "bbk", "mof"):
-        fn = {"boe": fetch_boe, "bbk": fetch_bbk, "mof": fetch_mof}[spec["kind"]]
-        try:
-            return cached_fetch(spec["kind"] + "_" + spec["series"].replace("/", "_"), lambda: fn(spec["series"]))
-        except Exception as e:
-            # Official site unreachable (e.g. from the cloud routine): fall back to the bond-ETF price,
-            # inverted (1/price, high and low swapped) so its direction reads as a yield.
-            if not spec.get("fallback"):
-                raise
-            print("  %s: official yield failed (%s); using inverted %s" % (key, e, spec["fallback"]))
-            px = cached_fetch("yahoo_" + spec["fallback"], lambda: fetch_yahoo(spec["fallback"]))
-            return [{"date": r["date"], "open": 1 / r["open"], "high": 1 / r["low"], "low": 1 / r["high"],
-                     "close": 1 / r["close"]} for r in px if r["open"] and r["low"] and r["high"] and r["close"]]
+        return fetch_official_yield(key, spec)
     if spec["kind"] == "cboe":
         return cached_fetch("cboe_" + spec["index"], lambda: fetch_cboe(spec["index"]))
     if spec["kind"] == "ratio":

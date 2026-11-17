@@ -224,6 +224,19 @@ def fetch_mof(tenor="10Y"):
     return _level_rows([p for p in pairs if p[0] >= "2000-01-01"], "MoF JGB " + tenor)
 
 
+def fetch_cnbc(symbol):
+    """CNBC's unofficial chart feed (e.g. UK10Y-GB, DE10Y-DE, JP10Y-JP): ~2 years of daily bars.
+    Returned close-only so it behaves like the official close-only series it stands in for
+    (CNBC's intraday high/low would widen the ATR margin and push more days to neutral)."""
+    text = _curl_text("https://ts-api.cnbc.com/harmony/app/charts/1Y.json?symbol=" + urllib.parse.quote(symbol),
+                      what="CNBC " + symbol)
+    pairs = []
+    for b in json.loads(text)["barData"]["priceBars"]:
+        t = b["tradeTime"]
+        pairs.append(("%s-%s-%s" % (t[:4], t[4:6], t[6:8]), float(b["close"])))
+    return _level_rows(pairs, "CNBC " + symbol)
+
+
 def ratio_series(legA, legB):
     """Elementwise O/H/L/C ratio of two OHLC series aligned by forward-filled date, mirroring
     how TradingView's synthetic ticker.inherit(A/B) ratio symbols behave."""
