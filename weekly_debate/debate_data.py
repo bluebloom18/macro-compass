@@ -86,7 +86,7 @@ def cot_pattern(groups, g, crowd, h="w13"):
 
 
 def bigpic_summary(path):
-    """Compact Big Picture (study 04) readings for the debate page: our own regime scores for 29
+    """Compact Markets & sectors (study 05) readings for the debate page: our own regime scores for 29
     markets, US regime checks, smart money proxy and CoT extremes. None if the doc is missing."""
     if not os.path.exists(path):
         return None
@@ -130,7 +130,7 @@ def bigpic_summary(path):
 
 
 def cycle_summary(path):
-    """Compact Market cycle (study 05) readings for the debate page: the composite of leading
+    """Compact Market cycle (study 03) readings for the debate page: the composite of leading
     indicators (OECD CLI, yield curve, credit, earnings revision breadth), its phase, the two
     checks and the S&P 500 record by phase. None if the doc is missing."""
     if not os.path.exists(path):
@@ -212,9 +212,9 @@ def main():
             print("macro pressure:", gauge["macro"]["index"][-1])
     if out["bigpic"]:
         bp = out["bigpic"]
-        print("big picture:", bp["asof"], "%d of %d risk on, %d long-term bull" % (bp["summary"]["on"], bp["summary"]["n"], bp["summary"]["bull"]))
+        print("markets & sectors:", bp["asof"], "%d of %d risk on, %d long-term bull" % (bp["summary"]["on"], bp["summary"]["n"], bp["summary"]["bull"]))
     else:
-        print("big picture: bigpic_doc.json missing, section left out")
+        print("markets & sectors: bigpic_doc.json missing, section left out")
     if out["cycle"]:
         cy = out["cycle"]
         print("market cycle:", cy["asof"], cy["phase"], cy["composite"], "(3m ago %s)" % cy["composite_3m_ago"],

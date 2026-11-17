@@ -166,7 +166,7 @@ td.dim{color:var(--ink-muted);}
 .archive-list .reg{color:var(--ink-faint); font-size:12.5px;}
 .archive-list .hl{color:var(--ink-muted);}
 @media (max-width:560px){.archive-list li{grid-template-columns:1fr; gap:2px;}}
-/* big picture */
+/* markets & sectors */
 .bp-sw{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:7px; vertical-align:-1px;}
 .bp-flag{display:inline-block; font-size:11.5px; padding:1px 8px; border-radius:100px; border:1px solid var(--amber); color:var(--amber); margin:0 4px 2px 0; white-space:nowrap;}
 .bp-no{color:var(--amber); font-weight:600;}
@@ -195,7 +195,7 @@ footer{border-top:1px solid var(--border); padding-top:16px; font-size:12.5px; c
 
   <section id="archive" hidden></section>
 
-  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, macro pressure, Big Picture, market cycle). Market context from the sources listed in each edition. Not investment advice.</footer>
+  <footer>Indicator readings from Macro Compass (regime model, Risk Gauge, macro pressure, markets &amp; sectors, market cycle). Market context from the sources listed in each edition. Not investment advice.</footer>
 </div>
 
 <script>
@@ -280,7 +280,7 @@ const BP_CHECK = {breadth:'breadth', vol:'volatility', credit:'credit'};
 function renderBigPic(b, note){
   const s = b.summary, br = b.breadth, n0 = br.on[0];
   const pct = v => Math.round(v) + '%';
-  let h = '<section><h2>Big Picture</h2>' + (note ? '<p class="lede">' + minus(note) + '</p>' : '')
+  let h = '<section><h2>Markets &amp; sectors</h2>' + (note ? '<p class="lede">' + minus(note) + '</p>' : '')
     + '<div class="chips" style="margin-top:0"><span class="chip">Markets risk on <b>' + s.on + ' of ' + s.n + '</b> (' + pct(br.on[br.on.length-1]) + ', ' + pct(n0) + ' on ' + day(br.dates[0]) + ')</span>'
     + '<span class="chip">Long-term bull <b>' + s.bull + ' of ' + s.n + '</b></span>'
     + '<span class="chip">Switched side in the latest session <b>' + s.new + '</b></span></div>';
@@ -314,7 +314,7 @@ function renderBigPic(b, note){
     const ST = {smi_up:'rising with the Dow', smi_down:'falling with the Dow', div_bear:'falling while the Dow rises (bearish divergence)', div_bull:'rising while the Dow falls (bullish divergence)'};
     h += '<p class="note">Smart money flow proxy (Dow, last 20 sessions): ' + (ST[b.smi.state] || esc(b.smi.state)) + '. It has shown no edge over its two years of history.</p>';
   }
-  h += '<p class="note">Big Picture readings as of ' + day(b.asof, true) + ', from Macro Compass study 04: our own scores for ' + s.n + ' markets, built from daily closes, CFTC reports and index member data. Method and backtests are on the dashboard.</p></section>';
+  h += '<p class="note">Markets &amp; sectors readings as of ' + day(b.asof, true) + ', from Macro Compass study 05: our own scores for ' + s.n + ' markets, built from daily closes, CFTC reports and index member data. Method and backtests are on the dashboard.</p></section>';
   return h;
 }
 
@@ -340,7 +340,7 @@ function renderCycle(c, note){
       + bt.map(k => { const b = c.backtest[k]; return '<tr' + (k === c.phase ? ' class="total"' : '') + '><td class="k">' + k + '</td><td class="num">' + minus((b.avg > 0 ? '+' : '') + b.avg.toFixed(1) + '%') + '</td><td class="num">' + b.hit + '%</td><td class="num">' + b.n + '</td></tr>'; }).join('')
       + '</tbody></table></div>';
   }
-  h += '<p class="note">Phase comes from the level of the 3-month average composite and its change over three months. Each leg is scored against its own history; credit is sign-flipped so wider spreads score lower. SOFR less IORB ' + (c.sofr_iorb_bp === null ? 'n/a' : minus(String(c.sofr_iorb_bp)) + 'bp') + '. Readings as of ' + day(c.asof, true) + ', from Macro Compass study 05.</p></section>';
+  h += '<p class="note">Phase comes from the level of the 3-month average composite and its change over three months. Each leg is scored against its own history; credit is sign-flipped so wider spreads score lower. SOFR less IORB ' + (c.sofr_iorb_bp === null ? 'n/a' : minus(String(c.sofr_iorb_bp)) + 'bp') + '. Readings as of ' + day(c.asof, true) + ', from Macro Compass study 03.</p></section>';
   return h;
 }
 

@@ -145,7 +145,7 @@ def email_html(doc, editions=()):
             u["name"], "risk on" if u["side"] == "on" else "risk off", u["agree"], u["views"],
             ", " + " and ".join(f.replace("volspike", "volatility spike").replace("washout", "breadth washout").replace("narrow", "narrow rally") for f in u["flags"]) if u["flags"] else "")
             for u in (bp.get("us_checks") or []))
-        bigpic_html = ('<h2 %s>Big Picture</h2><p style="margin:0 0 6px"><b>%d of %d markets risk on</b> (%d%% on %s, %d%% now), %d in a long-term bull.%s</p>%s' % (
+        bigpic_html = ('<h2 %s>Markets &amp; sectors</h2><p style="margin:0 0 6px"><b>%d of %d markets risk on</b> (%d%% on %s, %d%% now), %d in a long-term bull.%s</p>%s' % (
             h2, sm["on"], sm["n"], round(br["on"][0]), e(br["dates"][0]), round(br["on"][-1]), sm["bull"],
             (" US indices: " + e(us) + ".") if us else "",
             ('<p style="margin:0">%s</p>' % t(doc["bigpic_note"])) if doc.get("bigpic_note") else ""))
