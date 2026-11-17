@@ -62,6 +62,10 @@ def validate(n):
     bn = n.get("bigpic_note")
     if bn is not None and not (isinstance(bn, str) and bn):
         errs.append("bigpic_note must be a non-empty string")
+    for k in ("nfci_note", "trades_note"):
+        v = n.get(k)
+        if v is not None and not (isinstance(v, str) and v):
+            errs.append("%s must be a non-empty string" % k)
     cn = n.get("cycle_note")
     if cn is not None and not (isinstance(cn, str) and cn):
         errs.append("cycle_note must be a non-empty string")
@@ -163,6 +167,25 @@ def email_html(doc, editions=()):
         cycle_html = ('<h2 %s>Market cycle</h2><p style="margin:0 0 6px"><b>%s</b>, composite %s (%s three months ago). Legs in sd: %s%s. %s%s</p>%s' % (
             h2, e(cy["phase"]), sg(cy["composite"]), sg(cy.get("composite_3m_ago")), legs, earn_txt, chk, bt_txt,
             ('<p style="margin:0">%s</p>' % t(doc["cycle_note"])) if doc.get("cycle_note") else ""))
+    nf = doc.get("nfci")
+    nfci_html = ""
+    if nf:
+        s3 = lambda v: "n/a" if v is None else ("%+.3f" % v).replace("-", "&minus;")
+        rl = lambda on: "risk on" if on else "risk off"
+        nfci_html = ('<h2 %s>Financial conditions</h2><p style="margin:0 0 6px"><b>NFCI %s</b> (week ending %s; 52-week average %s). '
+                     'Level vs average: %s. One-week change %s: %s. Moves beyond &plusmn;0.02: %s.</p>%s' % (
+            h2, s3(nf["level"]), e(nf["week"]), s3(nf["ma52"]), rl(nf["rules"]["ma"]), s3(nf["weeks"][-1]["chg"]), rl(nf["rules"]["week"]),
+            rl(nf["rules"]["band"]), ('<p style="margin:0">%s</p>' % t(doc["nfci_note"])) if doc.get("nfci_note") else ""))
+    tr = doc.get("trades")
+    trades_html = ""
+    if tr:
+        callname = {"long_full": "full long", "long_half": "half long"}
+        held = ", ".join("%s (%s, %s)" % (e(x["t"]), e(x["name"]), callname.get(x["call"], x["call"])) for x in tr["held"]) or "none"
+        last = tr["roro"]["bars"][-1]
+        trades_html = ('<h2 %s>Trade signals</h2><p style="margin:0 0 6px">Of %d ETFs, <b>%d trend up, %d flat, %d down</b>. Risk-on vote share %d%%; risk off since %s. '
+                       'Positions held: %s.</p>%s' % (
+            h2, tr["n"], tr["states"]["bull"], tr["states"]["neutral"], tr["states"]["bear"], round(last["on"]), e(tr["roro"]["current"]["since"]), held,
+            ('<p style="margin:0">%s</p>' % t(doc["trades_note"])) if doc.get("trades_note") else ""))
     last_week = ('<h2 %s>Last week\'s call</h2><p style="margin:0">%s</p>' % (h2, t(doc["last_week"]))) if doc.get("last_week") else ""
     return """<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1D2330;max-width:720px">
 <p style="margin:0 0 6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6F7A90">Macro Compass weekly debate &middot; readings as of {asof}</p>
@@ -174,8 +197,10 @@ def email_html(doc, editions=()):
 <h2 {h2}>Markets and indicators</h2><p style="margin:0 0 10px">{context}</p>
 <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:13px;width:100%;max-width:560px">
 <tr><th style="text-align:left;padding:4px 8px;color:#6F7A90">Market</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">Level</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">1 month</th><th style="text-align:right;padding:4px 8px;color:#6F7A90">vs 52w high</th></tr>{rows}</table>
-{bigpic_html}
+{nfci_html}
 {cycle_html}
+{bigpic_html}
+{trades_html}
 <h2 {h2}>Bear case</h2><ol style="margin:0;padding-left:20px">{bear}</ol>
 <h2 {h2}>Bull case</h2><ol style="margin:0;padding-left:20px">{bull}</ol>
 <h2 {h2}>Sentiment</h2><p style="margin:0">{sent}</p>
@@ -186,7 +211,7 @@ def email_html(doc, editions=()):
 {past_html}
 <p style="margin:18px 0 0;font-size:12px;color:#6F7A90">Indicator readings from Macro Compass. Sources are linked on the page. Not investment advice.</p>
 </div>""".format(
-        bigpic_html=bigpic_html, cycle_html=cycle_html, special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
+        bigpic_html=bigpic_html, cycle_html=cycle_html, nfci_html=nfci_html, trades_html=trades_html, special_html=special_html, past_html=past_html, eid=e(doc["id"]), asof=e(doc["asof"]), headline=e(doc["headline"]), url=PAGE_URL, regime=e(r["name"]), rpct=r["pct"][r["code"] - 1] if r["code"] else "-",
         gu=len(ax["growth"]["up"]), gd=len(ax["growth"]["down"]), iu=len(ax["inflation"]["up"]), idn=len(ax["inflation"]["down"]),
         rg=gauge_txt(doc.get("gauge")),
         # macro pressure replaced the barometer in the summary from the 2 Nov 2026 edition

@@ -33,12 +33,22 @@ send tool (query `gmail send_message`). If ArtifactData is missing, stop and rep
    `python3 market_cycle.py` (about a minute; add `--no-earn` if the Yahoo pull fails) and say so
    in the report. Don't commit `data/eps_breadth.csv` changes from that run. If it fails, carry on
    without it: the page leaves the Market cycle section out.
+   Also `get` doc ids `nfci` and `trades`. Copy `/tmp/mc_db/regime/nfci.json` to `nfci/nfci_doc.json`
+   and `/tmp/mc_db/regime/trades.json` to `trades_doc.json` in the repo root. The NFCI is weekly and
+   published a week late, so its `asof` may be up to 14 days old; `trades.asof` should be within the
+   last 4 days. If `trades` is missing or stale, run `python3 trade_signals.py` (about 2 minutes,
+   after build.py output exists) and say so in the report. If either is still missing, carry on: the
+   page leaves that section out.
 2. Run `python3 weekly_debate/debate_data.py`. It writes `weekly_debate/debate_data.json`: the
    market table, regime vote counts per axis, the five-session vote changes, the last five
    Risk Gauge weeks with macro pressure, and the Markets & sectors summary (`bigpic`: markets by
    regime, regime changes over five sessions, the share of the 30 markets risk on, US regime checks,
    CoT extremes and the smart money proxy), and the Market cycle summary (`cycle`: composite,
-   phase, legs, the two warning checks, the last six months and the S&P 500 record by phase). Those numbers are fixed; the narrative must agree with them.
+   phase, legs, the two warning checks, the last six months and the S&P 500 record by phase), the
+   Financial conditions summary (`nfci`: NFCI level, 52-week average, last six weeks, the three
+   rules and their backtest) and the Trade signals summary (`trades`: trend counts by group, the
+   positions the rules hold, the latest session's trend changes, the risk-on vote share and the
+   calls-vs-hold backtests). Those numbers are fixed; the narrative must agree with them.
 
 ## 3. Last week's edition
 
@@ -134,6 +144,15 @@ stop. Avoid AI-sounding phrasing:
   current phase only beside its hit rate, and don't present it as a forecast. Where the cycle
   phase and the regime or Risk Gauge disagree, say so; that tension is useful in the bear and bull
   cases. Leave `cycle_note` out if `cycle` is null. Cite it as Macro Compass.
+- `nfci_note`: 2 to 3 sentences on `nfci`: the level against its 52-week average, whether the
+  last few weekly changes are tightening or easing, and which rules read risk on or off. Say the
+  week it covers (it lags a week). The 1-week change beyond 0.02 rule has the best backtest; the
+  plain 1-week change rule is noisy, so don't lean on it alone. Leave it out if `nfci` is null.
+- `trades_note`: 2 to 4 sentences on `trades`: how many of the ETFs trend up, flat and down and
+  which groups stand out, which positions the rules hold and why (the role suits the regime and the
+  trend agrees), and any calls that changed in the latest session. These are mechanical rule
+  outputs; tie them to the positioning view, and say plainly where the discretionary view differs.
+  Leave it out if `trades` is null.
 - `callout`: what to watch on the Macro Compass dashboard for the turn (which regime it would
   most likely move to first, and which signals would have to flip).
 
@@ -166,12 +185,12 @@ the report.
 ## 9. Finish
 
 Commit nothing. `narrative.json`, `debate_data.json`, `edition_doc.json`, `index_doc.json`,
-`email.html`, `latest_doc.json`, `risk_doc.json`, `bigpic_doc.json` and `cycle_doc.json` are gitignored scratch files. If a stop hook
+`email.html`, `latest_doc.json`, `risk_doc.json`, `bigpic_doc.json`, `cycle_doc.json`, `nfci/nfci_doc.json` and `trades_doc.json` are gitignored scratch files. If a stop hook
 asks you to commit untracked files, delete the scratch files instead.
 
-Report: the edition id and headline, the regime, Risk Gauge and macro pressure used, the Big
-Picture share of markets risk on, the market cycle phase and composite, whether the database
-readings (including `bigpic` and `cycle`) were fresh
+Report: the edition id and headline, the regime, Risk Gauge and macro pressure used, the Markets & sectors share of markets risk on, the market cycle phase and composite, the NFCI level
+and rule states, the trade-signal trend counts and held positions, whether the database
+readings (including `bigpic`, `cycle`, `nfci` and `trades`) were fresh
 or rebuilt, the number of sources, whether the database write and the email
 succeeded, and anything you could not verify.
 

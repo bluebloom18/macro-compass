@@ -1,7 +1,7 @@
 # narrative.json schema
 
 The week's written content. `assemble.py` validates it, merges it with `debate_data.json`
-(markets, axes, vote changes, barometer, regime, asof, bigpic, cycle) and writes the edition document.
+(markets, axes, vote changes, barometer, regime, asof, nfci, cycle, bigpic, trades) and writes the edition document.
 See `narrative_example.json` for a complete example.
 
 | Field | Type | Notes |
@@ -16,6 +16,8 @@ See `narrative_example.json` for a complete example.
 | `barometer_note` | string | What changed in the Risk Gauge and macro pressure this week, and why. The gauge is the coincident stress read; macro pressure (the barometer's economic surprise, liquidity, rates and FX pillars) is the early warning, flagged when it is below its weak line while the gauge is still calm. The page no longer shows the 8-pillar barometer, so don't cite its other pillars. |
 | `bigpic_note` | string, optional | 2-4 sentences on the Markets & sectors readings (`bigpic` in debate_data.json). Omit when `bigpic` is null. Shown at the top of the page's Markets & sectors section and in the email. |
 | `cycle_note` | string, optional | 2-3 sentences on the Market cycle readings (`cycle` in debate_data.json): phase, composite and its trend, the legs driving it, the warning checks. Omit when `cycle` is null. Shown at the top of the page's Market cycle section and in the email. |
+| `nfci_note` | string, optional | 2-3 sentences on the Financial conditions readings (`nfci`): the NFCI level against its 52-week average, the direction of the last few weekly changes, and which of the three rules read risk on or off. Omit when `nfci` is null. |
+| `trades_note` | string, optional | 2-4 sentences on the Trade signals readings (`trades`): how many ETFs trend up/flat/down and by group, which positions the rules hold and why (regime role + trend), what changed in the latest session, and the risk-on vote share. Omit when `trades` is null. |
 | `bear`, `bull` | 4-6 `{title, text}` | `title` is the claim, `text` the evidence. |
 | `sentiment` | object | `text` (the answer), `retail_label`, `retail` [`{k, v}`], `pro_label`, `pro` [`{k, v}`], `note` (optional). |
 | `positioning` | `[{what, why}]` | Judgment call. |

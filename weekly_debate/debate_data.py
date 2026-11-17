@@ -1,5 +1,7 @@
 """Numbers for the weekly macro debate page: the market table, regime vote counts per axis,
-the last five Risk Gauge weeks (with macro pressure), the Risk Barometer weeks and the five-session vote changes.
+the last five Risk Gauge weeks (with macro pressure), the Risk Barometer weeks, the five-session vote changes,
+and compact summaries of the dashboard's Financial conditions, Market cycle, Markets & sectors and Trade
+signals studies.
 
 Run from the repo root after build.py, finalize.py and risk_barometer.py (it reads their
 output and reuses build.py's fetch cache). Writes weekly_debate/debate_data.json, which
@@ -43,8 +45,10 @@ def closes(rows):
     return out
 
 
-def market_row(label, key, fn, kind):
+def market_row(label, key, fn, kind, asof=None):
     s = closes(cached_fetch(key, fn))
+    if asof:   # don't let a fresher fetch (e.g. today's partial Asian session) run past the readings date
+        s = [x for x in s if x[0] <= asof]
     date, last = s[-1]
     month_ago = s[-22][1] if len(s) > 21 else s[0][1]
     year = [v for _, v in s[-252:]]
@@ -157,6 +161,66 @@ def cycle_summary(path):
     )
 
 
+NF_BAND = 0.02
+
+
+def nfci_summary(path):
+    """Compact Financial conditions (study 02) readings: Chicago Fed NFCI level, its 52-week average,
+    the last six weekly changes (first prints where published) and the three rules from the dashboard
+    (level vs 52-week average, 1-week change, 1-week change beyond +/-0.02). None if the doc is missing."""
+    if not os.path.exists(path):
+        return None
+    d = json.load(open(path))
+    dates, v = d["dates"], d["v"]
+    fp = dict(zip(d["fp"]["dates"], d["fp"]["ch"]))
+    chg, band, band_since, band_chg = [], 1, None, None
+    for i, dt in enumerate(dates):
+        c = fp.get(dt, None if i == 0 else round(v[i] - v[i - 1], 3))
+        chg.append(c)
+        if c is not None and abs(c) > NF_BAND:
+            band, band_since, band_chg = (1 if c < 0 else 0), dt, c
+    ma = sum(v[-52:]) / 52
+    bt = d.get("backtest") or {}
+    return dict(
+        asof=d["asof"], week=dates[-1], level=v[-1], ma52=round(ma, 3), level_52w_ago=v[-53] if len(v) > 52 else None,
+        weeks=[dict(date=dates[i], level=v[i], chg=chg[i]) for i in range(len(dates) - 6, len(dates))],
+        rules=dict(ma=v[-1] <= ma, week=(chg[-1] or 0) <= 0, band=bool(band)),
+        band_since=band_since, band_chg=band_chg,
+        backtest=[dict(rule=r["rule"], cagr=r["cagr"], sharpe=r["sharpe"], maxdd=r["maxdd"]) for r in bt.get("rows", [])],
+        backtest_span=[bt.get("start"), bt.get("end")],
+    )
+
+
+def trades_summary(path):
+    """Compact Trade signals (study 06) readings: trend labels and regime-role calls for the ETF universe,
+    what changed in the latest session, the share of risk assets trending up, and the call backtests."""
+    if not os.path.exists(path):
+        return None
+    d = json.load(open(path))
+    rows = [dict(r, group=g["name"]) for g in d["groups"] for r in g["rows"] if r.get("state")]
+    calls = {}
+    for r in rows:
+        calls[r["call"]] = calls.get(r["call"], 0) + 1
+    held = [dict(t=r["t"], name=r["name"], group=r["group"], role=r["role"], state=r["state"], call=r["call"])
+            for r in rows if r["call"] != "none"]
+    changed = [dict(t=r["t"], name=r["name"], group=r["group"], before=r["prev_state"], after=r["state"],
+                    call_before=r["prev_call"], call=r["call"])
+               for r in rows if r.get("prev_state") and r["prev_state"] != r["state"]]
+    by_group = []
+    for g in d["groups"]:
+        rr = [r for r in g["rows"] if r.get("state")]
+        by_group.append(dict(name=g["name"], n=len(rr), bull=sum(r["state"] == "bull" for r in rr),
+                             neutral=sum(r["state"] == "neutral" for r in rr), bear=sum(r["state"] == "bear" for r in rr)))
+    bt = []
+    for b in d.get("backtest") or []:
+        bt.append(dict(t=b["sym"], name=b["name"], role=b.get("role"), start=b["start"][:4],
+                       strat=b["strat"], bh=b["bh"]))
+    ro = d["roro"]
+    return dict(asof=d["asof"], regime=d["regime_name"], n=len(rows), states=d["counts"], calls=calls,
+                held=held, changed=changed, by_group=by_group,
+                roro=dict(bars=ro["bars"], current=ro["current"], per_year=ro["per_year"]), backtest=bt)
+
+
 def main():
     latest = json.load(open(os.path.join(ROOT, "latest_doc.json")))
     risk = json.load(open(os.path.join(ROOT, "risk_doc.json")))
@@ -164,7 +228,7 @@ def main():
     markets = []
     for label, key, fn, kind in MARKETS:
         try:
-            markets.append(market_row(label, key, fn, kind))
+            markets.append(market_row(label, key, fn, kind, latest["asof"]))
         except Exception as e:  # a missing series drops its row, never the page
             print("market row failed:", label, e, file=sys.stderr)
 
@@ -198,6 +262,8 @@ def main():
         markets=markets,
         bigpic=bigpic_summary(os.path.join(ROOT, "bigpic_doc.json")),
         cycle=cycle_summary(os.path.join(ROOT, "cycle_doc.json")),
+        nfci=nfci_summary(os.path.join(ROOT, "nfci", "nfci_doc.json")),
+        trades=trades_summary(os.path.join(ROOT, "trades_doc.json")),
     )
     path = os.path.join(HERE, "debate_data.json")
     with open(path, "w") as f:
@@ -221,6 +287,17 @@ def main():
               "checks tripped:", sum(c["trip"] for c in cy["checks"]))
     else:
         print("market cycle: cycle_doc.json missing, section left out")
+    if out["nfci"]:
+        nf = out["nfci"]
+        print("financial conditions:", nf["week"], "NFCI %.3f vs 52w avg %.3f, last change %s, rules" % (nf["level"], nf["ma52"], nf["weeks"][-1]["chg"]), nf["rules"])
+    else:
+        print("financial conditions: nfci/nfci_doc.json missing, section left out")
+    if out["trades"]:
+        tr = out["trades"]
+        print("trade signals:", tr["asof"], tr["states"], "calls", tr["calls"], "risk on %.0f%%" % tr["roro"]["bars"][-1]["on"],
+              "%d trend changes in the latest session" % len(tr["changed"]))
+    else:
+        print("trade signals: trades_doc.json missing, section left out")
     print("risk index:", barometer["dates"][-1], barometer["index"][-1])
     for m in markets:
         print("  %-24s %s %10.2f  1m %6s  vs hi %6s" % (m["name"], m["date"], m["level"], m["m1"], m["vs_high"]))

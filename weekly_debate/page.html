@@ -344,6 +344,59 @@ function renderCycle(c, note){
   return h;
 }
 
+function renderNfci(n, note){
+  const s3 = v => v === null || v === undefined ? '&mdash;' : (v > 0 ? '+' : v < 0 ? '&minus;' : '') + Math.abs(v).toFixed(3);
+  const pill = on => '<b style="color:var(' + (on ? '--bull' : '--bear') + ')">' + (on ? 'risk on' : 'risk off') + '</b>';
+  let h = '<section><h2>Financial conditions</h2>' + (note ? '<p class="lede">' + minus(note) + '</p>' : '')
+    + '<div class="chips" style="margin-top:0"><span class="chip">NFCI <b>' + s3(n.level) + '</b> (' + (n.level < 0 ? 'looser' : 'tighter') + ' than average)</span>'
+    + '<span class="chip">52-week average <b>' + s3(n.ma52) + '</b></span>'
+    + '<span class="chip">Week ending <b>' + day(n.week) + '</b></span></div>';
+  h += '<div class="table-scroll"><table><thead><tr><th>Rule</th><th>Reading</th><th>Detail</th></tr></thead><tbody>'
+    + '<tr><td class="k">Level vs 52-week average</td><td>' + pill(n.rules.ma) + '</td><td class="wrap">NFCI ' + s3(n.level) + ' vs ' + s3(n.ma52) + (n.rules.ma ? ', at or below its average' : ', above its average (tighter)') + '</td></tr>'
+    + '<tr><td class="k">1-week change</td><td>' + pill(n.rules.week) + '</td><td class="wrap">' + s3(n.weeks[n.weeks.length-1].chg) + ' this week</td></tr>'
+    + '<tr><td class="k">1-week change beyond &plusmn;0.02</td><td>' + pill(n.rules.band) + '</td><td class="wrap">' + (n.band_since ? 'last move beyond &plusmn;0.02 was ' + s3(n.band_chg) + ' in the week ending ' + day(n.band_since, true) : 'no qualifying move') + '</td></tr>'
+    + '</tbody></table></div>';
+  h += '<p class="note">Weekly NFCI: ' + n.weeks.map(w => day(w.date) + ' ' + s3(w.level) + ' (' + s3(w.chg) + ')').join(', ') + '. Negative is looser than average; a rising reading is tightening.</p>';
+  if(n.backtest && n.backtest.length){
+    h += '<h3 style="font-size:17px; margin-top:6px;">Switching SPY on each rule (' + (n.backtest_span[0] || '').slice(0,4) + '&ndash;' + (n.backtest_span[1] || '').slice(0,4) + ', as-published data)</h3><div class="table-scroll"><table><thead><tr><th>Rule</th><th class="num">CAGR</th><th class="num">Sharpe</th><th class="num">Max drawdown</th></tr></thead><tbody>'
+      + n.backtest.map(b => '<tr><td class="k">' + esc(b.rule) + '</td><td class="num">' + (b.cagr*100).toFixed(1) + '%</td><td class="num">' + b.sharpe.toFixed(2) + '</td><td class="num">' + minus((b.maxdd*100).toFixed(1) + '%') + '</td></tr>').join('')
+      + '</tbody></table></div>';
+  }
+  h += '<p class="note">Chicago Fed National Financial Conditions Index, published weekly with a one-week lag. Readings from Macro Compass study 02.</p></section>';
+  return h;
+}
+
+const TS_CALL = {long_full:'Long, full', long_half:'Long, half', none:'No position'};
+const TS_STATE = {bull:'up', neutral:'flat', bear:'down'};
+function renderTrades(t, note){
+  const last = t.roro.bars[t.roro.bars.length-1];
+  let h = '<section><h2>Trade signals</h2>' + (note ? '<p class="lede">' + minus(note) + '</p>' : '')
+    + '<div class="chips" style="margin-top:0"><span class="chip">Regime <b>' + esc(t.regime) + '</b></span>'
+    + '<span class="chip">Trend up / flat / down <b>' + t.states.bull + ' / ' + t.states.neutral + ' / ' + t.states.bear + '</b> of ' + t.n + '</span>'
+    + '<span class="chip">Risk-on vote share <b>' + Math.round(last.on) + '%</b></span>'
+    + '<span class="chip">Risk ' + (t.roro.current.risk_on ? 'on' : 'off') + ' since <b>' + day(t.roro.current.since) + '</b> (' + t.roro.current.sessions + ' sessions)</span></div>';
+  h += '<div class="table-scroll"><table><thead><tr><th>Group</th><th class="num">Up</th><th class="num">Flat</th><th class="num">Down</th></tr></thead><tbody>'
+    + t.by_group.map(g => '<tr><td class="k">' + esc(g.name) + '</td><td class="num">' + g.bull + '</td><td class="num">' + g.neutral + '</td><td class="num">' + g.bear + '</td></tr>').join('')
+    + '</tbody></table></div>';
+  h += '<h3 style="font-size:17px; margin-top:6px;">Positions the rules hold (' + t.held.length + ' of ' + t.n + ')</h3>'
+    + (t.held.length ? '<div class="table-scroll"><table><thead><tr><th>ETF</th><th>Exposure</th><th>Role</th><th>Trend</th><th>Call</th></tr></thead><tbody>'
+      + t.held.map(r => '<tr><td class="k">' + esc(r.t) + '</td><td>' + esc(r.name) + '</td><td>' + esc(r.role) + '</td><td>' + TS_STATE[r.state] + '</td><td>' + TS_CALL[r.call] + '</td></tr>').join('')
+      + '</tbody></table></div>' : '<p class="note">None.</p>');
+  if(t.changed && t.changed.length){
+    h += '<h3 style="font-size:17px; margin-top:6px;">Trend changes in the latest session</h3><div class="table-scroll"><table><thead><tr><th>ETF</th><th>Exposure</th><th>Trend</th><th>Call</th></tr></thead><tbody>'
+      + t.changed.map(r => '<tr><td class="k">' + esc(r.t) + '</td><td>' + esc(r.name) + '</td><td>' + TS_STATE[r.before] + ' &rarr; ' + TS_STATE[r.after] + '</td><td>' + (r.call_before === r.call ? TS_CALL[r.call] : TS_CALL[r.call_before] + ' &rarr; ' + TS_CALL[r.call]) + '</td></tr>').join('')
+      + '</tbody></table></div>';
+  }
+  if(t.backtest && t.backtest.length){
+    const pc = v => minus((v*100).toFixed(1) + '%');
+    h += '<h3 style="font-size:17px; margin-top:6px;">Calls vs buy and hold</h3><div class="table-scroll"><table><thead><tr><th>Asset</th><th class="num">From</th><th class="num">Sharpe, calls</th><th class="num">Sharpe, hold</th><th class="num">Max drawdown, calls</th><th class="num">Max drawdown, hold</th></tr></thead><tbody>'
+      + t.backtest.map(b => '<tr><td class="k">' + esc(b.name) + '</td><td class="num">' + b.start + '</td><td class="num">' + b.strat.sharpe.toFixed(2) + '</td><td class="num">' + b.bh.sharpe.toFixed(2) + '</td><td class="num">' + pc(b.strat.maxdd) + '</td><td class="num">' + pc(b.bh.maxdd) + '</td></tr>').join('')
+      + '</tbody></table></div>';
+  }
+  h += '<p class="note">Each ETF gets a trend label from the same moving-average rule as the regime signals, and a role (risk, duration, inflation, gold, haven). The rules hold a full long when the role suits the current regime and the trend is up, a half long when the trend is flat, and nothing otherwise. Long only; uninvested money earns T-bills. Readings as of ' + day(t.asof, true) + ', from Macro Compass study 06.</p></section>';
+  return h;
+}
+
 function render(d){
   const r = d.regime || {}, rm = REGIME[r.code];
   document.getElementById('eyebrow').textContent = 'Macro Compass weekly debate · readings as of ' + day(d.asof, true) + ' · written ' + day(d.written, true);
@@ -399,8 +452,10 @@ function render(d){
     + '<tr class="total"><td class="k">Risk Index</td>' + d.barometer.index.map(v => scoreCell(v, t)).join('') + '</tr>'
     + '</tbody></table></div>') + '<p class="note">' + minus(d.barometer_note) + '</p></section>');
 
-  if(d.bigpic) html.push(renderBigPic(d.bigpic, d.bigpic_note));
+  if(d.nfci) html.push(renderNfci(d.nfci, d.nfci_note));
   if(d.cycle) html.push(renderCycle(d.cycle, d.cycle_note));
+  if(d.bigpic) html.push(renderBigPic(d.bigpic, d.bigpic_note));
+  if(d.trades) html.push(renderTrades(d.trades, d.trades_note));
 
   const side = (cls, title, items) => '<div class="side ' + cls + '"><h3>' + title + '</h3><ol>'
     + items.map(x => '<li><b>' + minus(x.title) + '</b><span>' + minus(x.text) + '</span></li>').join('') + '</ol></div>';
