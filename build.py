@@ -3,7 +3,7 @@ import os
 import sys
 import time
 
-from fetch import fetch_yahoo, fetch_fred, fetch_cboe, ratio_series
+from fetch import fetch_yahoo, fetch_fred, fetch_cboe, fetch_boe, fetch_bbk, fetch_mof, ratio_series
 from align import forward_fill_onto
 from model import signal_logic, regime_contribution
 from config import SIGNALS, MASTER_CALENDAR_SYMBOL, DEFAULTS
@@ -28,6 +28,19 @@ def fetch_signal_raw(key, spec):
         return cached_fetch("yahoo_" + spec["symbol"].replace("/", "_"), lambda: fetch_yahoo(spec["symbol"]))
     if spec["kind"] == "fred":
         return cached_fetch("fred_" + spec["series"], lambda: fetch_fred(spec["series"]))
+    if spec["kind"] in ("boe", "bbk", "mof"):
+        fn = {"boe": fetch_boe, "bbk": fetch_bbk, "mof": fetch_mof}[spec["kind"]]
+        try:
+            return cached_fetch(spec["kind"] + "_" + spec["series"].replace("/", "_"), lambda: fn(spec["series"]))
+        except Exception as e:
+            # Official site unreachable (e.g. from the cloud routine): fall back to the bond-ETF price,
+            # inverted (1/price, high and low swapped) so its direction reads as a yield.
+            if not spec.get("fallback"):
+                raise
+            print("  %s: official yield failed (%s); using inverted %s" % (key, e, spec["fallback"]))
+            px = cached_fetch("yahoo_" + spec["fallback"], lambda: fetch_yahoo(spec["fallback"]))
+            return [{"date": r["date"], "open": 1 / r["open"], "high": 1 / r["low"], "low": 1 / r["high"],
+                     "close": 1 / r["close"]} for r in px if r["open"] and r["low"] and r["high"] and r["close"]]
     if spec["kind"] == "cboe":
         return cached_fetch("cboe_" + spec["index"], lambda: fetch_cboe(spec["index"]))
     if spec["kind"] == "ratio":

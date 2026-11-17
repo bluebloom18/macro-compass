@@ -464,7 +464,7 @@ body{background:#06080C;}
     <ul>
       <li>Ported from <em>Global Macro Regime</em> (QuantitativeAlpha, TradingView) &mdash; same trend-cross signal logic (EMA30/EMA60, ATR-scaled margin) and sticky-regime aggregation across cross-asset signals, run in Python against open data instead of TradingView's feed.</li>
       <li>Credit spreads, breakevens and the US 2Y yield come from <a href="https://fred.stlouisfed.org" target="_blank" rel="noopener">FRED</a>, as in the original; the US 10Y uses Cboe's <code>^TNX</code> for full daily ranges.</li>
-      <li>Equities, FX, commodities, VIX and MOVE come from Yahoo Finance's public chart feed; 3M implied correlation (COR3M) from Cboe's daily history file. <span class="note-icon" title="German/UK/Japan 10Y yields have no free daily series, so these three use a duration-matched government bond ETF price as an inverse proxy (weights complemented accordingly). Emerging markets uses the EEM ETF in place of ICE MME1! futures.">3 proxies &amp; 1 substitution &mdash; hover ⓘ in the table below</span>.</li>
+      <li>Equities, FX, commodities, VIX and MOVE come from Yahoo Finance's public chart feed; 3M implied correlation (COR3M) from Cboe's daily history file. <span class="note-icon" title="German, UK and Japan 10Y yields come from the Bundesbank, Bank of England and Japan Ministry of Finance daily files (UK about two business days late). Emerging markets uses the EEM ETF in place of ICE MME1! futures.">official yields &amp; 1 substitution &mdash; hover ⓘ in the table below</span>.</li>
       <li>Each signal runs on its own market's trading days before being carried onto the S&amp;P 500 calendar, as TradingView's <code>request.security</code> does.</li>
     </ul>
   </section>
@@ -962,8 +962,8 @@ function renderLatest(latest){
   renderVoteChanges(latest);
 }
 
-// Inflation-axis signals vote Reflation+Inflation when inflation is rising (weights 0/1/1/0, or the
-// complemented 1/0/0/1 for the bond-ETF yield proxies); everything else sits on the growth axis.
+// Inflation-axis signals vote Reflation+Inflation when inflation is rising (weights 0/1/1/0, or a
+// complemented 1/0/0/1); everything else sits on the growth axis.
 function signalAxis(w){ return (w[0]===w[3] && w[1]===w[2] && w[0]!==w[1]) ? 'inflation' : 'growth'; }
 function signalVotes(s){
   if(!s.ready || !s.weights || !(s.bull || s.bear)) return [];

@@ -3,9 +3,9 @@
 Each entry: key -> dict(label, kind, weights=(goldilocks, reflation, inflation, deflation), ...)
 kind is one of: "yahoo" (single symbol), "ratio" (two yahoo symbols, A/B), "fred" (FRED series id),
 "cboe" (Cboe index history CSV).
-`invert_yield` marks the three signals sourced from a bond-ETF PRICE as a proxy for a YIELD:
-price direction is the inverse of yield direction, so the weight tuple must be the complement of
-what the original (yield-sourced) signal used - see the review notes for why.
+kind "boe" / "bbk" / "mof" are official daily yield series (Bank of England, Bundesbank, Japan MoF).
+Until 2026-11-17 the German/UK/Japan 10Y signals used bond-ETF prices as inverse proxies with
+complemented weights; the proxies read flat on many days when yields were trending.
 """
 
 SIGNALS = {
@@ -32,12 +32,13 @@ SIGNALS = {
     "audusd":  dict(label="AUD/USD FX Rate",              kind="yahoo", symbol="AUDUSD=X", weights=(1, 1, 0, 0)),
     "eurusd":  dict(label="EUR/USD FX Rate",              kind="yahoo", symbol="EURUSD=X", weights=(1, 1, 0, 0)),
     "gbpusd":  dict(label="GBP/USD FX Rate",              kind="yahoo", symbol="GBPUSD=X", weights=(1, 1, 0, 0)),
-    "eu10y":   dict(label="German 10Y Bund Yield",        kind="yahoo", symbol="EXHD.DE", weights=(1, 0, 0, 1), invert_yield=True,
-                     note="Proxy: iShares eb.rexx Germany 5.5-10.5yr Govt Bond ETF price (inverse of yield); weights complemented."),
-    "gb10y":   dict(label="UK 10Y Gilt Yield",            kind="yahoo", symbol="IGLT.L", weights=(1, 0, 0, 1), invert_yield=True,
-                     note="Proxy: iShares Core UK Gilts UCITS ETF price (inverse of yield); weights complemented."),
-    "jp10y":   dict(label="Japan 10Y JGB Yield",          kind="yahoo", symbol="236A.T", weights=(1, 0, 0, 1), invert_yield=True,
-                     note="Proxy: iShares 7-10Y Japan Govt Bond ETF price (inverse of yield); weights complemented."),
+    "eu10y":   dict(label="German 10Y Bund Yield",        kind="bbk", fallback="EXHD.DE", series="BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A",
+                     weights=(0, 1, 1, 0),
+                     note="Bundesbank daily 10y yield on federal securities (term structure). Close-only, like the US 2Y. Replaced a Bund ETF price proxy on 2026-11-17."),
+    "gb10y":   dict(label="UK 10Y Gilt Yield",            kind="boe", fallback="IGLT.L", series="IUDMNZC", weights=(0, 1, 1, 0),
+                     note="Bank of England daily 10y nominal zero-coupon gilt yield, published about two business days late (carried forward). Close-only. Replaced a gilt ETF price proxy on 2026-11-17."),
+    "jp10y":   dict(label="Japan 10Y JGB Yield",          kind="mof", fallback="236A.T", series="10Y", weights=(0, 1, 1, 0),
+                     note="Japan Ministry of Finance daily 10y JGB benchmark yield. Close-only. Replaced a JGB ETF price proxy on 2026-11-17."),
     "us02y":   dict(label="US 2Y Treasury Yield",         kind="fred", series="DGS2",  weights=(0, 1, 1, 0)),
     "us10y":   dict(label="US 10Y Treasury Yield",        kind="yahoo", symbol="^TNX", weights=(0, 1, 1, 0),
                      note="Cboe 10Y yield index: full OHLC like TVC:US10Y (FRED DGS10 is close-only, which shrinks the ATR margin)."),

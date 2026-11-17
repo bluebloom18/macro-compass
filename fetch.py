@@ -139,6 +139,91 @@ def fetch_cboe(index, retries=3):
     raise RuntimeError("failed to fetch Cboe index %s: %s" % (index, last_err))
 
 
+def _curl_text(url, retries=3, what="series"):
+    last_err = None
+    for attempt in range(retries):
+        try:
+            proc = subprocess.run(["curl", "-sL", "-m", "60", "-A", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", url],
+                                  capture_output=True, timeout=70, check=True)
+            text = proc.stdout.decode("utf-8-sig", "replace")
+            if not text.strip() or text.lstrip().lower().startswith(("<!doctype", "<html")):
+                raise ValueError("non-CSV response: %r" % text[:80])
+            return text
+        except Exception as e:
+            last_err = e
+            time.sleep(10 * (attempt + 1))
+    raise RuntimeError("failed to fetch %s: %s" % (what, last_err))
+
+
+def _level_rows(pairs, what):
+    out = {}
+    for date, v in pairs:
+        out[date] = {"date": date, "open": v, "high": v, "low": v, "close": v}
+    if len(out) < 500:
+        raise ValueError("%s: only %d observations" % (what, len(out)))
+    return [out[k] for k in sorted(out)]
+
+
+def fetch_boe(series_code):
+    """Bank of England IADB daily series as CSV (e.g. IUDMNZC, 10y nominal zero-coupon gilt yield).
+    Close-only, published about two business days late. Needs a browser-like user agent."""
+    # Two requests: a query starting in 2000 came back cut off ~a week short (seen 2026-11-17, likely a
+    # cached response), while one starting in 2015 ran to the latest release.
+    pairs = []
+    for frm, to in (("01/Jan/2000", "31/Dec/2014"), ("01/Jan/2015", "now")):
+        url = ("https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes"
+               "&Datefrom=%s&Dateto=%s&SeriesCodes=%s&CSVF=TN&UsingCodes=Y&VPD=Y&VFD=N" % (frm, to, series_code))
+        lines = _curl_text(url, what="BoE " + series_code).strip().splitlines()
+        if not lines[0].upper().startswith("DATE"):
+            raise ValueError("BoE returned non-CSV for %s: %r" % (series_code, lines[0][:80]))
+        for line in lines[1:]:
+            parts = line.split(",")
+            try:
+                pairs.append((datetime.strptime(parts[0].strip(), "%d %b %Y").strftime("%Y-%m-%d"), float(parts[1])))
+            except (ValueError, IndexError):
+                continue
+    return _level_rows(pairs, "BoE " + series_code)
+
+
+def fetch_bbk(series_key):
+    """Deutsche Bundesbank statistics API daily series as CSV, e.g.
+    BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A (10y Bund yield from the term structure).
+    Close-only; weekend rows carry '.'."""
+    url = "https://api.statistiken.bundesbank.de/rest/download/%s?format=csv&lang=en" % series_key
+    text = _curl_text(url, what="Bundesbank " + series_key)
+    pairs = []
+    for line in text.splitlines():
+        parts = line.split(",")
+        if len(parts) < 2 or len(parts[0]) != 10 or parts[0][4] != "-":
+            continue
+        try:
+            pairs.append((parts[0], float(parts[1])))
+        except ValueError:
+            continue
+    return _level_rows(pairs, "Bundesbank " + series_key)
+
+
+def fetch_mof(tenor="10Y"):
+    """Japan Ministry of Finance JGB benchmark yields: the full history file plus the current-month
+    file (the history file stops at the end of last month). Close-only."""
+    base = "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/"
+    pairs = []
+    for url in (base + "historical/jgbcme_all.csv", base + "jgbcme.csv"):
+        lines = _curl_text(url, what="MoF JGB").splitlines()
+        hdr = next((i for i, l in enumerate(lines) if l.startswith("Date,")), None)
+        if hdr is None:
+            raise ValueError("MoF file has no Date header: %s" % url)
+        col = lines[hdr].split(",").index(tenor)
+        for line in lines[hdr + 1:]:
+            parts = line.split(",")
+            try:
+                y, m, d = (int(x) for x in parts[0].split("/"))
+                pairs.append(("%04d-%02d-%02d" % (y, m, d), float(parts[col])))
+            except (ValueError, IndexError):
+                continue
+    return _level_rows([p for p in pairs if p[0] >= "2000-01-01"], "MoF JGB " + tenor)
+
+
 def ratio_series(legA, legB):
     """Elementwise O/H/L/C ratio of two OHLC series aligned by forward-filled date, mirroring
     how TradingView's synthetic ticker.inherit(A/B) ratio symbols behave."""

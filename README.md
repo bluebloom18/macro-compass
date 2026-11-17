@@ -25,7 +25,8 @@ regime's share of the votes cast that day.
 
 | Source | Used for |
 |---|---|
-| [Yahoo Finance chart API](https://query1.finance.yahoo.com/v8/finance/chart/) | Equities, FX, commodities, VIX, MOVE, US 10Y yield (`^TNX`), bond-ETF yield proxies |
+| [Yahoo Finance chart API](https://query1.finance.yahoo.com/v8/finance/chart/) | Equities, FX, commodities, VIX, MOVE, US 10Y yield (`^TNX`); bond ETFs as fallback for the German/UK/Japan yields |
+| [Bank of England](https://www.bankofengland.co.uk/boeapps/database/), [Bundesbank](https://api.statistiken.bundesbank.de/), [Japan MoF](https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/) | UK 10Y (IUDMNZC, ~2 business days late), German 10Y, Japan 10Y yields |
 | [Cboe index history CSV](https://cdn.cboe.com/api/global/us_indices/daily_prices/COR3M_History.csv) | 3M implied correlation (COR3M) |
 | [FRED CSV endpoint](https://fred.stlouisfed.org/graph/fredgraph.csv) | US 2Y Treasury yield, 10Y breakeven, credit spreads (distressed/HY/IG OAS) |
 
@@ -38,10 +39,11 @@ out to `curl` for FRED requests instead.
 All 30 of the original's signals are present; these are sourced differently:
 
 
-- **German/UK/Japan 10Y yields** use a duration-matched government bond ETF price
-  (`EXHD.DE`, `IGLT.L`, `236A.T`) as an inverse proxy — no free daily sovereign yield
-  series exists for these. Weights are complemented accordingly since price moves
-  inverse to yield.
+- **German/UK/Japan 10Y yields** come from the central bank / finance ministry daily files
+  (close-only). Until 2026-11-17 they used bond ETF prices (`EXHD.DE`, `IGLT.L`, `236A.T`)
+  as inverse proxies; those read flat on many days when yields were clearly trending
+  (agreement with the real yield's trend state: UK 77%, Germany 83%), and changed the
+  regime call on ~7% of days. The ETFs remain a fallback, inverted, if an official fetch fails.
 - **Emerging markets** uses the `EEM` ETF in place of the original's `ICE MME1!`
   futures contract.
 
