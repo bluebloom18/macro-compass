@@ -295,7 +295,7 @@ body{background:#06080C;}
 .study.b .card{background:#132848; border-color:#3E6BAE;}
 @media (max-width:600px){.study{padding:2px 10px 6px; border-radius:14px;}}
 
-/* ---------- market cycle (study 05) ---------- */
+/* ---------- market cycle (study 03) ---------- */
 .mc-phase{display:inline-flex; align-items:center; gap:6px; align-self:flex-start; padding:3px 10px; border-radius:100px; font-size:12px; font-weight:600;}
 .mc-pos{color:#7FA8E8;} .mc-neg{color:#EE9A8F;}
 .mc-chart svg{display:block; width:100%; height:auto;}
@@ -336,8 +336,8 @@ body{background:#06080C;}
     <div class="title-block">
       <div class="eyebrow">Cross-asset macro &middot; updated daily</div>
       <h1>Macro Compass</h1>
-      <p>Six studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, a big-picture view of 30 equity markets and futures positioning, a market-cycle nowcast, and regime-aware trade signals for 84 ETFs. Yahoo Finance, FRED, the OECD and the CFTC, no vendor key required.</p>
-      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a><a href="#study-bigpic">04 Big picture</a><a href="#study-cycle">05 Market cycle</a><a href="#study-trades">06 Trade signals</a></nav>
+      <p>Six studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market-cycle nowcast, a market risk gauge with an 8-pillar barometer, health and positioning across 30 equity markets, US sectors and futures, and regime-aware trade signals for 84 ETFs. Yahoo Finance, FRED, the OECD and the CFTC, no vendor key required.</p>
+      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-cycle">03 Market cycle</a><a href="#study-risk">04 Risk gauge</a><a href="#study-bigpic">05 Markets &amp; sectors</a><a href="#study-trades">06 Trade signals</a></nav>
     </div>
     <div class="status-chip"><span class="status-dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
   </header>
@@ -520,8 +520,52 @@ body{background:#06080C;}
     <p class="bt-note">Level and 52-week MA use today's NFCI history, which the Chicago Fed re-estimates every week. Weekly changes from May 2011 are as first published (ALFRED vintages), because that is what a weekly rule actually trades on &mdash; today's smoothed history has had no weekly move above 0.02 since March 2023. Earlier weekly changes come from today's history. The &gt;0.02 rule keeps its position until a weekly move clears &plusmn;0.02. Backtest: SPY total return when on, 3-month T-bills when off, positions moved the Thursday after each release, 5bp per switch.</p>
   </section>
 
-  <div class="part" id="study-risk">
+  <div class="part" id="study-cycle">
     <span class="num">03</span>
+    <div><h2>Market cycle</h2><p>The balance of growth, rates and credit behind equities: leading indicators, the yield curve, credit spreads and analyst earnings revisions &middot; monthly, revisions daily</p></div>
+  </div>
+
+  <section id="cycleComposite">
+    <div class="section-head">
+      <h2>Cycle composite</h2>
+      <div class="hint" id="mcHint">&mdash;</div>
+    </div>
+    <div class="nf-tiles" id="mcTiles"></div>
+    <div class="card bt-card mc-chart">
+      <div class="bt-controls">
+        <div class="eyebrow">Composite and phase, z-score</div>
+        <div class="seg" id="mcRange" role="group" aria-label="Range">
+          <button type="button" data-v="60">5Y</button><button type="button" data-v="120" aria-pressed="true">10Y</button><button type="button" data-v="0">All</button>
+        </div>
+      </div>
+      <div id="mcChart"></div>
+      <div class="mc-legend" id="mcLegend"></div>
+    </div>
+  </section>
+
+  <section id="cycleChecks">
+    <div class="section-head">
+      <h2>Correction or something deeper?</h2>
+      <div class="hint">Two conditions that came before the damaging selloffs</div>
+    </div>
+    <div class="mc-grid2" id="mcChecks"></div>
+    <div class="mc-grid2" style="margin-top:12px;">
+      <div class="card bt-card mc-chart"><div class="eyebrow" style="margin-bottom:6px;">Repo funding: SOFR minus IORB, bp</div><div id="mcFunding"></div></div>
+      <div class="card bt-card mc-chart"><div class="eyebrow" style="margin-bottom:6px;">Earnings revision breadth, collected daily</div><div id="mcEarn"></div></div>
+    </div>
+  </section>
+
+  <section id="cycleBacktest">
+    <div class="section-head">
+      <h2>S&amp;P 500 after each phase</h2>
+      <div class="hint" id="mcBtHint">&mdash;</div>
+    </div>
+    <div class="card bt-card"><div style="overflow-x:auto;"><table class="bt-table" id="mcBt"></table></div></div>
+    <p class="bt-note">A nowcast of the balance between growth and financial risk, not a return forecast. Each leg is a z-score against its own history up to that month (at least five years, no later data), signed so positive means supportive for equities, and the composite is their simple average. Leading indicators: the OECD composite leading indicator for the G20. Yield curve: the 12-month change in the US 10-year minus 2-year spread, so steepening counts as supportive. Credit: the 12-month change in the Moody&rsquo;s Baa minus 10-year spread, averaged with the 6-month change in the US and euro high-yield spreads where FRED has them (it keeps only three years of high-yield history), widening counted as negative. Earnings: net analyst EPS revisions over the last 30 days for this and next fiscal year across about 110 large caps worldwide, from Yahoo; Yahoo keeps no history, so it is collected daily and joins the composite after 12 months (scaled on its &minus;1 to +1 range until there are three years for a z-score). Phase uses the composite&rsquo;s 3-month average: expansion above zero and rising, slowdown above zero and falling, contraction below zero and falling, recovery below zero and rising. Returns are S&amp;P 500 price changes from each month-end since 1991, overlapping.</p>
+  </section>
+
+  <div class="part" id="study-risk">
+    <span class="num">04</span>
     <div><h2>Risk gauge</h2><p>Coincident market stress from volatility, credit and the equity trend, plus the 8-pillar barometer &middot; weekly</p></div>
   </div>
 
@@ -637,8 +681,8 @@ body{background:#06080C;}
   </section>
 
   <div class="part" id="study-bigpic">
-    <span class="num">04</span>
-    <div><h2>Big picture</h2><p>Market health and regime across 30 equity markets and US sectors, plus speculator positioning in 44 futures markets &middot; daily, CoT weekly</p></div>
+    <span class="num">05</span>
+    <div><h2>Markets &amp; sectors</h2><p>Market health and regime across 30 equity markets and US sectors, plus speculator positioning in 44 futures markets &middot; daily, CoT weekly</p></div>
   </div>
 
   <section id="bigPicture">
@@ -777,49 +821,6 @@ body{background:#06080C;}
     </ol>
   </section>
 
-  <div class="part" id="study-cycle">
-    <span class="num">05</span>
-    <div><h2>Market cycle</h2><p>The balance of growth, rates and credit behind equities: leading indicators, the yield curve, credit spreads and analyst earnings revisions &middot; monthly, revisions daily</p></div>
-  </div>
-
-  <section id="cycleComposite">
-    <div class="section-head">
-      <h2>Cycle composite</h2>
-      <div class="hint" id="mcHint">&mdash;</div>
-    </div>
-    <div class="nf-tiles" id="mcTiles"></div>
-    <div class="card bt-card mc-chart">
-      <div class="bt-controls">
-        <div class="eyebrow">Composite and phase, z-score</div>
-        <div class="seg" id="mcRange" role="group" aria-label="Range">
-          <button type="button" data-v="60">5Y</button><button type="button" data-v="120" aria-pressed="true">10Y</button><button type="button" data-v="0">All</button>
-        </div>
-      </div>
-      <div id="mcChart"></div>
-      <div class="mc-legend" id="mcLegend"></div>
-    </div>
-  </section>
-
-  <section id="cycleChecks">
-    <div class="section-head">
-      <h2>Correction or something deeper?</h2>
-      <div class="hint">Two conditions that came before the damaging selloffs</div>
-    </div>
-    <div class="mc-grid2" id="mcChecks"></div>
-    <div class="mc-grid2" style="margin-top:12px;">
-      <div class="card bt-card mc-chart"><div class="eyebrow" style="margin-bottom:6px;">Repo funding: SOFR minus IORB, bp</div><div id="mcFunding"></div></div>
-      <div class="card bt-card mc-chart"><div class="eyebrow" style="margin-bottom:6px;">Earnings revision breadth, collected daily</div><div id="mcEarn"></div></div>
-    </div>
-  </section>
-
-  <section id="cycleBacktest">
-    <div class="section-head">
-      <h2>S&amp;P 500 after each phase</h2>
-      <div class="hint" id="mcBtHint">&mdash;</div>
-    </div>
-    <div class="card bt-card"><div style="overflow-x:auto;"><table class="bt-table" id="mcBt"></table></div></div>
-    <p class="bt-note">A nowcast of the balance between growth and financial risk, not a return forecast. Each leg is a z-score against its own history up to that month (at least five years, no later data), signed so positive means supportive for equities, and the composite is their simple average. Leading indicators: the OECD composite leading indicator for the G20. Yield curve: the 12-month change in the US 10-year minus 2-year spread, so steepening counts as supportive. Credit: the 12-month change in the Moody&rsquo;s Baa minus 10-year spread, averaged with the 6-month change in the US and euro high-yield spreads where FRED has them (it keeps only three years of high-yield history), widening counted as negative. Earnings: net analyst EPS revisions over the last 30 days for this and next fiscal year across about 110 large caps worldwide, from Yahoo; Yahoo keeps no history, so it is collected daily and joins the composite after 12 months (scaled on its &minus;1 to +1 range until there are three years for a z-score). Phase uses the composite&rsquo;s 3-month average: expansion above zero and rising, slowdown above zero and falling, contraction below zero and falling, recovery below zero and rising. Returns are S&amp;P 500 price changes from each month-end since 1991, overlapping.</p>
-  </section>
 
 
   <div class="part" id="study-trades">
@@ -2229,7 +2230,7 @@ function wireNfEquity(){
 }
 
 
-// ================= Big Picture (study 04) =================
+// ================= Markets & sectors (study 05; db doc regime/bigpic) =================
 const BP_COL = ['var(--r0)','var(--r1)','var(--r2)','var(--r3)','var(--r4)','var(--r5)'];
 const BP_HEX = ['#5B9BEA','#86B6F0','#B5D3F6','#F3B9AE','#E8846F','#D0594B'];
 const BP_SHORT = {world:'World',spx:'S&P 500',ndx:'Nasdaq',nya:'NYSE',tsx:'TSX',rut:'R2000',dax:'DAX',cac:'CAC',mib:'MIB',ibex:'IBEX',sxxp:'Stoxx',ftse:'FTSE',asx:'ASX',nky:'Nikkei',csi:'CSI 300',hsi:'HSI',em:'EM',xlb:'XLB',xlre:'XLRE',xlu:'XLU',xle:'XLE',xlp:'XLP',xli:'XLI',xlv:'XLV',xlk:'XLK',xlf:'XLF',xly:'XLY',xlc:'XLC',gdx:'GDX'};
