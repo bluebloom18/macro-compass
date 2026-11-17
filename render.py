@@ -48,6 +48,14 @@ except FileNotFoundError:
     cy = "null"  # run market_cycle.py first to populate the Market cycle section
 out = out.replace("__CYCLE_JSON__", cy)
 
+try:
+    with open("trades_doc.json") as f:
+        td = f.read()
+    json.loads(td)
+except FileNotFoundError:
+    td = "null"  # run trade_signals.py first to populate the Trade signals section
+out = out.replace("__TRADES_JSON__", td)
+
 with open("macro_compass.html", "w") as f:
     f.write(out)
 

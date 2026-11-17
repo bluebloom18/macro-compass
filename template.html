@@ -309,6 +309,26 @@ body{background:#06080C;}
 .mc-check .flag.na{background:rgba(166,175,196,.18); color:var(--ink-faint);}
 .mc-grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
 @media (max-width:760px){.mc-grid2{grid-template-columns:1fr;}}
+
+/* ---------- trade signals (study 06) ---------- */
+.ts-odds{padding:16px 18px; display:flex; flex-direction:column; gap:10px;}
+.ts-odds .bar-row{grid-template-columns:96px 1fr 92px;}
+.ts-split{display:flex; height:9px; border-radius:5px; overflow:hidden; background:var(--surface-2);}
+.ts-split i{display:block; height:100%;}
+.ts-groups{margin-bottom:10px;}
+.ts-table td.nm{font-family:var(--font-body); font-size:12.5px; color:var(--ink-muted); white-space:normal; min-width:150px; text-align:left;}
+.ts-table td.tk{font-weight:600; color:var(--ink);}
+.ts-table td.rl{font-family:var(--font-body); font-size:12px; color:var(--ink-faint); text-align:left;}
+.ts-table th.cur, .ts-table td.cur{background:rgba(176,162,245,.10);}
+.ts-table tr.grp td{font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); background:var(--surface-2); padding:6px 10px;}
+.call{display:inline-block; padding:3px 9px; border-radius:100px; font-family:var(--font-body); font-size:11.5px; font-weight:600;}
+.call.long_full{background:rgba(61,156,121,.85); color:#0E1A16;}
+.call.long_half{background:rgba(61,156,121,.22); color:#7FCBAE;}
+.call.none{background:rgba(174,182,196,.10); color:var(--ink-faint); font-weight:500;}
+.chg-dot{color:var(--accent); margin-left:5px; font-size:11px;}
+.mc-pos-b{color:#7FA8E8;} .mc-neg-r{color:#EE9A8F;}
+.ts-chart svg{display:block; width:100%; height:auto;}
+@media (max-width:600px){.ts-table td.nm{min-width:110px;}}
 </style>
 
 <div class="wrap">
@@ -316,8 +336,8 @@ body{background:#06080C;}
     <div class="title-block">
       <div class="eyebrow">Cross-asset macro &middot; updated daily</div>
       <h1>Macro Compass</h1>
-      <p>Five studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, a big-picture view of 30 equity markets and futures positioning, and a market-cycle nowcast. Yahoo Finance, FRED, the OECD and the CFTC, no vendor key required.</p>
-      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a><a href="#study-bigpic">04 Big picture</a><a href="#study-cycle">05 Market cycle</a></nav>
+      <p>Six studies on open data: a 30-signal macro regime, Chicago Fed financial conditions, a market risk gauge with an 8-pillar barometer, a big-picture view of 30 equity markets and futures positioning, a market-cycle nowcast, and regime-aware trade signals for 84 ETFs. Yahoo Finance, FRED, the OECD and the CFTC, no vendor key required.</p>
+      <nav class="study-nav"><a href="#study-regime">01 Macro regime</a><a href="#study-nfci">02 Financial conditions</a><a href="#study-risk">03 Risk gauge</a><a href="#study-bigpic">04 Big picture</a><a href="#study-cycle">05 Market cycle</a><a href="#study-trades">06 Trade signals</a></nav>
     </div>
     <div class="status-chip"><span class="status-dot" id="statusDot"></span><span id="statusText">loading&hellip;</span></div>
   </header>
@@ -801,6 +821,51 @@ body{background:#06080C;}
     <p class="bt-note">A nowcast of the balance between growth and financial risk, not a return forecast. Each leg is a z-score against its own history up to that month (at least five years, no later data), signed so positive means supportive for equities, and the composite is their simple average. Leading indicators: the OECD composite leading indicator for the G20. Yield curve: the 12-month change in the US 10-year minus 2-year spread, so steepening counts as supportive. Credit: the 12-month change in the Moody&rsquo;s Baa minus 10-year spread, averaged with the 6-month change in the US and euro high-yield spreads where FRED has them (it keeps only three years of high-yield history), widening counted as negative. Earnings: net analyst EPS revisions over the last 30 days for this and next fiscal year across about 110 large caps worldwide, from Yahoo; Yahoo keeps no history, so it is collected daily and joins the composite after 12 months (scaled on its &minus;1 to +1 range until there are three years for a z-score). Phase uses the composite&rsquo;s 3-month average: expansion above zero and rising, slowdown above zero and falling, contraction below zero and falling, recovery below zero and rising. Returns are S&amp;P 500 price changes from each month-end since 1991, overlapping.</p>
   </section>
 
+
+  <div class="part" id="study-trades">
+    <span class="num">06</span>
+    <div><h2>Trade signals</h2><p>A trend label and a position call for 84 ETFs: hold what the current regime favours, sized by its own trend &middot; daily</p></div>
+  </div>
+
+  <section id="tsOddsSec">
+    <div class="section-head">
+      <h2>Risk-on or risk-off</h2>
+      <div class="hint" id="tsOddsHint">&mdash;</div>
+    </div>
+    <div class="mc-grid2">
+      <div class="card ts-odds" id="tsOdds"></div>
+      <div class="card ts-odds" id="tsSwitch"></div>
+    </div>
+  </section>
+
+  <section id="tsCallsSec">
+    <div class="section-head">
+      <h2>Position calls</h2>
+      <div class="hint" id="tsHint">&mdash;</div>
+    </div>
+    <div class="nf-tiles" id="tsTiles"></div>
+    <div class="seg ts-groups" id="tsGroups" role="group" aria-label="Group"></div>
+    <div class="card bt-card"><div style="overflow-x:auto;"><table class="bt-table ts-table" id="tsTable"></table></div></div>
+    <p class="bt-note">Trend uses the same rule as the regime model&rsquo;s 30 signals, on each ETF&rsquo;s own price: bullish when the 30-day average is more than 0.3&times; the 60-day average true range above the 60-day average, bearish when as far below, neutral in between. Each ETF has a role that fixes the regimes it is held in: risk assets (equities, credit, crypto, base metals, non-dollar FX) in Goldilocks and Reflation; duration in Goldilocks and Deflation; inflation hedges (energy, agriculture, broad commodities, uranium, TIPS) in Reflation and Inflation; gold and precious-metal miners in Reflation and Deflation; the dollar, yen and franc in Inflation and Deflation; cash-like bonds always. When the regime favours it: full position if the trend is bullish, half if neutral, none if bearish. Otherwise no position. Long-only: shorting the out-of-favour assets lost money in every test since 2006. The G/R/I/D columns are each ETF&rsquo;s annualised return in each regime over its own history (regime read with a one-day lag), as a check on its role; &#9679; marks a call that changed since the previous session.</p>
+  </section>
+
+  <section id="tsBtSec">
+    <div class="section-head">
+      <h2>Backtest of the calls</h2>
+      <div class="hint" id="tsBtHint">&mdash;</div>
+    </div>
+    <div class="card bt-card"><div style="overflow-x:auto;"><table class="bt-table" id="tsBt"></table></div></div>
+    <div class="card bt-card ts-chart" style="margin-top:12px;">
+      <div class="bt-controls">
+        <div class="eyebrow" id="tsCurveTitle">Growth of 1, log scale</div>
+        <div class="seg" id="tsCurveSel" role="group" aria-label="Asset"></div>
+      </div>
+      <div id="tsCurve"></div>
+      <div class="mc-legend"><span><span class="mc-sw" style="background:#B0A2F5"></span>Calls</span><span><span class="mc-sw" style="background:#A6AFC4"></span>Buy and hold</span></div>
+    </div>
+    <p class="bt-note">Daily from the regime model&rsquo;s first reading (late 2006, or the ETF&rsquo;s launch). The call is read at one close and traded at the next, as in the regime backtest. Idle cash earns 3-month T-bills, 5bp per unit traded, dividend-adjusted prices. Sharpe is excess return over T-bills divided by volatility. The roles were chosen with the whole period in view, so treat this as a check that the rules hang together, not an out-of-sample result. The trend rule and the regime model were not fitted to it.</p>
+  </section>
+
   <footer>
     <span>Data: Yahoo Finance &middot; FRED (St. Louis Fed) &middot; CFTC</span>
     <span>Source code: <a href="https://github.com/bluebloom18/macro-compass" target="_blank" rel="noopener" style="color:inherit">github.com/bluebloom18/macro-compass</a></span>
@@ -809,7 +874,7 @@ body{background:#06080C;}
 </div>
 
 <script>
-// Group each study's divider and sections into one panel, alternating shades (01, 03, 05 dark; 02, 04 blue).
+// Group each study's divider and sections into one panel, alternating shades (01, 03, 05 dark; 02, 04, 06 blue).
 (function(){
   const wrap = document.querySelector('.wrap'); let box = null, n = 0;
   Array.from(wrap.children).forEach(el=>{
@@ -824,6 +889,7 @@ let NFCI = __NFCI_JSON__;
 let RISK = __RISK_JSON__;
 let BIGPIC = __BIGPIC_JSON__;
 let CYCLE = __CYCLE_JSON__;
+let TRADES = __TRADES_JSON__;
 const SEED_GAUGE = RISK && RISK.gauge;   // shown until the live regime/risk doc carries a gauge
 const REGIME_META = {
   1:{name:'Goldilocks', color:'var(--gold)', hex:'#BD8A32', desc:'growth accelerating, inflation cooling'},
@@ -2711,6 +2777,87 @@ function renderCycle(doc){
   }
 }
 
+// ---------- trade signals (study 06) ----------
+const TS = {doc:null, group:'All', curve:0, wired:false};
+const TS_CALL = {long_full:'Long &middot; full', long_half:'Long &middot; half', none:'No position'};
+const TS_REG = {1:'G', 2:'R', 3:'I', 4:'D'};
+function tsSigned(v, dp){ if(v===null||v===undefined) return '&mdash;'; let x = v*100; const p = Math.pow(10, dp===undefined?0:dp); x = Math.round(x*p)/p; if(x===0) x = 0; return '<span class="'+(x>0?'mc-pos-b':x<0?'mc-neg-r':'')+'">'+(x>0?'+':x<0?'&minus;':'')+Math.abs(x).toFixed(dp===undefined?0:dp)+'%</span>'; }
+function tsRsi(v){ if(v===null||v===undefined) return '&mdash;'; return '<span class="'+(v>=70?'mc-neg-r':v<=30?'mc-pos-b':'')+'">'+v+'</span>'; }
+function renderTradeTable(){
+  const d = TS.doc, cur = d.regime;
+  const groups = TS.group==='All' ? d.groups : d.groups.filter(g=>g.name===TS.group);
+  let h = '<thead><tr><th>ETF</th><th style="text-align:left">Name</th><th style="text-align:left">Role</th><th>Last</th><th>1d</th><th>RSI</th><th>Trend</th><th>Call</th>'
+    + [1,2,3,4].map(k=>'<th'+(k===cur?' class="cur"':'')+' title="'+REGIME_META[k].name+'">'+TS_REG[k]+'</th>').join('') + '</tr></thead><tbody>';
+  groups.forEach(g=>{
+    if(TS.group==='All') h += '<tr class="grp"><td colspan="12">'+esc(g.name)+'</td></tr>';
+    g.rows.forEach(r=>{
+      const st = r.state==='neutral' ? 'flat' : r.state;
+      const changed = r.call!==r.prev_call ? '<span class="chg-dot" title="was '+TS_CALL[r.prev_call].replace('&middot;','·')+'">&#9679;</span>' : '';
+      h += '<tr><td class="tk">'+esc(r.t)+'</td><td class="nm">'+esc(r.name)+'</td><td class="rl">'+esc((d.roles[r.role]||{}).label||r.role)+'</td>'
+        + '<td>'+r.px.toLocaleString('en-US')+'</td><td>'+tsSigned(r.chg1d,1)+'</td><td>'+tsRsi(r.rsi)+'</td>'
+        + '<td><span class="pill '+st+'">'+(r.state==='neutral'?'neutral':STATE_TEXT[r.state])+'</span></td>'
+        + '<td><span class="call '+r.call+'">'+TS_CALL[r.call]+'</span>'+changed+'</td>'
+        + [1,2,3,4].map(k=>'<td'+(k===cur?' class="cur"':'')+'>'+tsSigned(r.reg_ret[k])+'</td>').join('') + '</tr>';
+    });
+  });
+  document.getElementById('tsTable').innerHTML = h + '</tbody>';
+}
+function drawTradeCurve(){
+  const b = TS.doc.backtest[TS.curve]; if(!b) return;
+  const W = 900, H = 280, L = 52, R = 12, T = 12, B = 26, c = b.curve, n = c.length;
+  const vals = c.flatMap(p=>[p[1],p[2]]).filter(v=>v>0);
+  let lo = Math.log(Math.min(...vals)), hi = Math.log(Math.max(...vals)); const pad = (hi-lo)*0.06 || 0.1; lo -= pad; hi += pad;
+  const x = i => L + (W-L-R)*i/Math.max(1,n-1), y = v => T + (H-T-B)*(hi-Math.log(v))/(hi-lo);
+  let g = '';
+  const tv = []; for(const m of [1,2,5]) for(let e=-2;e<=6;e++){ const v = m*Math.pow(10,e); if(Math.log(v)>=lo && Math.log(v)<=hi) tv.push(v); }
+  tv.sort((a,b)=>a-b).forEach(v=>{ g += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v).toFixed(1)+'" y2="'+y(v).toFixed(1)+'" stroke="#3A4560"/><text x="'+(L-6)+'" y="'+(y(v)+4).toFixed(1)+'" fill="#A6AFC4" font-size="11" text-anchor="end" font-family="IBM Plex Mono,monospace">'+(v>=1000?(v/1000)+'k':v)+'</text>'; });
+  let lastYr = null; c.forEach((p,i)=>{ const yr = p[0].slice(0,4); if(yr!==lastYr && (+yr % (n>500?2:1)===0)){ g += '<text x="'+x(i).toFixed(1)+'" y="'+(H-8)+'" fill="#A6AFC4" font-size="11" text-anchor="middle" font-family="IBM Plex Mono,monospace">'+yr+'</text>'; } lastYr = yr; });
+  const path = k => c.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p[k]).toFixed(1)).join('');
+  g += '<path d="'+path(2)+'" fill="none" stroke="#A6AFC4" stroke-width="1.6"/><path d="'+path(1)+'" fill="none" stroke="#B0A2F5" stroke-width="2.2"/>';
+  document.getElementById('tsCurve').innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(b.name)+' calls vs buy and hold">'+g+'</svg>';
+  document.getElementById('tsCurveTitle').textContent = b.name+' ('+b.sym+'), growth of 1 since '+fmtDate(b.start)+', log scale';
+}
+function renderTrades(doc){
+  if(!doc || !doc.groups) return;
+  TS.doc = doc;
+  const ro = doc.roro, cur = REGIME_META[doc.regime];
+  document.getElementById('tsOddsHint').textContent = 'Goldilocks + Reflation share of regime votes vs Inflation + Deflation';
+  document.getElementById('tsOdds').innerHTML = '<div class="eyebrow">Risk-on share of votes</div>' + ro.bars.map(b=>
+    '<div class="bar-row"><span class="bar-label">'+esc(b.label)+'</span><div class="ts-split"><i style="width:'+b.on+'%;background:var(--refl)"></i><i style="width:'+b.off+'%;background:var(--infl);opacity:.8"></i></div><span class="bar-val">'+Math.round(b.on)+'% / '+(100-Math.round(b.on))+'%</span></div>').join('')
+    + '<div class="sub" style="font-size:12px;color:var(--ink-faint)">Green risk on, red risk off. Dates: '+ro.bars.map(b=>fmtDay(b.date)).join(', ')+'.</div>';
+  const c = ro.current;
+  document.getElementById('tsSwitch').innerHTML = '<div class="eyebrow">Switches between risk on and risk off</div>'
+    + '<div>'+riskPill(c.risk_on)+' <span class="sub" style="font-size:12.5px;color:var(--ink-muted)">since '+fmtDate(c.since)+' &middot; '+c.sessions+' sessions</span></div>'
+    + '<table class="bt-table"><thead><tr><th>Window</th><th>Switches a year</th></tr></thead><tbody>'
+    + ro.per_year.map(p=>'<tr><td class="reg">Last '+p.years+(p.years===1?' year':' years')+'</td><td>'+p.per_year.toFixed(1)+'</td></tr>').join('') + '</tbody></table>'
+    + '<div class="sub" style="font-size:12px;color:var(--ink-faint)">Spells shorter than 15 sessions are folded into the one before.</div>';
+  const all = doc.groups.flatMap(g=>g.rows), cnt = k => all.filter(r=>r.call===k).length, sc = k => all.filter(r=>r.state===k).length;
+  const changed = all.filter(r=>r.call!==r.prev_call);
+  document.getElementById('tsHint').textContent = 'Regime: '+cur.name+' · prices to '+fmtDate(doc.asof) + (doc.errors && Object.keys(doc.errors).length ? ' · missing: '+Object.keys(doc.errors).join(', ') : '');
+  const tile = (t, v, sub) => '<div class="card nf-tile"><div class="eyebrow">'+t+'</div><div class="val">'+v+'</div><div class="sub">'+sub+'</div></div>';
+  document.getElementById('tsTiles').innerHTML = tile('Regime', '<span style="color:'+cur.color+'">'+cur.name+'</span>', 'Held now: '+Object.keys(doc.roles).filter(k=>doc.roles[k].held_in.includes(doc.regime)).map(k=>doc.roles[k].label.toLowerCase()).join(', '))
+    + tile('Long, full', cnt('long_full'), cnt('long_half')+' half, '+cnt('none')+' no position')
+    + tile('Trend', sc('bull')+' / '+sc('neutral')+' / '+sc('bear'), 'bullish / neutral / bearish of '+all.length)
+    + tile('Changed today', changed.length, changed.length ? changed.map(r=>esc(r.t)).join(', ') : 'No call changed since the previous session');
+  const names = ['All'].concat(doc.groups.map(g=>g.name));
+  if(!names.includes(TS.group)) TS.group = 'All';
+  document.getElementById('tsGroups').innerHTML = names.map(n=>'<button type="button" data-v="'+esc(n)+'" aria-pressed="'+(n===TS.group)+'">'+esc(n)+'</button>').join('');
+  document.querySelectorAll('#tsGroups button').forEach(b=>b.addEventListener('click', ()=>{ TS.group = b.dataset.v; document.querySelectorAll('#tsGroups button').forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false')); renderTradeTable(); }));
+  renderTradeTable();
+  const bt = doc.backtest || [];
+  document.getElementById('tsBtHint').textContent = bt.length ? 'Calls vs buy and hold, '+bt[0].start.slice(0,4)+' to '+bt[0].end.slice(0,4) : '';
+  const better = (a, b, hiGood) => (hiGood ? a > b : a > b) ? ' class="best"' : '';
+  document.getElementById('tsBt').innerHTML = '<thead><tr><th>Asset</th><th>Held in</th><th>From</th><th>Return a year<small>calls / hold</small></th><th>Worst drawdown<small>calls / hold</small></th><th>Sharpe<small>calls / hold</small></th></tr></thead><tbody>'
+    + bt.map(b=>'<tr><td class="reg">'+esc(b.name)+' <span style="color:var(--ink-faint)">'+esc(b.sym)+'</span></td><td class="reg" style="color:var(--ink-muted)">'+b.held_in.join(', ')+'</td><td>'+b.start.slice(0,4)+'</td>'
+      + '<td>'+tsSigned(b.strat.cagr,1)+' / '+tsSigned(b.bh.cagr,1)+'</td>'
+      + '<td><span'+(b.strat.maxdd>b.bh.maxdd?' style="color:var(--ink);font-weight:600"':'')+'>'+tsSigned(b.strat.maxdd,0)+'</span> / '+tsSigned(b.bh.maxdd,0)+'</td>'
+      + '<td><span'+(b.strat.sharpe>b.bh.sharpe?' style="color:var(--ink);font-weight:600"':'')+'>'+b.strat.sharpe.toFixed(2)+'</span> / '+b.bh.sharpe.toFixed(2)+'</td></tr>').join('') + '</tbody>';
+  if(TS.curve >= bt.length) TS.curve = 0;
+  document.getElementById('tsCurveSel').innerHTML = bt.map((b,i)=>'<button type="button" data-i="'+i+'" aria-pressed="'+(i===TS.curve)+'">'+esc(b.sym)+'</button>').join('');
+  document.querySelectorAll('#tsCurveSel button').forEach(b=>b.addEventListener('click', ()=>{ TS.curve = +b.dataset.i; document.querySelectorAll('#tsCurveSel button').forEach(x=>x.setAttribute('aria-pressed', x===b?'true':'false')); drawTradeCurve(); }));
+  drawTradeCurve();
+}
+
 function renderAll(seed){
   renderLatest(seed.latest);
   renderQuadrant(seed.latest, seed.recent);
@@ -2720,6 +2867,7 @@ function renderAll(seed){
   renderRisk(RISK);
   renderBigPic(BIGPIC);
   renderCycle(CYCLE);
+  renderTrades(TRADES);
 }
 
 renderAll(SEED);
@@ -2758,6 +2906,11 @@ document.getElementById('statusText').textContent = 'seed data · ' + SEED.lates
       if(!snap.exists) return;
       const data = snap.data();
       if(data && data.history && data.legs){ CYCLE = data; renderCycle(CYCLE); }
+    });
+    db.doc('regime/trades').onSnapshot(snap=>{
+      if(!snap.exists) return;
+      const data = snap.data();
+      if(data && data.groups && data.roro){ TRADES = data; renderTrades(TRADES); }
     });
     db.doc('regime/backtest').onSnapshot(snap=>{
       if(!snap.exists) return;

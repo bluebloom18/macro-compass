@@ -93,8 +93,32 @@ python3 build.py       # fetch + compute -> output.json
 python3 finalize.py    # -> latest_doc.json, history_doc.json (+ artifact_seed.json)
 python3 backtest.py    # -> backtest.json (LAG=0 for the same-close variant)
 python3 risk_barometer.py --refresh   # -> risk_doc.json (Risk Gauge + Risk Barometer section)
+python3 trade_signals.py               # -> trades_doc.json (Trade signals section; needs output.json)
 python3 render.py      # optional: -> macro_compass.html for local preview
 ```
+
+## Trade signals (study 06)
+
+`trade_signals.py` gives 84 ETFs (US sectors, equity factors, countries, fixed income, macro exposures)
+a trend label and a position call, written to the `regime/trades` doc.
+
+- **Trend**: the regime model's own signal rule (EMA30/EMA60 cross with a 0.3x ATR(60) margin) on each
+  ETF's price: bullish, neutral or bearish. On 16 Nov 2026 it matched a third-party trend-label set for
+  81 of these ETFs 68% of the time (44 of their 45 bearish calls), better than faster, slower,
+  two-speed or volatility-adjusted-momentum variants; the reference labels are kept locally in
+  `research/private/` (gitignored), run `python3 trade_signals.py --fit` to rescore.
+- **Role**: each ETF is held only in the regimes its role favours: risk assets (equities, credit,
+  crypto, base metals, non-dollar FX) in Goldilocks/Reflation, duration in Goldilocks/Deflation,
+  inflation hedges in Reflation/Inflation, gold in Reflation/Deflation, dollar/yen/franc in
+  Inflation/Deflation, cash-like bonds always.
+- **Call**: favoured regime and bullish trend -> long full, neutral -> long half, bearish -> none;
+  otherwise none. Long-only by design: shorting out-of-favour assets lost money in every test, and
+  roles learned from each ETF's own regime returns were too noisy (SPY flipped long/short year to year).
+- Also: risk-on vote share (now, 1w, 1m, 3m ago), risk-on/off switches per year (spells < 15 sessions
+  folded), and a backtest (signal at close t, traded at close t+1, T-bills on idle cash, 5bp per unit
+  traded). 2006-26: SPY Sharpe 0.67 vs 0.54 buy-and-hold, max drawdown -14% vs -55%; VT 0.58 vs 0.47;
+  HYG 0.49 vs 0.36; TLT 0.21 vs 0.14; AAXJ about level; gold worse (0.31 vs 0.48). Roles were chosen
+  with the whole period in view, so this is a consistency check, not out-of-sample evidence.
 
 ## Financial conditions (NFCI)
 
